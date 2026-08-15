@@ -1,0 +1,4 @@
+node_modules
+build_front.txt
+npm-debug.log
+.git

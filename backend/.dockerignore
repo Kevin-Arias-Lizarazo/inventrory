@@ -1,0 +1,14 @@
+.gradle
+build
+!build/libs
+!build/libs/inventario-0.0.1-SNAPSHOT.jar
+node_modules
+*.db
+uploads
+app_out.txt
+app_err.txt
+app.pid
+build_out.txt
+.idea
+.vscode
+HELP.md
