@@ -14,6 +14,8 @@ app_out.txt
 app_err.txt
 build_out.txt
 frontend/build_front.txt
+app.out.log
+app.err.log
 backend/src/main/resources/static/
 
 ### STS ###

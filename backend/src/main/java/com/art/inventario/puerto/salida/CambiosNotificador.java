@@ -19,6 +19,10 @@ public interface CambiosNotificador {
 	String RECURSO_MOVIMIENTOS_MATERIALES = "movimientos-materiales";
 	String RECURSO_MOVIMIENTOS_CONSUMIBLES = "movimientos-consumibles";
 	String RECURSO_ASIGNACIONES_CONSUMIBLES = "asignaciones-consumibles";
+	String RECURSO_MOVIMIENTOS_EPP = "movimientos-epp";
+	String RECURSO_PROVEEDORES = "proveedores";
+	String RECURSO_COMPRAS = "compras";
+	String RECURSO_FACTURAS = "facturas";
 
 	SseEmitter suscribir();
 

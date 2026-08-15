@@ -62,7 +62,8 @@ public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 		Consumible actual = persistencia.obtener(id);
 		validarNombre(datos);
 		validarNombreUnico(datos.getNombre(), id);
-		actual.setNombre(datos.getNombre());
+actual.setNombre(datos.getNombre());
+		actual.setMarca(datos.getMarca());
 		actual.setUnidad(datos.getUnidad());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());

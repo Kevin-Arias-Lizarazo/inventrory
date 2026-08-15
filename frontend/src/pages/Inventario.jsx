@@ -6,7 +6,7 @@ import { Tabla, Microsofto, Badge, MiniImagen, Paginacion } from '../components/
 import SubidaImagen from '../components/SubidaImagen';
 import QrCodigo from '../components/QrCodigo';
 
-const inicialItem = () => ({ nombre: '', unidad: '', descripcion: '', fotoUrl: null });
+const inicialItem = () => ({ nombre: '', marca: '', unidad: '', descripcion: '', fotoUrl: null });
 
 const inicialMov = () => ({
   tipo: 'INGRESO',
@@ -64,7 +64,13 @@ export default function Inventario({ config, titulo }) {
 
   function abrirEdicionItem(item) {
     setEditandoItem(item);
-    setFormItem({ nombre: item.nombre, unidad: item.unidad, descripcion: item.descripcion, fotoUrl: item.fotoUrl });
+    setFormItem({
+      nombre: item.nombre,
+      marca: item.marca || '',
+      unidad: item.unidad,
+      descripcion: item.descripcion,
+      fotoUrl: item.fotoUrl,
+    });
     setErrores(null);
     setAbiertoItem(true);
   }
@@ -142,7 +148,8 @@ export default function Inventario({ config, titulo }) {
     ...(config.mostrarCodigo
       ? [{ clave: 'codigo', titulo: 'Código', render: (x) => <QrCodigo codigo={x.codigo} tamano={40} /> }]
       : []),
-    { clave: 'nombre', titulo: config.nombreSingular === 'material' ? 'Material' : 'Consumible' },
+    { clave: 'nombre', titulo: config.tituloNombre || (config.nombreSingular === 'material' ? 'Material' : 'Consumible') },
+    ...(config.mostrarMarca ? [{ clave: 'marca', titulo: 'Marca', render: (x) => x.marca || <span className="sin-dato">&mdash;</span> }] : []),
     {
       clave: 'stock',
       titulo: 'Stock',
@@ -152,7 +159,7 @@ export default function Inventario({ config, titulo }) {
         </Badge>
       ),
     },
-    { clave: 'unidad', titulo: 'Unidad' },
+    ...(config.mostrarUnidad === false ? [] : [{ clave: 'unidad', titulo: 'Unidad' }]),
     { clave: 'descripcion', titulo: 'Descripción' },
     {
       clave: 'acciones',
@@ -241,15 +248,27 @@ export default function Inventario({ config, titulo }) {
               required
             />
           </div>
-          <div className="campo">
-            <label>Unidad</label>
-            <input
-              type="text"
-              value={formItem.unidad}
-              placeholder="ej. bulto, unidad, litro"
-              onChange={(e) => setFormItem({ ...formItem, unidad: e.target.value })}
-            />
-          </div>
+          {config.mostrarMarca && (
+            <div className="campo">
+              <label>Marca</label>
+              <input
+                type="text"
+                value={formItem.marca}
+                onChange={(e) => setFormItem({ ...formItem, marca: e.target.value })}
+              />
+            </div>
+          )}
+          {config.mostrarUnidad !== false && (
+            <div className="campo">
+              <label>Unidad</label>
+              <input
+                type="text"
+                value={formItem.unidad}
+                placeholder="ej. bulto, unidad, litro"
+                onChange={(e) => setFormItem({ ...formItem, unidad: e.target.value })}
+              />
+            </div>
+          )}
           <div className="campo">
             <label>Descripción</label>
             <input

@@ -61,6 +61,7 @@ public class MaterialAplicacion implements MaterialCasoDeUso {
 		validarNombre(datos);
 		validarNombreUnico(datos.getNombre(), id);
 		actual.setNombre(datos.getNombre());
+		actual.setMarca(datos.getMarca());
 		actual.setUnidad(datos.getUnidad());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());

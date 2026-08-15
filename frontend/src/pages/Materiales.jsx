@@ -13,6 +13,7 @@ export default function Materiales() {
         nombreSingular: 'material',
         nombrePlural: 'materiales',
         mostrarCodigo: false,
+        mostrarMarca: true,
       }}
       titulo="Inventario de materiales"
     />

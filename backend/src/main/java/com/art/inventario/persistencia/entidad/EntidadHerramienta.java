@@ -22,6 +22,7 @@ public class EntidadHerramienta {
 	private Integer cantidadTotal;
 	private Integer cantidadDanada;
 	private Integer cantidadPerdida;
+	private Double ultimoCosto;
 
 	public Long getId() {
 		return id;
@@ -93,5 +94,13 @@ public class EntidadHerramienta {
 
 	public void setCantidadPerdida(Integer cantidadPerdida) {
 		this.cantidadPerdida = cantidadPerdida;
+	}
+
+	public Double getUltimoCosto() {
+		return ultimoCosto;
+	}
+
+	public void setUltimoCosto(Double ultimoCosto) {
+		this.ultimoCosto = ultimoCosto;
 	}
 }

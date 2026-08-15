@@ -568,6 +568,296 @@ async function main() {
   const borradoProtegido = await request(`/api/empleados/${empConRefs.data.id}`, { method: "DELETE" });
   ok("DELETE empleado con referencias protegido (409)", borradoProtegido.status === 409, `status=${borradoProtegido.status}`);
 
+  // ===== Proveedores =====
+  const prov = await request("/api/proveedores", {
+    method: "POST",
+    body: {
+      nombre: "Ferretería Central " + runId,
+      telefono: "601 000 0000",
+      correo: "ventas@ferreteria.com",
+      direccion: "Calle 10 # 5-20",
+    },
+  });
+  ok("POST proveedor", prov.status === 201 && prov.data.id > 0 && prov.data.nombre.includes("Ferretería"));
+  const provId = prov.data.id;
+
+  const provDup = await request("/api/proveedores", {
+    method: "POST",
+    body: { nombre: "Ferretería Central " + runId },
+  });
+  ok("rechaza proveedor duplicado (400)", provDup.status === 400, `status=${provDup.status}`);
+
+  const provList = await request("/api/proveedores");
+  ok("GET proveedores", provList.status === 200 && provList.data.some((p) => p.id === provId));
+
+  const provPag = await request("/api/proveedores/paginado?pagina=0&tamano=30");
+  ok("paginado proveedores", provPag.data.total > 0 && Array.isArray(provPag.data.contenido));
+
+  const provPut = await request(`/api/proveedores/${provId}`, {
+    method: "PUT",
+    body: { ...prov.data, telefono: "601 111 1111" },
+  });
+  ok("PUT proveedor", provPut.status === 200 && provPut.data.telefono === "601 111 1111");
+
+  // ===== Compra sin factura (entrada a stock sin precio) =====
+  const mCompra = await request("/api/materiales", {
+    method: "POST",
+    body: { nombre: "Cemento Compra " + runId, marca: "Argos", unidad: "bulto" },
+  });
+  ok("POST material para compras (con marca)", mCompra.status === 201 && mCompra.data.marca === "Argos" && mCompra.data.stock === 0);
+  const mCompraId = mCompra.data.id;
+  ok("material sin costo inicial", mCompra.data.ultimoCosto == null);
+
+  const compra = await request("/api/compras", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-12",
+      observacion: "Compra de prueba",
+      proveedor: { id: provId },
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 10 }],
+    },
+  });
+  ok(
+    "POST compra sin factura",
+    compra.status === 201 &&
+      compra.data.id > 0 &&
+      compra.data.facturaId == null &&
+      compra.data.lineas.length === 1 &&
+      compra.data.proveedor?.id === provId
+  );
+  const compraId = compra.data.id;
+
+  const mCompra1 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock material tras compra = 10", mCompra1.data.stock === 10, `stock=${mCompra1.data.stock}`);
+  ok("costo intacto sin factura", mCompra1.data.ultimoCosto == null, `costo=${mCompra1.data.ultimoCosto}`);
+
+  const comprasList = await request("/api/compras");
+  ok("GET compras", comprasList.status === 200 && comprasList.data.some((c) => c.id === compraId));
+
+  // ===== Factura vincula compra existente (sin doblar stock) =====
+  const facturaVin = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      numero: "F-100",
+      fecha: "2026-08-12",
+      proveedor: { id: provId },
+      compraId: compraId,
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 10, costoUnitario: 5000 }],
+    },
+  });
+  ok(
+    "POST factura vincula compra",
+    facturaVin.status === 201 && facturaVin.data.compraId === compraId && facturaVin.data.total === 50000
+  );
+  const facturaVinId = facturaVin.data.id;
+
+  const mCompra2 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock NO se dobla al facturar compra existente (10)", mCompra2.data.stock === 10, `stock=${mCompra2.data.stock}`);
+  ok("ultimoCosto tras facturar = 5000", mCompra2.data.ultimoCosto === 5000, `costo=${mCompra2.data.ultimoCosto}`);
+
+  const comprasEstado = await request("/api/compras");
+  ok("compra pasa a facturada", comprasEstado.data.find((c) => c.id === compraId)?.facturaId === facturaVinId);
+
+  // ===== Factura con crearCompra=true (sube stock) =====
+  const facturaCrea = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-13",
+      crearCompra: true,
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 5, costoUnitario: 4000 }],
+    },
+  });
+  ok("POST factura crea compra vinculada", facturaCrea.status === 201 && facturaCrea.data.compraId != null);
+  const facturaCreaId = facturaCrea.data.id;
+
+  const mCompra3 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock tras factura con compra = 15", mCompra3.data.stock === 15, `stock=${mCompra3.data.stock}`);
+  ok("ultimoCosto = 4000 (más reciente)", mCompra3.data.ultimoCosto === 4000, `costo=${mCompra3.data.ultimoCosto}`);
+
+  const comprasCreadas = await request("/api/compras");
+  ok("compra creada por factura queda vinculada", comprasCreadas.data.some((c) => c.facturaId === facturaCreaId));
+
+  // ===== Factura informal (sin proveedor, sin número, standalone) =====
+  const facturaInformal = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-14",
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 2, costoUnitario: 6000 }],
+    },
+  });
+  ok(
+    "POST factura informal",
+    facturaInformal.status === 201 && facturaInformal.data.compraId == null && facturaInformal.data.proveedor == null
+  );
+  const facturaInformalId = facturaInformal.data.id;
+
+  const mCompra4 = await request(`/api/materiales/${mCompraId}`);
+  ok("informal no toca stock (15)", mCompra4.data.stock === 15, `stock=${mCompra4.data.stock}`);
+  ok("ultimoCosto = 6000 (la más reciente)", mCompra4.data.ultimoCosto === 6000, `costo=${mCompra4.data.ultimoCosto}`);
+
+  // ===== Editar factura recalcula costo =====
+  const facturaInformalEdit = await request(`/api/facturas/${facturaInformalId}`, {
+    method: "PUT",
+    body: {
+      numero: "INF-1",
+      fecha: "2026-08-14",
+      observacion: "Ajuste",
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 2, costoUnitario: 7000 }],
+    },
+  });
+  ok("PUT factura informal", facturaInformalEdit.status === 200 && facturaInformalEdit.data.total === 14000);
+  const mCompra5 = await request(`/api/materiales/${mCompraId}`);
+  ok("ultimoCosto tras editar = 7000", mCompra5.data.ultimoCosto === 7000, `costo=${mCompra5.data.ultimoCosto}`);
+
+  // ===== Rechazos =====
+  const facturaVinEdit = await request(`/api/facturas/${facturaVinId}`, {
+    method: "PUT",
+    body: {
+      fecha: "2026-08-15",
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 10, costoUnitario: 5000 }],
+    },
+  });
+  ok("rechaza editar factura vinculada a compra (409)", facturaVinEdit.status === 409, `status=${facturaVinEdit.status}`);
+
+  const compraEditFacturada = await request(`/api/compras/${compraId}`, {
+    method: "PUT",
+    body: { fecha: "2026-08-12", lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 3 }] },
+  });
+  ok("rechaza editar compra facturada (409)", compraEditFacturada.status === 409, `status=${compraEditFacturada.status}`);
+
+  const facturaDoble = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      compraId: compraId,
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 1, costoUnitario: 100 }],
+    },
+  });
+  ok("rechaza facturar compra ya facturada (409)", facturaDoble.status === 409, `status=${facturaDoble.status}`);
+
+  // ===== Eliminar facturas recalcula costo =====
+  const delInformal = await request(`/api/facturas/${facturaInformalId}`, { method: "DELETE" });
+  ok("DELETE factura informal (204)", delInformal.status === 204, `status=${delInformal.status}`);
+  const mCompra6 = await request(`/api/materiales/${mCompraId}`);
+  ok("ultimoCosto tras eliminar informal = 4000", mCompra6.data.ultimoCosto === 4000, `costo=${mCompra6.data.ultimoCosto}`);
+
+  const delFacturaCrea = await request(`/api/facturas/${facturaCreaId}`, { method: "DELETE" });
+  ok("DELETE factura con compra creada (204)", delFacturaCrea.status === 204, `status=${delFacturaCrea.status}`);
+  const mCompra6b = await request(`/api/materiales/${mCompraId}`);
+  ok("ultimoCosto tras eliminar = 5000", mCompra6b.data.ultimoCosto === 5000, `costo=${mCompra6b.data.ultimoCosto}`);
+  const compraDesvinculada = await request("/api/compras");
+  ok("compra creada queda sin factura tras eliminar", compraDesvinculada.data.some((c) => c.facturaId == null && c.lineas.length === 1));
+
+  // ===== Compra independiente: editar y eliminar revierten stock =====
+  const compra2 = await request("/api/compras", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 8 }],
+    },
+  });
+  ok("POST segunda compra", compra2.status === 201 && compra2.data.id > 0);
+  const compra2Id = compra2.data.id;
+
+  const mCompra7 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock tras segunda compra = 23", mCompra7.data.stock === 23, `stock=${mCompra7.data.stock}`);
+
+  const compra2Edit = await request(`/api/compras/${compra2Id}`, {
+    method: "PUT",
+    body: {
+      fecha: "2026-08-15",
+      lineas: [{ tipo: "MATERIAL", productoId: mCompraId, cantidad: 3 }],
+    },
+  });
+  ok("PUT compra sin facturar", compra2Edit.status === 200);
+  const mCompra8 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock tras editar compra (revierte 8, suma 3) = 18", mCompra8.data.stock === 18, `stock=${mCompra8.data.stock}`);
+
+  const movCompra2 = await request(`/api/materiales/${mCompraId}/movimientos`);
+  ok("movimientos de compra etiquetados", movCompra2.data.filter((m) => m.observacion === "Compra #" + compra2Id).length === 1);
+
+  const delCompra2 = await request(`/api/compras/${compra2Id}`, { method: "DELETE" });
+  ok("DELETE compra sin facturar (204)", delCompra2.status === 204, `status=${delCompra2.status}`);
+  const mCompra9 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock tras eliminar compra = 15", mCompra9.data.stock === 15, `stock=${mCompra9.data.stock}`);
+  const movCompra2b = await request(`/api/materiales/${mCompraId}/movimientos`);
+  ok("movimientos de compra eliminados", movCompra2b.data.filter((m) => m.observacion === "Compra #" + compra2Id).length === 0);
+
+  // ===== Ropa (solo registro, sin stock) =====
+  const compraRopa = await request("/api/compras", {
+    method: "POST",
+    body: { fecha: "2026-08-15", lineas: [{ tipo: "ROPA", descripcion: "Overol azul", cantidad: 4 }] },
+  });
+  ok("POST compra de ropa", compraRopa.status === 201 && compraRopa.data.lineas[0].descripcion === "Overol azul");
+  const mCompra10 = await request(`/api/materiales/${mCompraId}`);
+  ok("ropa no toca stock (15)", mCompra10.data.stock === 15, `stock=${mCompra10.data.stock}`);
+
+  // ===== Movimientos de EPP =====
+  const eppMov = await request("/api/epp", { method: "POST", body: { nombre: "Arnés " + runId, marca: "3M", stock: 5 } });
+  ok("POST epp con marca", eppMov.status === 201 && eppMov.data.marca === "3M");
+  const eppMovId = eppMov.data.id;
+
+  const eppIng = await request(`/api/epp/${eppMovId}/movimientos`, {
+    method: "POST",
+    body: { tipo: "INGRESO", cantidad: 3, fecha: "2026-08-12", observacion: "Reabastecimiento" },
+  });
+  ok("POST movimiento ingreso epp", eppIng.status === 201 && eppIng.data.cantidad === 3);
+  const eppMov1 = await request(`/api/epp/${eppMovId}`);
+  ok("stock epp tras ingreso = 8", eppMov1.data.stock === 8, `stock=${eppMov1.data.stock}`);
+
+  const eppMovList = await request(`/api/epp/${eppMovId}/movimientos`);
+  ok("GET movimientos epp", eppMovList.status === 200 && eppMovList.data.length === 1);
+
+  const eppTodosMov = await request("/api/movimientos-epp");
+  ok("GET /api/movimientos-epp", eppTodosMov.status === 200 && Array.isArray(eppTodosMov.data));
+
+  const eppPutMov = await request(`/api/movimientos-epp/${eppIng.data.id}`, {
+    method: "PUT",
+    body: { tipo: "EGRESO", cantidad: 2, fecha: "2026-08-12", observacion: "Uso" },
+  });
+  ok("PUT movimiento epp (ingreso->egreso)", eppPutMov.status === 200);
+  const eppMov2 = await request(`/api/epp/${eppMovId}`);
+  ok("stock epp tras cambio = 3", eppMov2.data.stock === 3, `stock=${eppMov2.data.stock}`);
+
+  const eppDelMov = await request(`/api/movimientos-epp/${eppIng.data.id}`, { method: "DELETE" });
+  ok("DELETE movimiento epp (204)", eppDelMov.status === 204, `status=${eppDelMov.status}`);
+  const eppMov3 = await request(`/api/epp/${eppMovId}`);
+  ok("stock epp restaurado = 5", eppMov3.data.stock === 5, `stock=${eppMov3.data.stock}`);
+
+  // ===== Compra de EPP sube stock =====
+  const compraEpp = await request("/api/compras", {
+    method: "POST",
+    body: { fecha: "2026-08-15", lineas: [{ tipo: "EPP", productoId: eppMovId, cantidad: 4 }] },
+  });
+  ok("POST compra de EPP", compraEpp.status === 201);
+  const eppMov4 = await request(`/api/epp/${eppMovId}`);
+  ok("stock epp tras compra = 9", eppMov4.data.stock === 9, `stock=${eppMov4.data.stock}`);
+
+  const delEppConMov = await request(`/api/epp/${eppMovId}`, { method: "DELETE" });
+  ok("no elimina epp con movimientos/compra (409)", delEppConMov.status === 409, `status=${delEppConMov.status}`);
+
+  await request(`/api/compras/${compraEpp.data.id}`, { method: "DELETE" });
+  const eppMov5 = await request(`/api/epp/${eppMovId}`);
+  ok("stock epp tras eliminar compra = 5", eppMov5.data.stock === 5, `stock=${eppMov5.data.stock}`);
+
+  // ===== Protecciones 409 =====
+  const delProvConRefs = await request(`/api/proveedores/${provId}`, { method: "DELETE" });
+  ok("no elimina proveedor con compras (409)", delProvConRefs.status === 409, `status=${delProvConRefs.status}`);
+
+  const delMatConRefs = await request(`/api/materiales/${mCompraId}`, { method: "DELETE" });
+  ok("no elimina material con compras/facturas (409)", delMatConRefs.status === 409, `status=${delMatConRefs.status}`);
+
+  // ===== Eliminar compra facturada desvincula su factura =====
+  const delCompraVin = await request(`/api/compras/${compraId}`, { method: "DELETE" });
+  ok("DELETE compra facturada (204)", delCompraVin.status === 204, `status=${delCompraVin.status}`);
+  const facturaVinAfter = await request(`/api/facturas/${facturaVinId}`);
+  ok("factura queda sin compra (compraId null)", facturaVinAfter.status === 200 && facturaVinAfter.data.compraId == null);
+  const mCompra11 = await request(`/api/materiales/${mCompraId}`);
+  ok("stock revertido tras eliminar compra facturada = 5", mCompra11.data.stock === 5, `stock=${mCompra11.data.stock}`);
+
+  const delEpp = await request(`/api/epp/${eppMovId}`, { method: "DELETE" });
+  ok("DELETE epp sin movimientos (204)", delEpp.status === 204, `status=${delEpp.status}`);
+
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);
 }

@@ -16,8 +16,10 @@ public class EntidadConsumible {
 
 	private String codigo;
 	private String nombre;
+	private String marca;
 	private String unidad;
 	private Integer stock;
+	private Double ultimoCosto;
 	private String descripcion;
 	private String fotoUrl;
 
@@ -45,6 +47,14 @@ public class EntidadConsumible {
 		this.nombre = nombre;
 	}
 
+	public String getMarca() {
+		return marca;
+	}
+
+	public void setMarca(String marca) {
+		this.marca = marca;
+	}
+
 	public String getUnidad() {
 		return unidad;
 	}
@@ -59,6 +69,14 @@ public class EntidadConsumible {
 
 	public void setStock(Integer stock) {
 		this.stock = stock;
+	}
+
+	public Double getUltimoCosto() {
+		return ultimoCosto;
+	}
+
+	public void setUltimoCosto(Double ultimoCosto) {
+		this.ultimoCosto = ultimoCosto;
 	}
 
 	public String getDescripcion() {

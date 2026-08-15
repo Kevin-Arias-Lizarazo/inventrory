@@ -13,6 +13,7 @@ public final class Herramienta {
 	private Integer cantidadPerdida;
 	private Integer cantidadAsignada;
 	private Integer cantidadDisponible;
+	private Double ultimoCosto;
 
 	public Long getId() {
 		return id;
@@ -100,5 +101,13 @@ public final class Herramienta {
 
 	public void setCantidadDisponible(Integer cantidadDisponible) {
 		this.cantidadDisponible = cantidadDisponible;
+	}
+
+	public Double getUltimoCosto() {
+		return ultimoCosto;
+	}
+
+	public void setUltimoCosto(Double ultimoCosto) {
+		this.ultimoCosto = ultimoCosto;
 	}
 }

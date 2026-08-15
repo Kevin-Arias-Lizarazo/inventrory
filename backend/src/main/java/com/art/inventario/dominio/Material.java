@@ -4,8 +4,10 @@ public final class Material {
 
 	private Long id;
 	private String nombre;
+	private String marca;
 	private String unidad;
 	private Integer stock;
+	private Double ultimoCosto;
 	private String descripcion;
 	private String fotoUrl;
 
@@ -25,6 +27,14 @@ public final class Material {
 		this.nombre = nombre;
 	}
 
+	public String getMarca() {
+		return marca;
+	}
+
+	public void setMarca(String marca) {
+		this.marca = marca;
+	}
+
 	public String getUnidad() {
 		return unidad;
 	}
@@ -39,6 +49,14 @@ public final class Material {
 
 	public void setStock(Integer stock) {
 		this.stock = stock;
+	}
+
+	public Double getUltimoCosto() {
+		return ultimoCosto;
+	}
+
+	public void setUltimoCosto(Double ultimoCosto) {
+		this.ultimoCosto = ultimoCosto;
 	}
 
 	public String getDescripcion() {

@@ -1,0 +1,41 @@
+# docker-compose.dev.yml — modo desarrollo desde Docker
+#
+# Frontend con hot reload (Vite HMR sobre el código montado) y backend con
+# gradle bootRun recompilando al arrancar el contenedor.
+#
+# Uso (junto al compose base):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# - Ediciones de frontend -> HMR instantáneo en http://localhost:5173
+# - Cambios de Java       -> reiniciar el contenedor del backend (recompila en
+#                            segundos, sin rebuild de imagen):
+#   docker compose restart inventario
+# - La base de datos persiste en el volumen inventario-data (independiente de
+#   backend/inventario.db local).
+
+services:
+  inventario:
+    build: !reset null
+    image: gradle:jdk17
+    # -Dorg.gradle.java.home anula el gradle.properties local (ruta Windows)
+    command: ["gradle", "-Dorg.gradle.java.home=/opt/java/openjdk", "bootRun", "--no-daemon"]
+    working_dir: /app
+    environment:
+      INVENTARIO_DB: /data/inventario.db
+      APP_UPLOADS_DIR: /data/uploads
+      TZ: America/Bogota
+    volumes:
+      - ./backend:/app
+      - inventario-data:/data
+      - gradle-home:/root/.gradle
+    ports:
+      - "8080:8080"
+
+  frontend:
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  gradle-home:

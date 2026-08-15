@@ -5,33 +5,45 @@ import java.util.stream.Collectors;
 
 import com.art.inventario.dominio.AsignacionConsumible;
 import com.art.inventario.dominio.AsignacionHerramienta;
+import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Consumible;
 import com.art.inventario.dominio.Contrato;
 import com.art.inventario.dominio.Empleado;
 import com.art.inventario.dominio.EntregaEpp;
 import com.art.inventario.dominio.EntregaRopa;
 import com.art.inventario.dominio.Epp;
+import com.art.inventario.dominio.Factura;
 import com.art.inventario.dominio.Herramienta;
+import com.art.inventario.dominio.LineaCompra;
+import com.art.inventario.dominio.LineaFactura;
 import com.art.inventario.dominio.Material;
 import com.art.inventario.dominio.Minuta;
 import com.art.inventario.dominio.MovimientoConsumible;
+import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.dominio.MovimientoHerramienta;
 import com.art.inventario.dominio.MovimientoMaterial;
+import com.art.inventario.dominio.Proveedor;
 import com.art.inventario.dominio.Proyecto;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionConsumible;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionHerramienta;
+import com.art.inventario.persistencia.entidad.EntidadCompra;
 import com.art.inventario.persistencia.entidad.EntidadConsumible;
 import com.art.inventario.persistencia.entidad.EntidadContrato;
 import com.art.inventario.persistencia.entidad.EntidadEmpleado;
 import com.art.inventario.persistencia.entidad.EntidadEntregaEpp;
 import com.art.inventario.persistencia.entidad.EntidadEntregaRopa;
 import com.art.inventario.persistencia.entidad.EntidadEpp;
+import com.art.inventario.persistencia.entidad.EntidadFactura;
 import com.art.inventario.persistencia.entidad.EntidadHerramienta;
+import com.art.inventario.persistencia.entidad.EntidadLineaCompra;
+import com.art.inventario.persistencia.entidad.EntidadLineaFactura;
 import com.art.inventario.persistencia.entidad.EntidadMaterial;
 import com.art.inventario.persistencia.entidad.EntidadMinuta;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoConsumible;
+import com.art.inventario.persistencia.entidad.EntidadMovimientoEpp;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoHerramienta;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoMaterial;
+import com.art.inventario.persistencia.entidad.EntidadProveedor;
 import com.art.inventario.persistencia.entidad.EntidadProyecto;
 
 public final class Mapeador {
@@ -240,8 +252,10 @@ public final class Mapeador {
 		EntidadEpp ee = new EntidadEpp();
 		ee.setId(e.getId());
 		ee.setNombre(e.getNombre());
+		ee.setMarca(e.getMarca());
 		ee.setDescripcion(e.getDescripcion());
 		ee.setStock(e.getStock());
+		ee.setUltimoCosto(e.getUltimoCosto());
 		ee.setFotoUrl(e.getFotoUrl());
 		return ee;
 	}
@@ -253,8 +267,10 @@ public final class Mapeador {
 		Epp d = new Epp();
 		d.setId(e.getId());
 		d.setNombre(e.getNombre());
+		d.setMarca(e.getMarca());
 		d.setDescripcion(e.getDescripcion());
 		d.setStock(e.getStock());
+		d.setUltimoCosto(e.getUltimoCosto());
 		d.setFotoUrl(e.getFotoUrl());
 		return d;
 	}
@@ -339,6 +355,7 @@ public final class Mapeador {
 		eh.setCantidadTotal(h.getCantidadTotal());
 		eh.setCantidadDanada(h.getCantidadDanada());
 		eh.setCantidadPerdida(h.getCantidadPerdida());
+		eh.setUltimoCosto(h.getUltimoCosto());
 		return eh;
 	}
 
@@ -356,6 +373,7 @@ public final class Mapeador {
 		d.setCantidadTotal(h.getCantidadTotal());
 		d.setCantidadDanada(h.getCantidadDanada());
 		d.setCantidadPerdida(h.getCantidadPerdida());
+		d.setUltimoCosto(h.getUltimoCosto());
 		return d;
 	}
 
@@ -402,8 +420,10 @@ public final class Mapeador {
 		EntidadMaterial em = new EntidadMaterial();
 		em.setId(m.getId());
 		em.setNombre(m.getNombre());
+		em.setMarca(m.getMarca());
 		em.setUnidad(m.getUnidad());
 		em.setStock(m.getStock());
+		em.setUltimoCosto(m.getUltimoCosto());
 		em.setDescripcion(m.getDescripcion());
 		em.setFotoUrl(m.getFotoUrl());
 		return em;
@@ -416,8 +436,10 @@ public final class Mapeador {
 		Material d = new Material();
 		d.setId(m.getId());
 		d.setNombre(m.getNombre());
+		d.setMarca(m.getMarca());
 		d.setUnidad(m.getUnidad());
 		d.setStock(m.getStock());
+		d.setUltimoCosto(m.getUltimoCosto());
 		d.setDescripcion(m.getDescripcion());
 		d.setFotoUrl(m.getFotoUrl());
 		return d;
@@ -461,8 +483,10 @@ public final class Mapeador {
 		ec.setId(c.getId());
 		ec.setCodigo(c.getCodigo());
 		ec.setNombre(c.getNombre());
+		ec.setMarca(c.getMarca());
 		ec.setUnidad(c.getUnidad());
 		ec.setStock(c.getStock());
+		ec.setUltimoCosto(c.getUltimoCosto());
 		ec.setDescripcion(c.getDescripcion());
 		ec.setFotoUrl(c.getFotoUrl());
 		return ec;
@@ -476,8 +500,10 @@ public final class Mapeador {
 		d.setId(c.getId());
 		d.setCodigo(c.getCodigo());
 		d.setNombre(c.getNombre());
+		d.setMarca(c.getMarca());
 		d.setUnidad(c.getUnidad());
 		d.setStock(c.getStock());
+		d.setUltimoCosto(c.getUltimoCosto());
 		d.setDescripcion(c.getDescripcion());
 		d.setFotoUrl(c.getFotoUrl());
 		return d;
@@ -510,6 +536,188 @@ public final class Mapeador {
 	}
 
 	public static List<MovimientoConsumible> aDominioMovimientosConsumible(List<EntidadMovimientoConsumible> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadProveedor aEntidad(Proveedor p) {
+		if (p == null) {
+			return null;
+		}
+		EntidadProveedor ep = new EntidadProveedor();
+		ep.setId(p.getId());
+		ep.setNombre(p.getNombre());
+		ep.setTelefono(p.getTelefono());
+		ep.setCorreo(p.getCorreo());
+		ep.setDireccion(p.getDireccion());
+		return ep;
+	}
+
+	public static Proveedor aDominio(EntidadProveedor p) {
+		if (p == null) {
+			return null;
+		}
+		Proveedor d = new Proveedor();
+		d.setId(p.getId());
+		d.setNombre(p.getNombre());
+		d.setTelefono(p.getTelefono());
+		d.setCorreo(p.getCorreo());
+		d.setDireccion(p.getDireccion());
+		return d;
+	}
+
+	public static List<Proveedor> aDominioProveedores(List<EntidadProveedor> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadLineaCompra aEntidad(LineaCompra l, EntidadCompra compra) {
+		EntidadLineaCompra el = new EntidadLineaCompra();
+		el.setId(l.getId());
+		el.setCompra(compra);
+		el.setTipo(l.getTipo());
+		el.setProductoId(l.getProductoId());
+		el.setDescripcion(l.getDescripcion());
+		el.setCantidad(l.getCantidad());
+		return el;
+	}
+
+	public static LineaCompra aDominio(EntidadLineaCompra l) {
+		LineaCompra d = new LineaCompra();
+		d.setId(l.getId());
+		d.setTipo(l.getTipo());
+		d.setProductoId(l.getProductoId());
+		d.setDescripcion(l.getDescripcion());
+		d.setCantidad(l.getCantidad());
+		return d;
+	}
+
+	public static List<LineaCompra> aDominioLineasCompra(List<EntidadLineaCompra> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadCompra aEntidad(Compra c, EntidadProveedor proveedor) {
+		if (c == null) {
+			return null;
+		}
+		EntidadCompra ec = new EntidadCompra();
+		ec.setId(c.getId());
+		ec.setFecha(c.getFecha());
+		ec.setObservacion(c.getObservacion());
+		ec.setFacturaId(c.getFacturaId());
+		ec.setProveedor(proveedor);
+		return ec;
+	}
+
+	public static Compra aDominio(EntidadCompra c, List<LineaCompra> lineas) {
+		if (c == null) {
+			return null;
+		}
+		Compra d = new Compra();
+		d.setId(c.getId());
+		d.setFecha(c.getFecha());
+		d.setObservacion(c.getObservacion());
+		d.setFacturaId(c.getFacturaId());
+		d.setProveedor(aDominio(c.getProveedor()));
+		d.setLineas(lineas);
+		return d;
+	}
+
+	public static List<Compra> aDominioCompras(List<EntidadCompra> lista, java.util.function.Function<EntidadCompra, List<LineaCompra>> lineasDe) {
+		return lista.stream().map(c -> aDominio(c, lineasDe.apply(c))).collect(Collectors.toList());
+	}
+
+	public static EntidadLineaFactura aEntidad(LineaFactura l, EntidadFactura factura) {
+		EntidadLineaFactura el = new EntidadLineaFactura();
+		el.setId(l.getId());
+		el.setFactura(factura);
+		el.setTipo(l.getTipo());
+		el.setProductoId(l.getProductoId());
+		el.setDescripcion(l.getDescripcion());
+		el.setCantidad(l.getCantidad());
+		el.setCostoUnitario(l.getCostoUnitario());
+		el.setSubtotal(l.getSubtotal());
+		return el;
+	}
+
+	public static LineaFactura aDominio(EntidadLineaFactura l) {
+		LineaFactura d = new LineaFactura();
+		d.setId(l.getId());
+		d.setTipo(l.getTipo());
+		d.setProductoId(l.getProductoId());
+		d.setDescripcion(l.getDescripcion());
+		d.setCantidad(l.getCantidad());
+		d.setCostoUnitario(l.getCostoUnitario());
+		d.setSubtotal(l.getSubtotal());
+		return d;
+	}
+
+	public static List<LineaFactura> aDominioLineasFactura(List<EntidadLineaFactura> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadFactura aEntidad(Factura f, EntidadProveedor proveedor) {
+		if (f == null) {
+			return null;
+		}
+		EntidadFactura ef = new EntidadFactura();
+		ef.setId(f.getId());
+		ef.setNumero(f.getNumero());
+		ef.setFecha(f.getFecha());
+		ef.setObservacion(f.getObservacion());
+		ef.setCompraId(f.getCompraId());
+		ef.setTotal(f.getTotal());
+		ef.setProveedor(proveedor);
+		return ef;
+	}
+
+	public static Factura aDominio(EntidadFactura f, List<LineaFactura> lineas) {
+		if (f == null) {
+			return null;
+		}
+		Factura d = new Factura();
+		d.setId(f.getId());
+		d.setNumero(f.getNumero());
+		d.setFecha(f.getFecha());
+		d.setObservacion(f.getObservacion());
+		d.setCompraId(f.getCompraId());
+		d.setTotal(f.getTotal());
+		d.setProveedor(aDominio(f.getProveedor()));
+		d.setLineas(lineas);
+		return d;
+	}
+
+	public static List<Factura> aDominioFacturas(List<EntidadFactura> lista, java.util.function.Function<EntidadFactura, List<LineaFactura>> lineasDe) {
+		return lista.stream().map(f -> aDominio(f, lineasDe.apply(f))).collect(Collectors.toList());
+	}
+
+	public static EntidadMovimientoEpp aEntidad(MovimientoEpp m, EntidadEpp epp) {
+		if (m == null) {
+			return null;
+		}
+		EntidadMovimientoEpp em = new EntidadMovimientoEpp();
+		em.setId(m.getId());
+		em.setTipo(m.getTipo());
+		em.setCantidad(m.getCantidad());
+		em.setFecha(m.getFecha());
+		em.setObservacion(m.getObservacion());
+		em.setEpp(epp);
+		return em;
+	}
+
+	public static MovimientoEpp aDominio(EntidadMovimientoEpp m) {
+		if (m == null) {
+			return null;
+		}
+		MovimientoEpp d = new MovimientoEpp();
+		d.setId(m.getId());
+		d.setTipo(m.getTipo());
+		d.setCantidad(m.getCantidad());
+		d.setFecha(m.getFecha());
+		d.setObservacion(m.getObservacion());
+		d.setEpp(aDominio(m.getEpp()));
+		return d;
+	}
+
+	public static List<MovimientoEpp> aDominioMovimientosEpp(List<EntidadMovimientoEpp> lista) {
 		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
 	}
 }

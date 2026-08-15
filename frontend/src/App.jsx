@@ -11,6 +11,8 @@ import Herramientas from './pages/Herramientas';
 import Epp from './pages/Epp';
 import Materiales from './pages/Materiales';
 import Consumibles from './pages/Consumibles';
+import Compras from './pages/Compras';
+import Proveedores from './pages/Proveedores';
 import Escaneo from './pages/Escaneo';
 import Codigos from './pages/Codigos';
 
@@ -43,6 +45,13 @@ const SECCIONES = [
       { clave: 'inv-epp', etiqueta: 'Inventario de EPP', componente: Epp },
       { clave: 'materiales', etiqueta: 'Inventario de materiales', componente: Materiales },
       { clave: 'consumibles', etiqueta: 'Inventario de consumibles', componente: Consumibles },
+    ],
+  },
+  {
+    grupo: 'Compras',
+    items: [
+      { clave: 'compras', etiqueta: 'Compras y facturas', componente: Compras },
+      { clave: 'proveedores', etiqueta: 'Proveedores', componente: Proveedores },
     ],
   },
   {

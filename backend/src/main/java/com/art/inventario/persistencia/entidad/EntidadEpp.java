@@ -15,8 +15,10 @@ public class EntidadEpp {
 	private Long id;
 
 	private String nombre;
+	private String marca;
 	private String descripcion;
 	private Integer stock;
+	private Double ultimoCosto;
 	private String fotoUrl;
 
 	public Long getId() {
@@ -35,6 +37,14 @@ public class EntidadEpp {
 		this.nombre = nombre;
 	}
 
+	public String getMarca() {
+		return marca;
+	}
+
+	public void setMarca(String marca) {
+		this.marca = marca;
+	}
+
 	public String getDescripcion() {
 		return descripcion;
 	}
@@ -49,6 +59,14 @@ public class EntidadEpp {
 
 	public void setStock(Integer stock) {
 		this.stock = stock;
+	}
+
+	public Double getUltimoCosto() {
+		return ultimoCosto;
+	}
+
+	public void setUltimoCosto(Double ultimoCosto) {
+		this.ultimoCosto = ultimoCosto;
 	}
 
 	public String getFotoUrl() {
