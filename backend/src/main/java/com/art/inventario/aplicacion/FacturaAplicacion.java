@@ -12,6 +12,7 @@ import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Factura;
 import com.art.inventario.dominio.LineaCompra;
 import com.art.inventario.dominio.LineaFactura;
+import com.art.inventario.dominio.PagoFactura;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.CompraCasoDeUso;
@@ -19,6 +20,7 @@ import com.art.inventario.puerto.entrada.FacturaCasoDeUso;
 import com.art.inventario.puerto.salida.CambiosNotificador;
 import com.art.inventario.puerto.salida.CompraPersistencia;
 import com.art.inventario.puerto.salida.FacturaPersistencia;
+import com.art.inventario.puerto.salida.PagoFacturaPersistencia;
 import com.art.inventario.puerto.salida.ProductoCostoPersistencia;
 
 @Service
@@ -28,25 +30,28 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 	private final CompraPersistencia compraPersistencia;
 	private final CompraCasoDeUso compras;
 	private final ProductoCostoPersistencia costos;
+	private final PagoFacturaPersistencia pagos;
 	private final CambiosNotificador notificador;
 
 	public FacturaAplicacion(FacturaPersistencia persistencia, CompraPersistencia compraPersistencia,
-			CompraCasoDeUso compras, ProductoCostoPersistencia costos, CambiosNotificador notificador) {
+			CompraCasoDeUso compras, ProductoCostoPersistencia costos, PagoFacturaPersistencia pagos,
+			CambiosNotificador notificador) {
 		this.persistencia = persistencia;
 		this.compraPersistencia = compraPersistencia;
 		this.compras = compras;
 		this.costos = costos;
+		this.pagos = pagos;
 		this.notificador = notificador;
 	}
 
 	@Override
 	public List<Factura> listar() {
-		return persistencia.listar();
+		return persistencia.listar().stream().map(this::enriquecerPagos).toList();
 	}
 
 	@Override
 	public Factura obtener(Long id) {
-		return persistencia.obtener(id);
+		return enriquecerPagos(persistencia.obtener(id));
 	}
 
 	@Override
@@ -107,9 +112,28 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 		if (actual.getCompraId() != null) {
 			compraPersistencia.desvincularFactura(actual.getCompraId());
 		}
+		pagos.eliminarPorFactura(id);
 		persistencia.eliminar(id);
 		recalcularCostos(actual.getLineas());
 		notificador.publicar(CambiosNotificador.RECURSO_FACTURAS);
+	}
+
+	private Factura enriquecerPagos(Factura factura) {
+		List<PagoFactura> lista = pagos.listarPorFactura(factura.getId());
+		double pagado = lista.stream().mapToDouble(p -> p.getMonto() == null ? 0d : p.getMonto()).sum();
+		double total = factura.getTotal() == null ? 0d : factura.getTotal();
+		double saldo = Math.max(0d, total - pagado);
+		factura.setPagos(lista);
+		factura.setTotalPagado(pagado);
+		factura.setSaldo(saldo);
+		if (pagado <= 0) {
+			factura.setEstadoPago("PENDIENTE");
+		} else if (saldo <= 0.001) {
+			factura.setEstadoPago("PAGADA");
+		} else {
+			factura.setEstadoPago("PARCIAL");
+		}
+		return factura;
 	}
 
 	private Compra compraDesdeFactura(Factura factura) {

@@ -13,7 +13,11 @@ public final class Factura {
 	private Long compraId;
 	private Double total;
 	private boolean crearCompra;
+	private Double totalPagado;
+	private Double saldo;
+	private String estadoPago;
 	private List<LineaFactura> lineas = new ArrayList<>();
+	private List<PagoFactura> pagos = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -85,5 +89,37 @@ public final class Factura {
 
 	public void setLineas(List<LineaFactura> lineas) {
 		this.lineas = lineas;
+	}
+
+	public Double getTotalPagado() {
+		return totalPagado;
+	}
+
+	public void setTotalPagado(Double totalPagado) {
+		this.totalPagado = totalPagado;
+	}
+
+	public Double getSaldo() {
+		return saldo;
+	}
+
+	public void setSaldo(Double saldo) {
+		this.saldo = saldo;
+	}
+
+	public String getEstadoPago() {
+		return estadoPago;
+	}
+
+	public void setEstadoPago(String estadoPago) {
+		this.estadoPago = estadoPago;
+	}
+
+	public List<PagoFactura> getPagos() {
+		return pagos;
+	}
+
+	public void setPagos(List<PagoFactura> pagos) {
+		this.pagos = pagos;
 	}
 }

@@ -101,3 +101,7 @@ Reglas:
 - Paginación: `{contenido,pagina,tamano,total,totalPaginas}`, `tamano` máx 100.
 - Los movimientos de stock de un producto viven en su propia persistencia (patrón `Material`).
 - Compra = entrada a stock sin precio (movimientos `"Compra #<id>"`); Factura fija `ultimoCosto` solo al facturar y lo recalcula al editar/eliminar.
+- Pagos de factura: `POST /api/facturas/{id}/pagos`, `DELETE /api/pagos-factura/{id}`; saldo = total − pagos; un pago no puede exceder el saldo. Factura expone `totalPagado`, `saldo`, `estadoPago` (PENDIENTE/PARCIAL/PAGADA).
+- Órdenes de compra simples: `CRUD /api/ordenes-compra` con líneas (`tipo`, `productoId` o `descripcion` para ropa, `cantidad`, `costoUnitario`), total calculado; **no** mueven stock.
+- Otros: `GET /api/dashboard?desde&hasta`, `GET /api/empleados/{id}/equipamiento`, `GET /api/backup` + `POST /api/backup/restaurar` (multipart, copia el SQLite en `backups/`), `POST /api/importar/{recurso}` (CSV: proveedores, materiales, consumibles, epp), reportes PDF `GET /api/reportes/{inventario,facturas,valor-inventario,alertas-reposicion}.pdf` (OpenPDF).
+- El frontend del backup/restauración e importación vive en `frontend/src/pages/Mantenimiento.jsx`.

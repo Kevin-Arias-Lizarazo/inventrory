@@ -21,12 +21,15 @@ import com.art.inventario.dominio.LineaAjuste;
 import com.art.inventario.dominio.LineaCompra;
 import com.art.inventario.dominio.LineaDevolucion;
 import com.art.inventario.dominio.LineaFactura;
+import com.art.inventario.dominio.LineaOrdenCompra;
 import com.art.inventario.dominio.Material;
 import com.art.inventario.dominio.Minuta;
 import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.dominio.MovimientoHerramienta;
 import com.art.inventario.dominio.MovimientoMaterial;
+import com.art.inventario.dominio.OrdenCompra;
+import com.art.inventario.dominio.PagoFactura;
 import com.art.inventario.dominio.Proveedor;
 import com.art.inventario.dominio.Proyecto;
 import com.art.inventario.persistencia.entidad.EntidadAjuste;
@@ -46,7 +49,10 @@ import com.art.inventario.persistencia.entidad.EntidadLineaAjuste;
 import com.art.inventario.persistencia.entidad.EntidadLineaCompra;
 import com.art.inventario.persistencia.entidad.EntidadLineaDevolucion;
 import com.art.inventario.persistencia.entidad.EntidadLineaFactura;
+import com.art.inventario.persistencia.entidad.EntidadLineaOrdenCompra;
 import com.art.inventario.persistencia.entidad.EntidadMaterial;
+import com.art.inventario.persistencia.entidad.EntidadOrdenCompra;
+import com.art.inventario.persistencia.entidad.EntidadPagoFactura;
 import com.art.inventario.persistencia.entidad.EntidadMinuta;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoConsumible;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoEpp;
@@ -834,6 +840,84 @@ public final class Mapeador {
 		d.setFecha(e.getFecha());
 		d.setObservacion(e.getObservacion());
 		d.setCompraId(e.getCompraId());
+		d.setLineas(lineas != null ? lineas : new ArrayList<>());
+		return d;
+	}
+
+	public static EntidadPagoFactura aEntidad(PagoFactura p) {
+		if (p == null) {
+			return null;
+		}
+		EntidadPagoFactura e = new EntidadPagoFactura();
+		e.setId(p.getId());
+		e.setFacturaId(p.getFacturaId());
+		e.setFecha(p.getFecha());
+		e.setMonto(p.getMonto());
+		e.setObservacion(p.getObservacion());
+		return e;
+	}
+
+	public static PagoFactura aDominio(EntidadPagoFactura e) {
+		if (e == null) {
+			return null;
+		}
+		PagoFactura d = new PagoFactura();
+		d.setId(e.getId());
+		d.setFacturaId(e.getFacturaId());
+		d.setFecha(e.getFecha());
+		d.setMonto(e.getMonto());
+		d.setObservacion(e.getObservacion());
+		return d;
+	}
+
+	public static EntidadLineaOrdenCompra aEntidad(LineaOrdenCompra l, EntidadOrdenCompra orden) {
+		if (l == null) {
+			return null;
+		}
+		EntidadLineaOrdenCompra e = new EntidadLineaOrdenCompra();
+		e.setId(l.getId());
+		e.setTipo(l.getTipo());
+		e.setProductoId(l.getProductoId());
+		e.setDescripcion(l.getDescripcion());
+		e.setCantidad(l.getCantidad());
+		e.setCostoUnitario(l.getCostoUnitario());
+		e.setSubtotal(l.getSubtotal());
+		e.setOrden(orden);
+		return e;
+	}
+
+	public static LineaOrdenCompra aDominio(EntidadLineaOrdenCompra l) {
+		if (l == null) {
+			return null;
+		}
+		LineaOrdenCompra d = new LineaOrdenCompra();
+		d.setId(l.getId());
+		d.setTipo(l.getTipo());
+		d.setProductoId(l.getProductoId());
+		d.setDescripcion(l.getDescripcion());
+		d.setCantidad(l.getCantidad());
+		d.setCostoUnitario(l.getCostoUnitario());
+		d.setSubtotal(l.getSubtotal());
+		return d;
+	}
+
+	public static List<LineaOrdenCompra> aDominioLineasOrden(List<EntidadLineaOrdenCompra> lista) {
+		if (lista == null) {
+			return new ArrayList<>();
+		}
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static OrdenCompra aDominio(EntidadOrdenCompra e, List<LineaOrdenCompra> lineas) {
+		if (e == null) {
+			return null;
+		}
+		OrdenCompra d = new OrdenCompra();
+		d.setId(e.getId());
+		d.setFecha(e.getFecha());
+		d.setObservacion(e.getObservacion());
+		d.setTotal(e.getTotal());
+		d.setProveedor(aDominio(e.getProveedor()));
 		d.setLineas(lineas != null ? lineas : new ArrayList<>());
 		return d;
 	}

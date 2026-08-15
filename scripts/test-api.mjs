@@ -13,9 +13,11 @@ function ok(name, cond, detalle = "") {
   }
 }
 
-async function request(path, { method = "GET", body, headers = {}, blob } = {}) {
+async function request(path, { method = "GET", body, headers = {}, blob, bin, raw } = {}) {
   const opts = { method, headers: { ...headers } };
-  if (body !== undefined) {
+  if (raw !== undefined) {
+    opts.body = raw;
+  } else if (body !== undefined) {
     opts.body = JSON.stringify(body);
     opts.headers["Content-Type"] = "application/json";
   }
@@ -23,6 +25,10 @@ async function request(path, { method = "GET", body, headers = {}, blob } = {}) 
     opts.body = blob;
   }
   const res = await fetch(`${BASE}${path}`, opts);
+  if (bin) {
+    const buf = await res.arrayBuffer();
+    return { status: res.status, data: buf, bytes: buf.byteLength };
+  }
   const text = await res.text();
   let data = null;
   try {
@@ -988,6 +994,73 @@ async function main() {
     Array.isArray(venc.data) && venc.data.some((a) => a.id === eppVenc.data.id && a.tipo === "EPP"),
     `venc=${JSON.stringify(venc.data?.slice?.(0, 3))}`
   );
+
+  // ===== F2 Pagos + órdenes =====
+  const facPago = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      numero: "PAGO-1",
+      lineas: [{ tipo: "MATERIAL", productoId: matDevId, descripcion: "x", cantidad: 1, costoUnitario: 50000 }],
+    },
+  });
+  ok("POST factura para pagos", facPago.status === 201, `status=${facPago.status}`);
+  const facPagoId = facPago.data.id;
+  const facPagoGet = await request(`/api/facturas/${facPagoId}`);
+  ok("factura saldo inicial = total", facPagoGet.data.saldo === 50000 && facPagoGet.data.estadoPago === "PENDIENTE",
+    `saldo=${facPagoGet.data.saldo} estado=${facPagoGet.data.estadoPago}`);
+  const pago1 = await request(`/api/facturas/${facPagoId}/pagos`, {
+    method: "POST",
+    body: { fecha: "2026-08-15", monto: 20000, observacion: "abono" },
+  });
+  ok("POST pago parcial", pago1.status === 201, `status=${pago1.status}`);
+  const facParcial = await request(`/api/facturas/${facPagoId}`);
+  ok("estado PARCIAL saldo 30000", facParcial.data.estadoPago === "PARCIAL" && facParcial.data.saldo === 30000,
+    `e=${facParcial.data.estadoPago} s=${facParcial.data.saldo}`);
+  const pagoExceso = await request(`/api/facturas/${facPagoId}/pagos`, {
+    method: "POST",
+    body: { fecha: "2026-08-15", monto: 999999 },
+  });
+  ok("rechaza pago que excede saldo (400)", pagoExceso.status === 400, `status=${pagoExceso.status}`);
+  await request(`/api/facturas/${facPagoId}/pagos`, {
+    method: "POST",
+    body: { fecha: "2026-08-15", monto: 30000 },
+  });
+  const facPagada = await request(`/api/facturas/${facPagoId}`);
+  ok("factura PAGADA", facPagada.data.estadoPago === "PAGADA" && facPagada.data.saldo === 0,
+    `e=${facPagada.data.estadoPago} s=${facPagada.data.saldo}`);
+
+  const orden = await request("/api/ordenes-compra", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      observacion: "orden test",
+      lineas: [{ tipo: "MATERIAL", productoId: matDevId, descripcion: "mat", cantidad: 2, costoUnitario: 1500 }],
+    },
+  });
+  ok("POST orden compra", orden.status === 201 && orden.data.total === 3000, `status=${orden.status} total=${orden.data?.total}`);
+  const delOrden = await request(`/api/ordenes-compra/${orden.data.id}`, { method: "DELETE" });
+  ok("DELETE orden (204)", delOrden.status === 204, `status=${delOrden.status}`);
+
+  // ===== F3 Dashboard + PDF + equipamiento =====
+  const dash = await request("/api/dashboard");
+  ok("GET dashboard", dash.status === 200 && typeof dash.data.valorInventario === "number",
+    `status=${dash.status}`);
+  const pdfInv = await request("/api/reportes/inventario.pdf", { bin: true });
+  ok("PDF inventario", pdfInv.status === 200 && pdfInv.bytes > 100, `status=${pdfInv.status} bytes=${pdfInv.bytes}`);
+  const equip = await request(`/api/empleados/${empId}/equipamiento`);
+  ok("GET equipamiento empleado", equip.status === 200 && equip.data.empleado, `status=${equip.status}`);
+
+  // ===== F4 Import + backup =====
+  const imp = await request("/api/importar/proveedores", {
+    method: "POST",
+    raw: `nombre,telefono\nImpProv-${Date.now()},300`,
+    headers: { "Content-Type": "text/plain" },
+  });
+  ok("import proveedores", imp.status === 200 && imp.data.creados >= 1,
+    `status=${imp.status} creados=${imp.data?.creados}`);
+  const backup = await request("/api/backup", { bin: true });
+  ok("GET backup", backup.status === 200 && backup.bytes > 100, `status=${backup.status} bytes=${backup.bytes}`);
 
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);

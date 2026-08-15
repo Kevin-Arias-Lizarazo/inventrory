@@ -17,11 +17,19 @@ import Escaneo from './pages/Escaneo';
 import Codigos from './pages/Codigos';
 import Alertas from './pages/Alertas';
 import Ajustes from './pages/Ajustes';
+import Dashboard from './pages/Dashboard';
+import CuentasPorPagar from './pages/CuentasPorPagar';
+import OrdenesCompra from './pages/OrdenesCompra';
+import Reportes from './pages/Reportes';
+import Mantenimiento from './pages/Mantenimiento';
 
 const SECCIONES = [
   {
     grupo: 'Inicio',
-    items: [{ clave: 'alertas', etiqueta: 'Alertas', componente: Alertas }],
+    items: [
+      { clave: 'dashboard', etiqueta: 'Dashboard', componente: Dashboard },
+      { clave: 'alertas', etiqueta: 'Alertas', componente: Alertas },
+    ],
   },
   {
     grupo: 'Proyectos',
@@ -58,7 +66,16 @@ const SECCIONES = [
     grupo: 'Compras',
     items: [
       { clave: 'compras', etiqueta: 'Compras y facturas', componente: Compras },
+      { clave: 'ordenes-compra', etiqueta: 'Órdenes de compra', componente: OrdenesCompra },
+      { clave: 'cuentas-pagar', etiqueta: 'Cuentas por pagar', componente: CuentasPorPagar },
       { clave: 'proveedores', etiqueta: 'Proveedores', componente: Proveedores },
+    ],
+  },
+  {
+    grupo: 'Reportes',
+    items: [
+      { clave: 'reportes', etiqueta: 'Reportes PDF', componente: Reportes },
+      { clave: 'mantenimiento', etiqueta: 'Mantenimiento', componente: Mantenimiento },
     ],
   },
   {
@@ -71,7 +88,7 @@ const SECCIONES = [
 ];
 
 export default function App() {
-  const [activa, setActiva] = useState('empleados');
+  const [activa, setActiva] = useState('dashboard');
   const activaItem = SECCIONES.flatMap((s) => s.items).find((i) => i.clave === activa);
   const Pagina = activa ? activaItem.componente : null;
 
