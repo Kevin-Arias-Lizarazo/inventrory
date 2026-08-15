@@ -23,6 +23,8 @@ public interface CambiosNotificador {
 	String RECURSO_PROVEEDORES = "proveedores";
 	String RECURSO_COMPRAS = "compras";
 	String RECURSO_FACTURAS = "facturas";
+	String RECURSO_AJUSTES = "ajustes";
+	String RECURSO_DEVOLUCIONES = "devoluciones";
 
 	SseEmitter suscribir();
 

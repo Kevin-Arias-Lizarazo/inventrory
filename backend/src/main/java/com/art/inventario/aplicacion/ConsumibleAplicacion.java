@@ -12,18 +12,25 @@ import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.ConsumibleCasoDeUso;
+import com.art.inventario.puerto.salida.AjusteConsultaSalida;
 import com.art.inventario.puerto.salida.CambiosNotificador;
 import com.art.inventario.puerto.salida.ConsumiblePersistencia;
+import com.art.inventario.puerto.salida.DevolucionPersistencia;
 
 @Service
 public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 
 	private final ConsumiblePersistencia persistencia;
 	private final CambiosNotificador notificador;
+	private final AjusteConsultaSalida ajustes;
+	private final DevolucionPersistencia devoluciones;
 
-	public ConsumibleAplicacion(ConsumiblePersistencia persistencia, CambiosNotificador notificador) {
+	public ConsumibleAplicacion(ConsumiblePersistencia persistencia, CambiosNotificador notificador,
+			AjusteConsultaSalida ajustes, DevolucionPersistencia devoluciones) {
 		this.persistencia = persistencia;
 		this.notificador = notificador;
+		this.ajustes = ajustes;
+		this.devoluciones = devoluciones;
 	}
 
 	@Override
@@ -61,9 +68,10 @@ public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 	public Consumible actualizar(Long id, Consumible datos) {
 		Consumible actual = persistencia.obtener(id);
 		validarNombre(datos);
-		validarNombreUnico(datos.getNombre(), id);
-actual.setNombre(datos.getNombre());
+validarNombreUnico(datos.getNombre(), id);
+		actual.setNombre(datos.getNombre());
 		actual.setMarca(datos.getMarca());
+		actual.setStockMinimo(datos.getStockMinimo());
 		actual.setUnidad(datos.getUnidad());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());
@@ -74,10 +82,16 @@ actual.setNombre(datos.getNombre());
 
 	@Override
 	@Transactional
-	public void eliminar(Long id) {
+public void eliminar(Long id) {
 		persistencia.obtener(id);
 		if (persistencia.tieneMovimientos(id)) {
 			throw new ConflictoExcepcion("No se puede eliminar: el consumible tiene movimientos asociados");
+		}
+		if (ajustes.tieneProducto("CONSUMIBLE", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el consumible tiene ajustes asociados");
+		}
+		if (devoluciones.tieneProducto("CONSUMIBLE", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el consumible tiene devoluciones asociadas");
 		}
 		persistencia.eliminar(id);
 		notificador.publicar(CambiosNotificador.RECURSO_CONSUMIBLES);

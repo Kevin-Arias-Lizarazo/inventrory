@@ -12,7 +12,9 @@ import com.art.inventario.dominio.MovimientoMaterial;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.MaterialCasoDeUso;
+import com.art.inventario.puerto.salida.AjusteConsultaSalida;
 import com.art.inventario.puerto.salida.CambiosNotificador;
+import com.art.inventario.puerto.salida.DevolucionPersistencia;
 import com.art.inventario.puerto.salida.MaterialPersistencia;
 
 @Service
@@ -20,10 +22,15 @@ public class MaterialAplicacion implements MaterialCasoDeUso {
 
 	private final MaterialPersistencia persistencia;
 	private final CambiosNotificador notificador;
+	private final AjusteConsultaSalida ajustes;
+	private final DevolucionPersistencia devoluciones;
 
-	public MaterialAplicacion(MaterialPersistencia persistencia, CambiosNotificador notificador) {
+	public MaterialAplicacion(MaterialPersistencia persistencia, CambiosNotificador notificador,
+			AjusteConsultaSalida ajustes, DevolucionPersistencia devoluciones) {
 		this.persistencia = persistencia;
 		this.notificador = notificador;
+		this.ajustes = ajustes;
+		this.devoluciones = devoluciones;
 	}
 
 	@Override
@@ -65,6 +72,7 @@ public class MaterialAplicacion implements MaterialCasoDeUso {
 		actual.setUnidad(datos.getUnidad());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());
+		actual.setStockMinimo(datos.getStockMinimo());
 		Material guardado = persistencia.guardar(actual);
 		notificador.publicar(CambiosNotificador.RECURSO_MATERIALES);
 		return guardado;
@@ -72,10 +80,16 @@ public class MaterialAplicacion implements MaterialCasoDeUso {
 
 	@Override
 	@Transactional
-	public void eliminar(Long id) {
+public void eliminar(Long id) {
 		persistencia.obtener(id);
 		if (persistencia.tieneMovimientos(id)) {
 			throw new ConflictoExcepcion("No se puede eliminar: el material tiene movimientos asociados");
+		}
+		if (ajustes.tieneProducto("MATERIAL", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el material tiene ajustes asociados");
+		}
+		if (devoluciones.tieneProducto("MATERIAL", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el material tiene devoluciones asociadas");
 		}
 		persistencia.eliminar(id);
 		notificador.publicar(CambiosNotificador.RECURSO_MATERIALES);

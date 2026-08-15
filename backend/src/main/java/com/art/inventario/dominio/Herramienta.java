@@ -14,6 +14,7 @@ public final class Herramienta {
 	private Integer cantidadAsignada;
 	private Integer cantidadDisponible;
 	private Double ultimoCosto;
+	private Integer stockMinimo;
 
 	public Long getId() {
 		return id;
@@ -109,5 +110,12 @@ public final class Herramienta {
 
 	public void setUltimoCosto(Double ultimoCosto) {
 		this.ultimoCosto = ultimoCosto;
+	}
+	public Integer getStockMinimo() {
+		return stockMinimo;
+	}
+
+	public void setStockMinimo(Integer stockMinimo) {
+		this.stockMinimo = stockMinimo;
 	}
 }

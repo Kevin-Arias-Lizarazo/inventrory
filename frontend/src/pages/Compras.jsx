@@ -70,6 +70,11 @@ export default function Compras() {
   const [formFactura, setFormFactura] = useState(inicialFactura);
   const [erroresFactura, setErroresFactura] = useState(null);
 
+  const [devAbierto, setDevAbierto] = useState(false);
+  const [compraDev, setCompraDev] = useState(null);
+  const [formDev, setFormDev] = useState({ fecha: hoy(), observacion: '', lineas: [] });
+  const [erroresDev, setErroresDev] = useState(null);
+
   const cargarTodo = useCallback(async ({ silencioso = false } = {}) => {
     if (!silencioso) setCargando(true);
     try {
@@ -159,6 +164,53 @@ export default function Compras() {
       await del(`/api/compras/${item.id}`);
     } catch (err) {
       window.alert(err.message);
+    }
+  }
+
+  function abrirDevolucion(compra) {
+    setCompraDev(compra);
+    setFormDev({
+      fecha: hoy(),
+      observacion: '',
+      lineas: (compra.lineas || [])
+        .filter((l) => l.tipo !== 'ROPA')
+        .map((l) => ({
+          tipo: l.tipo,
+          productoId: l.productoId,
+          descripcion: l.descripcion || '',
+          cantidadMax: l.cantidad,
+          cantidad: '',
+        })),
+    });
+    setErroresDev(null);
+    setDevAbierto(true);
+  }
+
+  async function guardarDevolucion(e) {
+    e.preventDefault();
+    setErroresDev(null);
+    try {
+      const lineas = formDev.lineas
+        .filter((l) => Number(l.cantidad) > 0)
+        .map((l) => ({
+          tipo: l.tipo,
+          productoId: l.productoId,
+          descripcion: l.descripcion,
+          cantidad: Number(l.cantidad),
+        }));
+      if (lineas.length === 0) {
+        setErroresDev(['Indica al menos una cantidad a devolver']);
+        return;
+      }
+      await post(`/api/compras/${compraDev.id}/devoluciones`, {
+        fecha: formDev.fecha,
+        observacion: formDev.observacion,
+        lineas,
+      });
+      setDevAbierto(false);
+      await cargarTodo({ silencioso: true });
+    } catch (err) {
+      setErroresDev([err.message]);
     }
   }
 
@@ -294,6 +346,9 @@ export default function Compras() {
       titulo: '',
       render: (c) => (
         <div className="acciones">
+          <button type="button" className="btn btn-borde" onClick={() => abrirDevolucion(c)}>
+            Devolver
+          </button>
           {!c.facturaId && (
             <button type="button" className="btn btn-borde" onClick={() => abrirEdicionCompra(c)}>
               Editar
@@ -724,6 +779,69 @@ export default function Compras() {
             </button>
             <button type="submit" className="btn btn-primario">
               {editandoFactura ? 'Guardar cambios' : 'Registrar factura'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        titulo={compraDev ? `Devolución de compra #${compraDev.id}` : 'Devolución'}
+        abierto={devAbierto}
+        onCerrar={() => setDevAbierto(false)}
+        ancho={640}
+      >
+        <form className="form" onSubmit={guardarDevolucion}>
+          <p className="texto-aviso">
+            Baja stock de lo devuelto (parcial OK). No modifica el costo aunque la compra esté facturada.
+          </p>
+          <div className="form-grid">
+            <div className="campo">
+              <label>Fecha *</label>
+              <input
+                type="date"
+                value={formDev.fecha}
+                onChange={(e) => setFormDev({ ...formDev, fecha: e.target.value })}
+                required
+              />
+            </div>
+            <div className="campo">
+              <label>Observación</label>
+              <input
+                type="text"
+                value={formDev.observacion}
+                onChange={(e) => setFormDev({ ...formDev, observacion: e.target.value })}
+              />
+            </div>
+          </div>
+          {(formDev.lineas || []).map((l, i) => (
+            <div key={i} className="linea-articulo form-grid">
+              <div className="campo">
+                <label>{l.descripcion || l.tipo}</label>
+                <small className="sin-dato">Comprado: {l.cantidadMax}</small>
+              </div>
+              <div className="campo">
+                <label>Devolver</label>
+                <input
+                  type="number"
+                  min="0"
+                  max={l.cantidadMax}
+                  value={l.cantidad}
+                  onChange={(e) => {
+                    const lineas = [...formDev.lineas];
+                    lineas[i] = { ...lineas[i], cantidad: e.target.value };
+                    setFormDev({ ...formDev, lineas });
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          <Microsofto errores={erroresDev} />
+          <div className="form-acciones">
+            <button type="button" className="btn btn-borde" onClick={() => setDevAbierto(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primario">
+              Registrar devolución
             </button>
           </div>
         </form>

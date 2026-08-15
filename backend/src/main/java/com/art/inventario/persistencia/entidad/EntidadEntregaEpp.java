@@ -20,6 +20,7 @@ public class EntidadEntregaEpp {
 	private String observacion;
 	private String fotoUrl;
 	private String firmaUrl;
+	private String fechaVencimiento;
 
 	@ManyToOne
 	@JoinColumn(name = "empleado_id")
@@ -83,5 +84,12 @@ public class EntidadEntregaEpp {
 
 	public void setEpp(EntidadEpp epp) {
 		this.epp = epp;
+	}
+	public String getFechaVencimiento() {
+		return fechaVencimiento;
+	}
+
+	public void setFechaVencimiento(String fechaVencimiento) {
+		this.fechaVencimiento = fechaVencimiento;
 	}
 }

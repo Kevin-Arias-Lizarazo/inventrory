@@ -1,20 +1,25 @@
 package com.art.inventario.persistencia;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.art.inventario.dominio.Ajuste;
 import com.art.inventario.dominio.AsignacionConsumible;
 import com.art.inventario.dominio.AsignacionHerramienta;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Consumible;
 import com.art.inventario.dominio.Contrato;
+import com.art.inventario.dominio.Devolucion;
 import com.art.inventario.dominio.Empleado;
 import com.art.inventario.dominio.EntregaEpp;
 import com.art.inventario.dominio.EntregaRopa;
 import com.art.inventario.dominio.Epp;
 import com.art.inventario.dominio.Factura;
 import com.art.inventario.dominio.Herramienta;
+import com.art.inventario.dominio.LineaAjuste;
 import com.art.inventario.dominio.LineaCompra;
+import com.art.inventario.dominio.LineaDevolucion;
 import com.art.inventario.dominio.LineaFactura;
 import com.art.inventario.dominio.Material;
 import com.art.inventario.dominio.Minuta;
@@ -24,18 +29,22 @@ import com.art.inventario.dominio.MovimientoHerramienta;
 import com.art.inventario.dominio.MovimientoMaterial;
 import com.art.inventario.dominio.Proveedor;
 import com.art.inventario.dominio.Proyecto;
+import com.art.inventario.persistencia.entidad.EntidadAjuste;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionConsumible;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionHerramienta;
 import com.art.inventario.persistencia.entidad.EntidadCompra;
 import com.art.inventario.persistencia.entidad.EntidadConsumible;
 import com.art.inventario.persistencia.entidad.EntidadContrato;
+import com.art.inventario.persistencia.entidad.EntidadDevolucion;
 import com.art.inventario.persistencia.entidad.EntidadEmpleado;
 import com.art.inventario.persistencia.entidad.EntidadEntregaEpp;
 import com.art.inventario.persistencia.entidad.EntidadEntregaRopa;
 import com.art.inventario.persistencia.entidad.EntidadEpp;
 import com.art.inventario.persistencia.entidad.EntidadFactura;
 import com.art.inventario.persistencia.entidad.EntidadHerramienta;
+import com.art.inventario.persistencia.entidad.EntidadLineaAjuste;
 import com.art.inventario.persistencia.entidad.EntidadLineaCompra;
+import com.art.inventario.persistencia.entidad.EntidadLineaDevolucion;
 import com.art.inventario.persistencia.entidad.EntidadLineaFactura;
 import com.art.inventario.persistencia.entidad.EntidadMaterial;
 import com.art.inventario.persistencia.entidad.EntidadMinuta;
@@ -224,6 +233,7 @@ public final class Mapeador {
 		ee.setObservacion(e.getObservacion());
 		ee.setFotoUrl(e.getFotoUrl());
 		ee.setFirmaUrl(e.getFirmaUrl());
+		ee.setFechaVencimiento(e.getFechaVencimiento());
 		ee.setEmpleado(empleado);
 		ee.setEpp(epp);
 		return ee;
@@ -236,6 +246,7 @@ public final class Mapeador {
 		d.setObservacion(e.getObservacion());
 		d.setFotoUrl(e.getFotoUrl());
 		d.setFirmaUrl(e.getFirmaUrl());
+		d.setFechaVencimiento(e.getFechaVencimiento());
 		d.setEmpleado(aDominio(e.getEmpleado()));
 		d.setEpp(aDominio(e.getEpp()));
 		return d;
@@ -256,6 +267,8 @@ public final class Mapeador {
 		ee.setDescripcion(e.getDescripcion());
 		ee.setStock(e.getStock());
 		ee.setUltimoCosto(e.getUltimoCosto());
+		ee.setStockMinimo(e.getStockMinimo());
+		ee.setFechaVencimiento(e.getFechaVencimiento());
 		ee.setFotoUrl(e.getFotoUrl());
 		return ee;
 	}
@@ -271,6 +284,8 @@ public final class Mapeador {
 		d.setDescripcion(e.getDescripcion());
 		d.setStock(e.getStock());
 		d.setUltimoCosto(e.getUltimoCosto());
+		d.setStockMinimo(e.getStockMinimo());
+		d.setFechaVencimiento(e.getFechaVencimiento());
 		d.setFotoUrl(e.getFotoUrl());
 		return d;
 	}
@@ -356,6 +371,7 @@ public final class Mapeador {
 		eh.setCantidadDanada(h.getCantidadDanada());
 		eh.setCantidadPerdida(h.getCantidadPerdida());
 		eh.setUltimoCosto(h.getUltimoCosto());
+		eh.setStockMinimo(h.getStockMinimo());
 		return eh;
 	}
 
@@ -374,6 +390,7 @@ public final class Mapeador {
 		d.setCantidadDanada(h.getCantidadDanada());
 		d.setCantidadPerdida(h.getCantidadPerdida());
 		d.setUltimoCosto(h.getUltimoCosto());
+		d.setStockMinimo(h.getStockMinimo());
 		return d;
 	}
 
@@ -424,6 +441,7 @@ public final class Mapeador {
 		em.setUnidad(m.getUnidad());
 		em.setStock(m.getStock());
 		em.setUltimoCosto(m.getUltimoCosto());
+		em.setStockMinimo(m.getStockMinimo());
 		em.setDescripcion(m.getDescripcion());
 		em.setFotoUrl(m.getFotoUrl());
 		return em;
@@ -440,6 +458,7 @@ public final class Mapeador {
 		d.setUnidad(m.getUnidad());
 		d.setStock(m.getStock());
 		d.setUltimoCosto(m.getUltimoCosto());
+		d.setStockMinimo(m.getStockMinimo());
 		d.setDescripcion(m.getDescripcion());
 		d.setFotoUrl(m.getFotoUrl());
 		return d;
@@ -487,6 +506,7 @@ public final class Mapeador {
 		ec.setUnidad(c.getUnidad());
 		ec.setStock(c.getStock());
 		ec.setUltimoCosto(c.getUltimoCosto());
+		ec.setStockMinimo(c.getStockMinimo());
 		ec.setDescripcion(c.getDescripcion());
 		ec.setFotoUrl(c.getFotoUrl());
 		return ec;
@@ -504,6 +524,7 @@ public final class Mapeador {
 		d.setUnidad(c.getUnidad());
 		d.setStock(c.getStock());
 		d.setUltimoCosto(c.getUltimoCosto());
+		d.setStockMinimo(c.getStockMinimo());
 		d.setDescripcion(c.getDescripcion());
 		d.setFotoUrl(c.getFotoUrl());
 		return d;
@@ -719,5 +740,101 @@ public final class Mapeador {
 
 	public static List<MovimientoEpp> aDominioMovimientosEpp(List<EntidadMovimientoEpp> lista) {
 		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadLineaAjuste aEntidad(LineaAjuste l, EntidadAjuste ajuste) {
+		if (l == null) {
+			return null;
+		}
+		EntidadLineaAjuste el = new EntidadLineaAjuste();
+		el.setId(l.getId());
+		el.setTipoMovimiento(l.getTipoMovimiento());
+		el.setTipoProducto(l.getTipoProducto());
+		el.setProductoId(l.getProductoId());
+		el.setDescripcion(l.getDescripcion());
+		el.setCantidad(l.getCantidad());
+		el.setAjuste(ajuste);
+		return el;
+	}
+
+	public static LineaAjuste aDominio(EntidadLineaAjuste l) {
+		if (l == null) {
+			return null;
+		}
+		LineaAjuste d = new LineaAjuste();
+		d.setId(l.getId());
+		d.setTipoMovimiento(l.getTipoMovimiento());
+		d.setTipoProducto(l.getTipoProducto());
+		d.setProductoId(l.getProductoId());
+		d.setDescripcion(l.getDescripcion());
+		d.setCantidad(l.getCantidad());
+		return d;
+	}
+
+	public static List<LineaAjuste> aDominioLineasAjuste(List<EntidadLineaAjuste> lista) {
+		if (lista == null) {
+			return new ArrayList<>();
+		}
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static Ajuste aDominio(EntidadAjuste e, List<LineaAjuste> lineas) {
+		if (e == null) {
+			return null;
+		}
+		Ajuste d = new Ajuste();
+		d.setId(e.getId());
+		d.setFecha(e.getFecha());
+		d.setObservacion(e.getObservacion());
+		d.setMotivo(e.getMotivo());
+		d.setLineas(lineas != null ? lineas : new ArrayList<>());
+		return d;
+	}
+
+	public static EntidadLineaDevolucion aEntidad(LineaDevolucion l, EntidadDevolucion devolucion) {
+		if (l == null) {
+			return null;
+		}
+		EntidadLineaDevolucion el = new EntidadLineaDevolucion();
+		el.setId(l.getId());
+		el.setTipo(l.getTipo());
+		el.setProductoId(l.getProductoId());
+		el.setDescripcion(l.getDescripcion());
+		el.setCantidad(l.getCantidad());
+		el.setDevolucion(devolucion);
+		return el;
+	}
+
+	public static LineaDevolucion aDominio(EntidadLineaDevolucion l) {
+		if (l == null) {
+			return null;
+		}
+		LineaDevolucion d = new LineaDevolucion();
+		d.setId(l.getId());
+		d.setTipo(l.getTipo());
+		d.setProductoId(l.getProductoId());
+		d.setDescripcion(l.getDescripcion());
+		d.setCantidad(l.getCantidad());
+		return d;
+	}
+
+	public static List<LineaDevolucion> aDominioLineasDevolucion(List<EntidadLineaDevolucion> lista) {
+		if (lista == null) {
+			return new ArrayList<>();
+		}
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static Devolucion aDominio(EntidadDevolucion e, List<LineaDevolucion> lineas) {
+		if (e == null) {
+			return null;
+		}
+		Devolucion d = new Devolucion();
+		d.setId(e.getId());
+		d.setFecha(e.getFecha());
+		d.setObservacion(e.getObservacion());
+		d.setCompraId(e.getCompraId());
+		d.setLineas(lineas != null ? lineas : new ArrayList<>());
+		return d;
 	}
 }

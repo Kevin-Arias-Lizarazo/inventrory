@@ -12,7 +12,9 @@ import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.EppCasoDeUso;
+import com.art.inventario.puerto.salida.AjusteConsultaSalida;
 import com.art.inventario.puerto.salida.CambiosNotificador;
+import com.art.inventario.puerto.salida.DevolucionPersistencia;
 import com.art.inventario.puerto.salida.EntregaEppPersistencia;
 import com.art.inventario.puerto.salida.EppPersistencia;
 
@@ -22,12 +24,16 @@ public class EppAplicacion implements EppCasoDeUso {
 	private final EppPersistencia persistencia;
 	private final EntregaEppPersistencia entregaPersistencia;
 	private final CambiosNotificador notificador;
+	private final AjusteConsultaSalida ajustes;
+	private final DevolucionPersistencia devoluciones;
 
 	public EppAplicacion(EppPersistencia persistencia, EntregaEppPersistencia entregaPersistencia,
-			CambiosNotificador notificador) {
+			CambiosNotificador notificador, AjusteConsultaSalida ajustes, DevolucionPersistencia devoluciones) {
 		this.persistencia = persistencia;
 		this.entregaPersistencia = entregaPersistencia;
 		this.notificador = notificador;
+		this.ajustes = ajustes;
+		this.devoluciones = devoluciones;
 	}
 
 	@Override
@@ -66,6 +72,8 @@ public class EppAplicacion implements EppCasoDeUso {
 		validarNombreUnico(datos.getNombre(), id);
 		actual.setNombre(datos.getNombre());
 		actual.setMarca(datos.getMarca());
+		actual.setStockMinimo(datos.getStockMinimo());
+		actual.setFechaVencimiento(datos.getFechaVencimiento());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());
 		Epp guardado = persistencia.guardar(actual);
@@ -82,6 +90,12 @@ public class EppAplicacion implements EppCasoDeUso {
 		}
 		if (persistencia.tieneMovimientos(id)) {
 			throw new ConflictoExcepcion("No se puede eliminar: el EPP tiene movimientos asociados");
+		}
+		if (ajustes.tieneProducto("EPP", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el EPP tiene ajustes asociados");
+		}
+		if (devoluciones.tieneProducto("EPP", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: el EPP tiene devoluciones asociadas");
 		}
 		persistencia.eliminar(id);
 		notificador.publicar(CambiosNotificador.RECURSO_EPP);

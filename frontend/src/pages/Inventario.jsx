@@ -6,7 +6,15 @@ import { Tabla, Microsofto, Badge, MiniImagen, Paginacion } from '../components/
 import SubidaImagen from '../components/SubidaImagen';
 import QrCodigo from '../components/QrCodigo';
 
-const inicialItem = () => ({ nombre: '', marca: '', unidad: '', descripcion: '', fotoUrl: null });
+const inicialItem = () => ({
+  nombre: '',
+  marca: '',
+  unidad: '',
+  descripcion: '',
+  fotoUrl: null,
+  stockMinimo: '',
+  fechaVencimiento: '',
+});
 
 const inicialMov = () => ({
   tipo: 'INGRESO',
@@ -70,6 +78,8 @@ export default function Inventario({ config, titulo }) {
       unidad: item.unidad,
       descripcion: item.descripcion,
       fotoUrl: item.fotoUrl,
+      stockMinimo: item.stockMinimo ?? '',
+      fechaVencimiento: item.fechaVencimiento || '',
     });
     setErrores(null);
     setAbiertoItem(true);
@@ -79,10 +89,17 @@ export default function Inventario({ config, titulo }) {
     e.preventDefault();
     setErrores(null);
     try {
+      const cuerpo = {
+        ...formItem,
+        stockMinimo: formItem.stockMinimo === '' || formItem.stockMinimo == null
+          ? null
+          : Number(formItem.stockMinimo),
+        fechaVencimiento: formItem.fechaVencimiento || null,
+      };
       if (editandoItem) {
-        await put(`${config.base}/${editandoItem.id}`, formItem);
+        await put(`${config.base}/${editandoItem.id}`, cuerpo);
       } else {
-        await post(config.base, formItem);
+        await post(config.base, cuerpo);
       }
       setAbiertoItem(false);
       await recargar();
@@ -153,12 +170,31 @@ export default function Inventario({ config, titulo }) {
     {
       clave: 'stock',
       titulo: 'Stock',
-      render: (x) => (
-        <Badge tipo={x.stock > 0 ? 'verde' : 'rojo'}>
-          {x.stock} {x.unidad ? ` ${x.unidad}` : ''}
-        </Badge>
-      ),
+      render: (x) => {
+        const bajo =
+          x.stockMinimo != null && x.stockMinimo > 0 && (x.stock ?? 0) <= x.stockMinimo;
+        return (
+          <Badge tipo={bajo ? 'rojo' : x.stock > 0 ? 'verde' : 'rojo'}>
+            {x.stock} {x.unidad ? ` ${x.unidad}` : ''}
+            {bajo ? ' ⚠' : ''}
+          </Badge>
+        );
+      },
     },
+    {
+      clave: 'stockMinimo',
+      titulo: 'Mín.',
+      render: (x) => (x.stockMinimo != null && x.stockMinimo > 0 ? x.stockMinimo : <span className="sin-dato">&mdash;</span>),
+    },
+    ...(config.mostrarVencimiento
+      ? [
+          {
+            clave: 'fechaVencimiento',
+            titulo: 'Vence',
+            render: (x) => x.fechaVencimiento || <span className="sin-dato">&mdash;</span>,
+          },
+        ]
+      : []),
     ...(config.mostrarUnidad === false ? [] : [{ clave: 'unidad', titulo: 'Unidad' }]),
     { clave: 'descripcion', titulo: 'Descripción' },
     {
@@ -266,6 +302,26 @@ export default function Inventario({ config, titulo }) {
                 value={formItem.unidad}
                 placeholder="ej. bulto, unidad, litro"
                 onChange={(e) => setFormItem({ ...formItem, unidad: e.target.value })}
+              />
+            </div>
+          )}
+          <div className="campo">
+            <label>Stock mínimo</label>
+            <input
+              type="number"
+              min="0"
+              value={formItem.stockMinimo}
+              placeholder="0 = sin alerta"
+              onChange={(e) => setFormItem({ ...formItem, stockMinimo: e.target.value })}
+            />
+          </div>
+          {config.mostrarVencimiento && (
+            <div className="campo">
+              <label>Fecha de vencimiento</label>
+              <input
+                type="date"
+                value={formItem.fechaVencimiento}
+                onChange={(e) => setFormItem({ ...formItem, fechaVencimiento: e.target.value })}
               />
             </div>
           )}

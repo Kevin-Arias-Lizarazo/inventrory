@@ -13,8 +13,10 @@ import com.art.inventario.dominio.MovimientoHerramienta;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.HerramientaCasoDeUso;
+import com.art.inventario.puerto.salida.AjusteConsultaSalida;
 import com.art.inventario.puerto.salida.AsignacionHerramientaPersistencia;
 import com.art.inventario.puerto.salida.CambiosNotificador;
+import com.art.inventario.puerto.salida.DevolucionPersistencia;
 import com.art.inventario.puerto.salida.HerramientaPersistencia;
 import com.art.inventario.puerto.salida.MovimientoHerramientaPersistencia;
 
@@ -25,14 +27,19 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 	private final AsignacionHerramientaPersistencia asignacionPersistencia;
 	private final MovimientoHerramientaPersistencia movimientoPersistencia;
 	private final CambiosNotificador notificador;
+	private final AjusteConsultaSalida ajustes;
+	private final DevolucionPersistencia devoluciones;
 
 	public HerramientaAplicacion(HerramientaPersistencia persistencia,
 			AsignacionHerramientaPersistencia asignacionPersistencia,
-			MovimientoHerramientaPersistencia movimientoPersistencia, CambiosNotificador notificador) {
+			MovimientoHerramientaPersistencia movimientoPersistencia, CambiosNotificador notificador,
+			AjusteConsultaSalida ajustes, DevolucionPersistencia devoluciones) {
 		this.persistencia = persistencia;
 		this.asignacionPersistencia = asignacionPersistencia;
 		this.movimientoPersistencia = movimientoPersistencia;
 		this.notificador = notificador;
+		this.ajustes = ajustes;
+		this.devoluciones = devoluciones;
 	}
 
 	@Override
@@ -106,6 +113,7 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 		}
 		actual.setNombre(datos.getNombre());
 		actual.setMarca(datos.getMarca());
+		actual.setStockMinimo(datos.getStockMinimo());
 		actual.setDescripcion(datos.getDescripcion());
 		actual.setFotoUrl(datos.getFotoUrl());
 		actual.setCantidadTotal(datos.getCantidadTotal());
@@ -160,6 +168,12 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 		if (asignacionPersistencia.tieneAsignacionActiva(id)) {
 			throw new ConflictoExcepcion(
 					"No se puede eliminar: la herramienta está asignada y no ha sido devuelta");
+		}
+		if (ajustes.tieneProducto("HERRAMIENTA", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: la herramienta tiene ajustes asociados");
+		}
+		if (devoluciones.tieneProducto("HERRAMIENTA", id)) {
+			throw new ConflictoExcepcion("No se puede eliminar: la herramienta tiene devoluciones asociadas");
 		}
 		asignacionPersistencia.desvincularHerramienta(id);
 		movimientoPersistencia.eliminarPorHerramienta(id);

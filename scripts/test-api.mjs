@@ -858,6 +858,137 @@ async function main() {
   const delEpp = await request(`/api/epp/${eppMovId}`, { method: "DELETE" });
   ok("DELETE epp sin movimientos (204)", delEpp.status === 204, `status=${delEpp.status}`);
 
+  // ===== F1.1 Stock mínimo y alertas =====
+  const matMin = await request("/api/materiales", {
+    method: "POST",
+    body: {
+      nombre: `MatMin-${Date.now()}`,
+      marca: "X",
+      unidad: "u",
+      stock: 0,
+      stockMinimo: 5,
+    },
+  });
+  ok("POST material con stockMinimo", matMin.status === 201, `status=${matMin.status}`);
+  const matMinId = matMin.data.id;
+  await request(`/api/materiales/${matMinId}/movimientos`, {
+    method: "POST",
+    body: { tipo: "INGRESO", cantidad: 3, fecha: "2026-08-15", observacion: "carga" },
+  });
+  const alertas = await request("/api/alertas/reposicion");
+  ok("GET alertas/reposicion", alertas.status === 200, `status=${alertas.status}`);
+  ok(
+    "alerta incluye material bajo mínimo",
+    Array.isArray(alertas.data) && alertas.data.some((a) => a.productoId === matMinId && a.tipo === "MATERIAL"),
+    `alertas=${JSON.stringify(alertas.data?.slice?.(0, 3))}`
+  );
+
+  // ===== F1.2 Ajustes =====
+  const ajuste = await request("/api/ajustes", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      motivo: "CONTEO",
+      observacion: "ajuste test",
+      lineas: [
+        {
+          tipoMovimiento: "INGRESO",
+          tipoProducto: "MATERIAL",
+          productoId: matMinId,
+          descripcion: "ajuste+",
+          cantidad: 10,
+        },
+      ],
+    },
+  });
+  ok("POST ajuste", ajuste.status === 201, `status=${ajuste.status}`);
+  const matTrasAjuste = await request(`/api/materiales/${matMinId}`);
+  ok("stock tras ajuste ingreso = 13", matTrasAjuste.data.stock === 13, `stock=${matTrasAjuste.data.stock}`);
+  const delAjuste = await request(`/api/ajustes/${ajuste.data.id}`, { method: "DELETE" });
+  ok("DELETE ajuste (204)", delAjuste.status === 204, `status=${delAjuste.status}`);
+  const matTrasDelAj = await request(`/api/materiales/${matMinId}`);
+  ok("stock revertido tras eliminar ajuste = 3", matTrasDelAj.data.stock === 3, `stock=${matTrasDelAj.data.stock}`);
+
+  // ===== F1.3 Devoluciones (parcial, sin tocar costo) =====
+  const provDev = await request("/api/proveedores", {
+    method: "POST",
+    body: { nombre: `ProvDev-${Date.now()}` },
+  });
+  const matDev = await request("/api/materiales", {
+    method: "POST",
+    body: { nombre: `MatDev-${Date.now()}`, marca: "D", unidad: "u", stock: 0 },
+  });
+  const matDevId = matDev.data.id;
+  const compraDev = await request("/api/compras", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      proveedor: { id: provDev.data.id },
+      lineas: [{ tipo: "MATERIAL", productoId: matDevId, descripcion: "x", cantidad: 20 }],
+    },
+  });
+  ok("POST compra para devolución", compraDev.status === 201, `status=${compraDev.status}`);
+  const compraDevId = compraDev.data.id;
+  const facDev = await request("/api/facturas", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      compraId: compraDevId,
+      proveedor: { id: provDev.data.id },
+      lineas: [
+        { tipo: "MATERIAL", productoId: matDevId, descripcion: "x", cantidad: 20, costoUnitario: 1000 },
+      ],
+    },
+  });
+  ok("POST factura de compra dev", facDev.status === 201, `status=${facDev.status}`);
+  const matAntesDev = await request(`/api/materiales/${matDevId}`);
+  ok("ultimoCosto antes devolución = 1000", matAntesDev.data.ultimoCosto === 1000, `c=${matAntesDev.data.ultimoCosto}`);
+  ok("stock antes devolución = 20", matAntesDev.data.stock === 20, `s=${matAntesDev.data.stock}`);
+  const dev = await request(`/api/compras/${compraDevId}/devoluciones`, {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      observacion: "parcial",
+      lineas: [{ tipo: "MATERIAL", productoId: matDevId, descripcion: "x", cantidad: 7 }],
+    },
+  });
+  ok("POST devolución parcial", dev.status === 201, `status=${dev.status}`);
+  const matTrasDev = await request(`/api/materiales/${matDevId}`);
+  ok("stock tras devolución = 13", matTrasDev.data.stock === 13, `s=${matTrasDev.data.stock}`);
+  ok("ultimoCosto intacto tras devolución = 1000", matTrasDev.data.ultimoCosto === 1000, `c=${matTrasDev.data.ultimoCosto}`);
+  const putCompraConDev = await request(`/api/compras/${compraDevId}`, {
+    method: "PUT",
+    body: compraDev.data,
+  });
+  ok("rechaza editar compra con devoluciones (409)", putCompraConDev.status === 409, `status=${putCompraConDev.status}`);
+  const delCompraConDev = await request(`/api/compras/${compraDevId}`, { method: "DELETE" });
+  ok("rechaza eliminar compra con devoluciones (409)", delCompraConDev.status === 409, `status=${delCompraConDev.status}`);
+  const delDev = await request(`/api/devoluciones/${dev.data.id}`, { method: "DELETE" });
+  ok("DELETE devolución (204)", delDev.status === 204, `status=${delDev.status}`);
+  const matTrasDelDev = await request(`/api/materiales/${matDevId}`);
+  ok("stock restaurado tras eliminar devolución = 20", matTrasDelDev.data.stock === 20, `s=${matTrasDelDev.data.stock}`);
+
+  // ===== F1.4 Vencimientos EPP =====
+  const hoy = new Date();
+  const en10 = new Date(hoy.getTime() + 10 * 86400000).toISOString().slice(0, 10);
+  const eppVenc = await request("/api/epp", {
+    method: "POST",
+    body: {
+      nombre: `EppVenc-${Date.now()}`,
+      marca: "V",
+      stock: 2,
+      fechaVencimiento: en10,
+    },
+  });
+  ok("POST epp con vencimiento", eppVenc.status === 201, `status=${eppVenc.status}`);
+  const venc = await request("/api/alertas/epp-vencimiento?dias=30");
+  ok("GET alertas/epp-vencimiento", venc.status === 200, `status=${venc.status}`);
+  ok(
+    "alerta vencimiento incluye epp",
+    Array.isArray(venc.data) && venc.data.some((a) => a.id === eppVenc.data.id && a.tipo === "EPP"),
+    `venc=${JSON.stringify(venc.data?.slice?.(0, 3))}`
+  );
+
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);
 }

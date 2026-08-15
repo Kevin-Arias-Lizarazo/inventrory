@@ -22,6 +22,7 @@ import com.art.inventario.puerto.entrada.HerramientaCasoDeUso;
 import com.art.inventario.puerto.entrada.MaterialCasoDeUso;
 import com.art.inventario.puerto.salida.CambiosNotificador;
 import com.art.inventario.puerto.salida.CompraPersistencia;
+import com.art.inventario.puerto.salida.DevolucionPersistencia;
 import com.art.inventario.puerto.salida.FacturaPersistencia;
 
 @Service
@@ -29,6 +30,7 @@ public class CompraAplicacion implements CompraCasoDeUso {
 
 	private final CompraPersistencia persistencia;
 	private final FacturaPersistencia facturaPersistencia;
+	private final DevolucionPersistencia devoluciones;
 	private final HerramientaCasoDeUso herramientas;
 	private final EppCasoDeUso epps;
 	private final ConsumibleCasoDeUso consumibles;
@@ -36,10 +38,11 @@ public class CompraAplicacion implements CompraCasoDeUso {
 	private final CambiosNotificador notificador;
 
 	public CompraAplicacion(CompraPersistencia persistencia, FacturaPersistencia facturaPersistencia,
-			HerramientaCasoDeUso herramientas, EppCasoDeUso epps, ConsumibleCasoDeUso consumibles,
-			MaterialCasoDeUso materiales, CambiosNotificador notificador) {
+			DevolucionPersistencia devoluciones, HerramientaCasoDeUso herramientas, EppCasoDeUso epps,
+			ConsumibleCasoDeUso consumibles, MaterialCasoDeUso materiales, CambiosNotificador notificador) {
 		this.persistencia = persistencia;
 		this.facturaPersistencia = facturaPersistencia;
+		this.devoluciones = devoluciones;
 		this.herramientas = herramientas;
 		this.epps = epps;
 		this.consumibles = consumibles;
@@ -75,6 +78,9 @@ public class CompraAplicacion implements CompraCasoDeUso {
 		if (actual.facturada()) {
 			throw new ConflictoExcepcion("No se puede modificar una compra ya facturada");
 		}
+		if (devoluciones.tienePorCompra(id)) {
+			throw new ConflictoExcepcion("No se puede modificar una compra con devoluciones");
+		}
 		validarCompra(datos);
 		validarProductos(datos.getLineas());
 		revertirMovimientos(id, actual.getLineas());
@@ -89,6 +95,9 @@ public class CompraAplicacion implements CompraCasoDeUso {
 	@Transactional
 	public void eliminar(Long id) {
 		Compra actual = persistencia.obtener(id);
+		if (devoluciones.tienePorCompra(id)) {
+			throw new ConflictoExcepcion("No se puede eliminar una compra con devoluciones");
+		}
 		if (actual.facturada()) {
 			facturaPersistencia.desvincularCompra(id);
 		}

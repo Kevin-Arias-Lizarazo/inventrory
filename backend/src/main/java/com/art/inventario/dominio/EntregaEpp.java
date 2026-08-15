@@ -7,6 +7,7 @@ public final class EntregaEpp {
 	private String observacion;
 	private String fotoUrl;
 	private String firmaUrl;
+	private String fechaVencimiento;
 	private Empleado empleado;
 	private Epp epp;
 
@@ -64,5 +65,12 @@ public final class EntregaEpp {
 
 	public void setEpp(Epp epp) {
 		this.epp = epp;
+	}
+	public String getFechaVencimiento() {
+		return fechaVencimiento;
+	}
+
+	public void setFechaVencimiento(String fechaVencimiento) {
+		this.fechaVencimiento = fechaVencimiento;
 	}
 }

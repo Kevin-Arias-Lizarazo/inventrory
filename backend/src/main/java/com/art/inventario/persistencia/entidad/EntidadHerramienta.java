@@ -23,6 +23,7 @@ public class EntidadHerramienta {
 	private Integer cantidadDanada;
 	private Integer cantidadPerdida;
 	private Double ultimoCosto;
+	private Integer stockMinimo;
 
 	public Long getId() {
 		return id;
@@ -102,5 +103,12 @@ public class EntidadHerramienta {
 
 	public void setUltimoCosto(Double ultimoCosto) {
 		this.ultimoCosto = ultimoCosto;
+	}
+	public Integer getStockMinimo() {
+		return stockMinimo;
+	}
+
+	public void setStockMinimo(Integer stockMinimo) {
+		this.stockMinimo = stockMinimo;
 	}
 }

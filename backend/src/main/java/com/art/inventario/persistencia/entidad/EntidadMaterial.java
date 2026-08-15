@@ -19,6 +19,7 @@ public class EntidadMaterial {
 	private String unidad;
 	private Integer stock;
 	private Double ultimoCosto;
+	private Integer stockMinimo;
 	private String descripcion;
 	private String fotoUrl;
 
@@ -84,5 +85,12 @@ public class EntidadMaterial {
 
 	public void setFotoUrl(String fotoUrl) {
 		this.fotoUrl = fotoUrl;
+	}
+	public Integer getStockMinimo() {
+		return stockMinimo;
+	}
+
+	public void setStockMinimo(Integer stockMinimo) {
+		this.stockMinimo = stockMinimo;
 	}
 }

@@ -112,10 +112,11 @@ public class EntregaEppAplicacion implements EntregaEppCasoDeUso {
 			eppNuevo.setStock(stock(eppNuevo) - 1);
 			eppPersistencia.guardar(eppNuevo);
 		}
-		actual.setFecha(datos.getFecha());
+actual.setFecha(datos.getFecha());
 		actual.setObservacion(datos.getObservacion());
 		actual.setFotoUrl(datos.getFotoUrl());
 		actual.setFirmaUrl(datos.getFirmaUrl());
+		actual.setFechaVencimiento(datos.getFechaVencimiento());
 		actual.setEmpleado(datos.getEmpleado());
 		actual.setEpp(eppNuevo);
 		EntregaEpp guardada = persistencia.guardar(actual);

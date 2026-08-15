@@ -8,6 +8,8 @@ public final class Epp {
 	private String descripcion;
 	private Integer stock;
 	private Double ultimoCosto;
+	private Integer stockMinimo;
+	private String fechaVencimiento;
 	private String fotoUrl;
 
 	public Long getId() {
@@ -64,5 +66,19 @@ public final class Epp {
 
 	public void setFotoUrl(String fotoUrl) {
 		this.fotoUrl = fotoUrl;
+	}
+	public Integer getStockMinimo() {
+		return stockMinimo;
+	}
+
+	public void setStockMinimo(Integer stockMinimo) {
+		this.stockMinimo = stockMinimo;
+	}
+	public String getFechaVencimiento() {
+		return fechaVencimiento;
+	}
+
+	public void setFechaVencimiento(String fechaVencimiento) {
+		this.fechaVencimiento = fechaVencimiento;
 	}
 }

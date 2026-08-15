@@ -7,7 +7,7 @@ import { Tabla, Microsofto, Badge, MiniImagen, Paginacion } from '../components/
 import SubidaImagen from '../components/SubidaImagen';
 import QrCodigo from '../components/QrCodigo';
 
-const inicial = () => ({ nombre: '', marca: '', descripcion: '', cantidadTotal: 1, fotoUrl: null });
+const inicial = () => ({ nombre: '', marca: '', descripcion: '', cantidadTotal: 1, fotoUrl: null, stockMinimo: '' });
 
 const inicialMov = () => ({
   tipo: 'INGRESO',
@@ -72,6 +72,7 @@ export default function Herramientas() {
       descripcion: item.descripcion,
       cantidadTotal: item.cantidadTotal ?? 1,
       fotoUrl: item.fotoUrl,
+      stockMinimo: item.stockMinimo ?? '',
     });
     setErrores(null);
     setAbierto(true);
@@ -81,7 +82,11 @@ export default function Herramientas() {
     e.preventDefault();
     setErrores(null);
     try {
-      const cuerpo = { ...form, cantidadTotal: Number(form.cantidadTotal) };
+      const cuerpo = {
+        ...form,
+        cantidadTotal: Number(form.cantidadTotal),
+        stockMinimo: form.stockMinimo === '' || form.stockMinimo == null ? null : Number(form.stockMinimo),
+      };
       if (editando) {
         await put(`/api/herramientas/${editando.id}`, cuerpo);
       } else {
@@ -157,6 +162,8 @@ export default function Herramientas() {
 
   function disponibilidadBadge(h) {
     const disponible = h.cantidadDisponible ?? 0;
+    const bajo = h.stockMinimo != null && h.stockMinimo > 0 && disponible <= h.stockMinimo;
+    if (bajo) return <Badge tipo="rojo">{disponible} ⚠</Badge>;
     if (disponible > 0) return <Badge tipo="verde">{disponible}</Badge>;
     return <Badge tipo="rojo">0</Badge>;
   }
@@ -171,6 +178,11 @@ export default function Herramientas() {
       clave: 'cantidadDisponible',
       titulo: 'Disponible',
       render: (h) => disponibilidadBadge(h),
+    },
+    {
+      clave: 'stockMinimo',
+      titulo: 'Mín.',
+      render: (h) => (h.stockMinimo != null && h.stockMinimo > 0 ? h.stockMinimo : <span className="sin-dato">&mdash;</span>),
     },
     { clave: 'cantidadAsignada', titulo: 'Asignada' },
     {
@@ -308,11 +320,13 @@ export default function Herramientas() {
               />
             </div>
             <div className="campo">
-              <label>Marca</label>
+              <label>Stock mínimo</label>
               <input
-                type="text"
-                value={form.marca}
-                onChange={(e) => setForm({ ...form, marca: e.target.value })}
+                type="number"
+                min="0"
+                value={form.stockMinimo}
+                placeholder="0 = sin alerta"
+                onChange={(e) => setForm({ ...form, stockMinimo: e.target.value })}
               />
             </div>
           </div>

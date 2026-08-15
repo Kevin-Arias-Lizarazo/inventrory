@@ -19,6 +19,7 @@ export default function Epp() {
         mostrarCodigo: false,
         mostrarMarca: true,
         mostrarUnidad: false,
+        mostrarVencimiento: true,
       }}
       titulo="Inventario de EPP"
     />

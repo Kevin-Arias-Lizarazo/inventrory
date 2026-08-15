@@ -15,8 +15,14 @@ import Compras from './pages/Compras';
 import Proveedores from './pages/Proveedores';
 import Escaneo from './pages/Escaneo';
 import Codigos from './pages/Codigos';
+import Alertas from './pages/Alertas';
+import Ajustes from './pages/Ajustes';
 
 const SECCIONES = [
+  {
+    grupo: 'Inicio',
+    items: [{ clave: 'alertas', etiqueta: 'Alertas', componente: Alertas }],
+  },
   {
     grupo: 'Proyectos',
     items: [{ clave: 'proyectos', etiqueta: 'Proyectos', componente: Proyectos }],
@@ -45,6 +51,7 @@ const SECCIONES = [
       { clave: 'inv-epp', etiqueta: 'Inventario de EPP', componente: Epp },
       { clave: 'materiales', etiqueta: 'Inventario de materiales', componente: Materiales },
       { clave: 'consumibles', etiqueta: 'Inventario de consumibles', componente: Consumibles },
+      { clave: 'ajustes', etiqueta: 'Ajustes de inventario', componente: Ajustes },
     ],
   },
   {
