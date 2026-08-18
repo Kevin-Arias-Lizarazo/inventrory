@@ -81,6 +81,21 @@ chmod +x scripts/install.sh scripts/start.sh scripts/stop.sh
 
 `install.sh` construye la imagen productiva y crea el contenedor; `start.sh` lo levanta sin reconstruir y abre el navegador cuando la API responde; `stop.sh` detiene el servicio sin borrar el volumen.
 
+Verificación completa del despliegue:
+
+```powershell
+.\scripts\verify-deploy.ps1
+```
+
+En Linux:
+
+```bash
+chmod +x scripts/verify-deploy.sh
+./scripts/verify-deploy.sh
+```
+
+La verificación construye React + Java, levanta Docker, comprueba `/` y `/api/empleados`, y ejecuta las pruebas API/React/SSE dentro de Node 22 en la red Docker.
+
 No ejecutar `docker compose down -v` si se deben conservar la base de datos y los archivos subidos.
 
 ### Persistencia en Docker

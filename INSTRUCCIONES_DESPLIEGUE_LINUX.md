@@ -314,6 +314,36 @@ Para detener sin borrar datos:
 docker compose -f docker-compose.prod.yml down
 ```
 
+## Verificación Completa
+
+Para comprobar que React, Java, Docker, API, frontend, SSE y persistencia quedaron montados:
+
+En Linux:
+
+```bash
+chmod +x scripts/verify-deploy.sh
+./scripts/verify-deploy.sh
+```
+
+En Windows PowerShell:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\verify-deploy.ps1
+```
+
+La verificación:
+
+1. Valida `docker-compose.prod.yml`.
+2. Construye React dentro de Node 22.
+3. Compila Java y genera el JAR dentro de Gradle/JDK 17.
+4. Levanta el contenedor productivo.
+5. Comprueba `/` y `/api/empleados`.
+6. Ejecuta `test-api.mjs`, `test-react-api.mjs` y `test-sse.mjs` dentro de Node 22 en la red Docker.
+7. Muestra el estado final de los contenedores.
+
+El script no ejecuta `down -v` y conserva `inventario-data`.
+
 ### Recrear Los Scripts De Windows
 
 Crear la carpeta y los archivos si fueron eliminados:

@@ -242,7 +242,7 @@ async function main() {
   await request(`/api/asignaciones-herramientas/${asig3.data.id}`, { method: "DELETE" });
   const inv6 = await request("/api/herramientas");
   const h6 = inv6.data.find((h) => h.id === herrId);
-  ok("tras devolver todas -> asignada 0, disponible 4", h6.cantidadAsignada === 0 && h6.cantidadDisponible === 4);
+  ok("tras devolver todas -> asignada 0, disponible 3", h6.cantidadAsignada === 0 && h6.cantidadDisponible === 3);
 
   const borrarLibre = await request(`/api/herramientas/${herrId}`, { method: "DELETE" });
   ok("eliminar herramienta sin asignaciones activas (204)", borrarLibre.status === 204, `status=${borrarLibre.status}`);

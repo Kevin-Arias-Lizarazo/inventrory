@@ -127,3 +127,15 @@ Requisitos Linux: Docker Engine, Docker Compose v2, `curl` y un navegador compat
 Para instrucciones detalladas y recreación manual de los scripts si se dañan, consulta `INSTRUCCIONES_DESPLIEGUE_LINUX.md`.
 
 En Windows también están disponibles `scripts/install.ps1`, `scripts/start.ps1` y `scripts/stop.ps1`. `start.ps1` espera la respuesta de `/api/empleados` y abre automáticamente `http://localhost:8080`.
+
+Para verificar todo el despliegue productivo:
+
+```powershell
+.\scripts\verify-deploy.ps1
+```
+
+En Linux:
+
+```bash
+./scripts/verify-deploy.sh
+```
