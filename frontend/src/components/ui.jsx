@@ -44,7 +44,7 @@ export function MiniImagen({ url, alt, alto }) {
 export function Microsofto({ errores }) {
   if (!errores) return null;
   return (
-    <div className="alerta">
+    <div className="alerta" role="alert" aria-live="polite">
       <ul>
         {errores.map((e, i) => (
           <li key={i}>{e}</li>

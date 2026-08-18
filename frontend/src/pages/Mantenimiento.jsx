@@ -21,6 +21,7 @@ export default function Mantenimiento() {
   async function restaurar(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
     if (!window.confirm('¿Restaurar la base de datos con este archivo? Reinicia el backend después.')) return;
     setMsg(null);
     try {

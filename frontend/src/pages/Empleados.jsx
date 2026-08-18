@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { post, put, del, hoy } from '../api';
+import { get, post, put, del, hoy } from '../api';
 import { useListaPaginada, useDebounce } from '../hooks';
 import Modal from '../components/Modal';
 import { Tabla, Microsofto, MiniImagen, Badge, Paginacion } from '../components/ui';
@@ -28,6 +28,23 @@ export default function Empleados() {
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
   const [errores, setErrores] = useState(null);
+  const [equipamiento, setEquipamiento] = useState(null);
+  const [equipamientoCargando, setEquipamientoCargando] = useState(false);
+  const [equipamientoAbierto, setEquipamientoAbierto] = useState(false);
+
+  async function verEquipamiento(item) {
+    setEquipamiento(null);
+    setEquipamientoAbierto(true);
+    setEquipamientoCargando(true);
+    try {
+      setEquipamiento(await get(`/api/empleados/${item.id}/equipamiento`));
+    } catch (err) {
+      window.alert(err.message);
+      setEquipamientoAbierto(false);
+    } finally {
+      setEquipamientoCargando(false);
+    }
+  }
 
   function abrirNuevo() {
     setEditando(null);
@@ -93,6 +110,9 @@ export default function Empleados() {
         <div className="acciones">
           <button type="button" className="btn btn-borde" onClick={() => abrirEdicion(e)}>
             Editar
+          </button>
+          <button type="button" className="btn btn-borde" onClick={() => verEquipamiento(e)}>
+            Equipamiento
           </button>
           <button type="button" className="btn btn-peligro" onClick={() => eliminar(e)}>
             Eliminar
@@ -200,6 +220,48 @@ export default function Empleados() {
             </button>
           </div>
         </form>
+      </Modal>
+      <Modal
+        titulo={equipamiento?.empleado ? `Equipamiento de ${equipamiento.empleado.nombre}` : 'Equipamiento del empleado'}
+        abierto={equipamientoAbierto}
+        onCerrar={() => { setEquipamientoAbierto(false); setEquipamiento(null); }}
+        ancho={760}
+      >
+        {equipamientoCargando && <p className="vacio">Cargando…</p>}
+        {!equipamientoCargando && equipamiento && (
+          <div className="equipamiento-resumen">
+            <h4>EPP entregado</h4>
+            {(equipamiento.entregasEpp || []).length === 0 ? (
+              <p className="sin-dato">Sin entregas de EPP.</p>
+            ) : (
+              <ul>
+                {equipamiento.entregasEpp.map((x) => (
+                  <li key={`epp-${x.id}`}>{x.epp?.nombre || 'EPP'} · {x.fecha}</li>
+                ))}
+              </ul>
+            )}
+            <h4>Ropa entregada</h4>
+            {(equipamiento.entregasRopa || []).length === 0 ? (
+              <p className="sin-dato">Sin entregas de ropa.</p>
+            ) : (
+              <ul>
+                {equipamiento.entregasRopa.map((x) => (
+                  <li key={`ropa-${x.id}`}>Entrega de ropa{x.observacion ? ` · ${x.observacion}` : ''} · {x.fecha}</li>
+                ))}
+              </ul>
+            )}
+            <h4>Herramientas asignadas</h4>
+            {(equipamiento.asignacionesHerramientas || []).length === 0 ? (
+              <p className="sin-dato">Sin herramientas asignadas.</p>
+            ) : (
+              <ul>
+                {equipamiento.asignacionesHerramientas.map((x) => (
+                  <li key={`herr-${x.id}`}>{x.herramienta?.nombre || 'Herramienta'} · {x.lugar || 'sin lugar'} · {x.devuelta ? 'Devuelta' : 'Asignada'}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </Modal>
     </section>
   );

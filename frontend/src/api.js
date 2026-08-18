@@ -67,6 +67,12 @@ export function hoy() {
   return `${d.getFullYear()}-${m}-${dia}`;
 }
 
+export function primerDiaMes() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-01`;
+}
+
 export function ahora() {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;

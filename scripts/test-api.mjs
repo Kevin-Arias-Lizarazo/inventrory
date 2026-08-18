@@ -229,6 +229,10 @@ async function main() {
   const inv5 = await request("/api/herramientas");
   const h5 = inv5.data.find((h) => h.id === herrId);
   ok("tras reparar -> dañada 0, disponible 1", h5.cantidadDanada === 0 && h5.cantidadDisponible === 1);
+  const danada2 = await request(`/api/herramientas/${herrId}/danada`, { method: "POST" });
+  ok("marca otra unidad como dañada para desechar", danada2.status === 200);
+  const desecharDanada = await request(`/api/herramientas/${herrId}/desechar-danada`, { method: "POST" });
+  ok("desechar dañada -> perdida", desecharDanada.status === 200 && desecharDanada.data.cantidadDanada === 0 && desecharDanada.data.cantidadPerdida === 2);
 
   const borrarEnUso = await request(`/api/herramientas/${herrId}`, { method: "DELETE" });
   ok("no permite eliminar herramienta con asignaciones activas (409)", borrarEnUso.status === 409, `status=${borrarEnUso.status}`);
@@ -910,6 +914,20 @@ async function main() {
   ok("POST ajuste", ajuste.status === 201, `status=${ajuste.status}`);
   const matTrasAjuste = await request(`/api/materiales/${matMinId}`);
   ok("stock tras ajuste ingreso = 13", matTrasAjuste.data.stock === 13, `stock=${matTrasAjuste.data.stock}`);
+  const ajusteObjetivo = await request("/api/ajustes", {
+    method: "POST",
+    body: {
+      fecha: "2026-08-15",
+      motivo: "CONTEO",
+      observacion: "ajuste objetivo",
+      lineas: [{ tipoProducto: "MATERIAL", productoId: matMinId, cantidadDisponible: 8 }],
+    },
+  });
+  ok("POST ajuste por cantidad disponible", ajusteObjetivo.status === 201, `status=${ajusteObjetivo.status}`);
+  const matTrasObjetivo = await request(`/api/materiales/${matMinId}`);
+  ok("stock queda en cantidad disponible objetivo = 8", matTrasObjetivo.data.stock === 8, `stock=${matTrasObjetivo.data.stock}`);
+  const delAjusteObjetivo = await request(`/api/ajustes/${ajusteObjetivo.data.id}`, { method: "DELETE" });
+  ok("DELETE ajuste objetivo (204)", delAjusteObjetivo.status === 204, `status=${delAjusteObjetivo.status}`);
   const delAjuste = await request(`/api/ajustes/${ajuste.data.id}`, { method: "DELETE" });
   ok("DELETE ajuste (204)", delAjuste.status === 204, `status=${delAjuste.status}`);
   const matTrasDelAj = await request(`/api/materiales/${matMinId}`);

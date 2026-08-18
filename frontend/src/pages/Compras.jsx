@@ -70,10 +70,17 @@ export default function Compras() {
   const [formFactura, setFormFactura] = useState(inicialFactura);
   const [erroresFactura, setErroresFactura] = useState(null);
 
+  const [catalogos, setCatalogos] = useState({});
+
   const [devAbierto, setDevAbierto] = useState(false);
   const [compraDev, setCompraDev] = useState(null);
   const [formDev, setFormDev] = useState({ fecha: hoy(), observacion: '', lineas: [] });
   const [erroresDev, setErroresDev] = useState(null);
+  const [devolucionesAbierto, setDevolucionesAbierto] = useState(false);
+  const [devolucionesCompra, setDevolucionesCompra] = useState(null);
+  const [devoluciones, setDevoluciones] = useState([]);
+  const [cargandoDevoluciones, setCargandoDevoluciones] = useState(false);
+  const [errorDevoluciones, setErrorDevoluciones] = useState(null);
 
   const cargarTodo = useCallback(async ({ silencioso = false } = {}) => {
     if (!silencioso) setCargando(true);
@@ -92,6 +99,12 @@ export default function Compras() {
       setProveedores(ps || []);
       setComprasSinFacturar((cs || []).filter((c) => !c.facturaId));
       const productos = [...(hs || []), ...(es || []), ...(csu || []), ...(ms || [])];
+      const catalogo = {};
+      (hs || []).forEach((p) => { catalogo['HERRAMIENTA:' + p.id] = p.nombre; });
+      (es || []).forEach((p) => { catalogo['EPP:' + p.id] = p.nombre; });
+      (csu || []).forEach((p) => { catalogo['CONSUMIBLE:' + p.id] = p.nombre; });
+      (ms || []).forEach((p) => { catalogo['MATERIAL:' + p.id] = p.nombre; });
+      setCatalogos(catalogo);
       const total = productos.reduce((acc, p) => acc + (p.stock || 0) * (p.ultimoCosto || 0), 0);
       const sinPrecio = productos.filter((p) => (p.stock || 0) > 0 && p.ultimoCosto == null).length;
       const sinFacturar = (cs || []).filter((c) => !c.facturaId).length;
@@ -134,6 +147,11 @@ export default function Compras() {
   async function guardarCompra(e) {
     e.preventDefault();
     setErroresCompra(null);
+    const sinProducto = formCompra.lineas.some((l) => l.tipo !== 'ROPA' && !l.productoId);
+    if (sinProducto) {
+      setErroresCompra(['Seleccione un producto en cada artículo (usa el buscador "Usar")']);
+      return;
+    }
     try {
       const cuerpo = {
         fecha: formCompra.fecha,
@@ -177,7 +195,7 @@ export default function Compras() {
         .map((l) => ({
           tipo: l.tipo,
           productoId: l.productoId,
-          descripcion: l.descripcion || '',
+          descripcion: catalogos[l.tipo + ':' + l.productoId] || l.descripcion || '',
           cantidadMax: l.cantidad,
           cantidad: '',
         })),
@@ -214,6 +232,31 @@ export default function Compras() {
     }
   }
 
+  async function verDevoluciones(compra) {
+    setDevolucionesCompra(compra);
+    setDevolucionesAbierto(true);
+    setCargandoDevoluciones(true);
+    setErrorDevoluciones(null);
+    try {
+      setDevoluciones(await get(`/api/compras/${compra.id}/devoluciones`));
+    } catch (err) {
+      setErrorDevoluciones(err.message);
+    } finally {
+      setCargandoDevoluciones(false);
+    }
+  }
+
+  async function eliminarDevolucion(devolucion) {
+    if (!window.confirm(`¿Eliminar la devolución #${devolucion.id}? El stock se restaurará.`)) return;
+    try {
+      await del(`/api/devoluciones/${devolucion.id}`);
+      await verDevoluciones(devolucionesCompra);
+      await cargarTodo({ silencioso: true });
+    } catch (err) {
+      window.alert(err.message);
+    }
+  }
+
   function abrirNuevaCompra() {
     setEditandoCompra(null);
     setFormCompra(inicialCompra());
@@ -230,7 +273,7 @@ export default function Compras() {
       lineas: item.lineas.map((l) => ({
         tipo: l.tipo,
         productoId: l.productoId || '',
-        nombre: l.descripcion || '',
+        nombre: catalogos[l.tipo + ':' + l.productoId] || '',
         descripcion: l.descripcion || '',
         cantidad: String(l.cantidad),
       })),
@@ -242,6 +285,11 @@ export default function Compras() {
   async function guardarFactura(e) {
     e.preventDefault();
     setErroresFactura(null);
+    const sinProducto = formFactura.lineas.some((l) => l.tipo !== 'ROPA' && !l.productoId);
+    if (sinProducto) {
+      setErroresFactura(['Seleccione un producto en cada artículo (usa el buscador "Usar")']);
+      return;
+    }
     try {
       const cuerpo = {
         numero: formFactura.numero,
@@ -298,7 +346,7 @@ export default function Compras() {
       lineas: item.lineas.map((l) => ({
         tipo: l.tipo,
         productoId: l.productoId || '',
-        nombre: l.descripcion || '',
+        nombre: catalogos[l.tipo + ':' + l.productoId] || '',
         descripcion: l.descripcion || '',
         cantidad: String(l.cantidad),
         costoUnitario: String(l.costoUnitario),
@@ -348,6 +396,9 @@ export default function Compras() {
         <div className="acciones">
           <button type="button" className="btn btn-borde" onClick={() => abrirDevolucion(c)}>
             Devolver
+          </button>
+          <button type="button" className="btn btn-borde" onClick={() => verDevoluciones(c)}>
+            Devoluciones
           </button>
           {!c.facturaId && (
             <button type="button" className="btn btn-borde" onClick={() => abrirEdicionCompra(c)}>
@@ -533,6 +584,7 @@ export default function Compras() {
                     const nuevo = inicialLinea(e.target.value);
                     cambiarLineaCompra(i, 'tipo', e.target.value);
                     cambiarLineaCompra(i, 'productoId', nuevo.productoId);
+                    cambiarLineaCompra(i, 'nombre', nuevo.nombre);
                     cambiarLineaCompra(i, 'descripcion', nuevo.descripcion);
                   }}
                 >
@@ -556,6 +608,7 @@ export default function Compras() {
               ) : (
                 <SelectorProducto
                   tipo={l.tipo}
+                  seleccionado={l.nombre}
                   onUsar={(a) => {
                     cambiarLineaCompra(i, 'productoId', a.productoId);
                     cambiarLineaCompra(i, 'nombre', a.nombre);
@@ -603,6 +656,41 @@ export default function Compras() {
             </button>
           </div>
         </form>
+      </Modal>
+      <Modal
+        titulo={devolucionesCompra ? `Devoluciones de compra #${devolucionesCompra.id}` : 'Devoluciones'}
+        abierto={devolucionesAbierto}
+        onCerrar={() => setDevolucionesAbierto(false)}
+        ancho={720}
+      >
+        {cargandoDevoluciones && <p className="vacio">Cargando…</p>}
+        {!cargandoDevoluciones && errorDevoluciones && <p className="texto-error">{errorDevoluciones}</p>}
+        {!cargandoDevoluciones && !errorDevoluciones && devoluciones.length === 0 && (
+          <p className="vacio">Esta compra no tiene devoluciones.</p>
+        )}
+        {!cargandoDevoluciones && !errorDevoluciones && devoluciones.length > 0 && (
+          <div className="tabla-envoltura">
+            <table className="tabla">
+              <thead>
+                <tr><th>Fecha</th><th>Observación</th><th>Artículos</th><th /></tr>
+              </thead>
+              <tbody>
+                {devoluciones.map((d) => (
+                  <tr key={d.id}>
+                    <td>{d.fecha}</td>
+                    <td>{d.observacion || <span className="sin-dato">&mdash;</span>}</td>
+                    <td>{(d.lineas || []).map((l) => `${l.cantidad}× ${l.descripcion || l.tipo}`).join('; ')}</td>
+                    <td>
+                      <button type="button" className="btn btn-peligro btn-sm" onClick={() => eliminarDevolucion(d)}>
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Modal>
 
       <Modal
@@ -702,6 +790,7 @@ export default function Compras() {
                     const nuevo = inicialLinea(e.target.value);
                     cambiarLineaFactura(i, 'tipo', e.target.value);
                     cambiarLineaFactura(i, 'productoId', nuevo.productoId);
+                    cambiarLineaFactura(i, 'nombre', nuevo.nombre);
                     cambiarLineaFactura(i, 'descripcion', nuevo.descripcion);
                   }}
                 >
@@ -725,6 +814,7 @@ export default function Compras() {
               ) : (
                 <SelectorProducto
                   tipo={l.tipo}
+                  seleccionado={l.nombre}
                   onUsar={(a) => {
                     cambiarLineaFactura(i, 'productoId', a.productoId);
                     cambiarLineaFactura(i, 'nombre', a.nombre);

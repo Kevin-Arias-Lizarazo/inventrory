@@ -47,6 +47,11 @@ export default function OrdenesCompra() {
   async function guardar(e) {
     e.preventDefault();
     setErrores(null);
+    const sinProducto = form.lineas.some((l) => l.tipo !== 'ROPA' && !l.productoId);
+    if (sinProducto) {
+      setErrores(['Seleccione un producto en cada artículo (usa el buscador "Usar")']);
+      return;
+    }
     try {
       const cuerpo = {
         fecha: form.fecha,
@@ -147,7 +152,11 @@ export default function OrdenesCompra() {
                   <input type="text" value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} required />
                 </div>
               ) : (
-                <SelectorProducto tipo={l.tipo} onUsar={({ productoId, nombre }) => setLinea(i, { productoId, descripcion: nombre })} />
+                <SelectorProducto
+                  tipo={l.tipo}
+                  seleccionado={l.descripcion}
+                  onUsar={({ productoId, nombre }) => setLinea(i, { productoId, descripcion: nombre })}
+                />
               )}
               {l.descripcion && <p className="texto-aviso">{l.descripcion}</p>}
             </div>

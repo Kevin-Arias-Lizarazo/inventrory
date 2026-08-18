@@ -84,4 +84,46 @@ docker compose logs -f frontend     # logs del dev server de React
 
 ### Uso en producción (opcional)
 
-Este setup levanta el **dev server** de React (ideal para desarrollo, con hot-reload). Para producción puedes eliminar el servicio `frontend`, compilar el frontend (`npm run build`, que genera el estático en `backend/src/main/resources/static`) y dejar que Spring sirva la SPA desde `http://localhost:8080`.
+El despliegue productivo compila React con Node 22, incorpora el estático en el JAR de Spring Boot y ejecuta un único contenedor Java:
+
+```powershell
+.\scripts\build.ps1
+.\scripts\deploy.ps1
+```
+
+También puede ejecutarse directamente:
+
+```powershell
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+La aplicación queda disponible en http://localhost:8080. El entorno productivo usa el volumen `inventario-data`; no ejecutes `docker compose down -v` si necesitas conservar la base de datos y los archivos subidos.
+
+### Instalación en Linux
+
+Linux no utiliza archivos `.exe`; los instaladores son scripts ejecutables. Desde la raíz del proyecto:
+
+```bash
+chmod +x scripts/install.sh scripts/start.sh scripts/stop.sh
+./scripts/install.sh
+```
+
+`install.sh` verifica Docker/Compose, solicita permisos mediante `sudo` si el usuario no puede acceder al daemon, construye las imágenes y crea el contenedor productivo.
+
+Para iniciar posteriormente sin reconstruir y abrir el navegador:
+
+```bash
+./scripts/start.sh
+```
+
+Si el contenedor ya está activo, `start.sh` no reconstruye la imagen; espera la API y abre `http://localhost:8080`. Para detenerlo sin borrar datos:
+
+```bash
+./scripts/stop.sh
+```
+
+Requisitos Linux: Docker Engine, Docker Compose v2, `curl` y un navegador compatible con `xdg-open` o `sensible-browser`.
+
+Para instrucciones detalladas y recreación manual de los scripts si se dañan, consulta `INSTRUCCIONES_DESPLIEGUE_LINUX.md`.
+
+En Windows también están disponibles `scripts/install.ps1`, `scripts/start.ps1` y `scripts/stop.ps1`. `start.ps1` espera la respuesta de `/api/empleados` y abre automáticamente `http://localhost:8080`.

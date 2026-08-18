@@ -25,6 +25,7 @@ public class EntidadLineaAjuste {
 	private Long productoId;
 	private String descripcion;
 	private Integer cantidad;
+	private Integer cantidadDisponible;
 
 	public Long getId() {
 		return id;
@@ -80,5 +81,13 @@ public class EntidadLineaAjuste {
 
 	public void setCantidad(Integer cantidad) {
 		this.cantidad = cantidad;
+	}
+
+	public Integer getCantidadDisponible() {
+		return cantidadDisponible;
+	}
+
+	public void setCantidadDisponible(Integer cantidadDisponible) {
+		this.cantidadDisponible = cantidadDisponible;
 	}
 }

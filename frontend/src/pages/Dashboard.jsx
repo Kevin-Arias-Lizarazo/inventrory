@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { get, hoy } from '../api';
+import { get, hoy, primerDiaMes } from '../api';
 import { useEventos } from '../eventos-contexto';
 import { Badge } from '../components/ui';
 
@@ -9,9 +9,7 @@ const fmt = (n) => COP.format(n || 0);
 export default function Dashboard() {
   const { suscribir } = useEventos();
   const [data, setData] = useState(null);
-  const [desde, setDesde] = useState(() => {
-    const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10);
-  });
+  const [desde, setDesde] = useState(primerDiaMes);
   const [hasta, setHasta] = useState(hoy());
   const [error, setError] = useState(null);
 

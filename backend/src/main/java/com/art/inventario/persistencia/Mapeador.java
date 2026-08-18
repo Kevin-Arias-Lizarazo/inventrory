@@ -759,6 +759,7 @@ public final class Mapeador {
 		el.setProductoId(l.getProductoId());
 		el.setDescripcion(l.getDescripcion());
 		el.setCantidad(l.getCantidad());
+		el.setCantidadDisponible(l.getCantidadDisponible());
 		el.setAjuste(ajuste);
 		return el;
 	}
@@ -774,6 +775,7 @@ public final class Mapeador {
 		d.setProductoId(l.getProductoId());
 		d.setDescripcion(l.getDescripcion());
 		d.setCantidad(l.getCantidad());
+		d.setCantidadDisponible(l.getCantidadDisponible());
 		return d;
 	}
 

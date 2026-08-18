@@ -160,6 +160,19 @@ section {
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+a.btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .btn-primario {
@@ -200,6 +213,27 @@ section {
   line-height: 1;
 }
 
+.btn-icono:hover {
+  color: var(--texto);
+  background: var(--fondo);
+  border-radius: 6px;
+}
+
+.btn:focus-visible,
+.btn-icono:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+a:not(.btn):hover {
+  color: var(--azul-osc);
+  opacity: 0.85;
+}
+
 /* --- tabla --- */
 .tabla-envoltura {
   background: #fff;
@@ -231,10 +265,6 @@ section {
 
 .tabla tbody tr:last-child td {
   border-bottom: 0;
-}
-
-.tabla tbody tr:hover {
-  background: #f8fafc;
 }
 
 .acciones {
@@ -373,6 +403,14 @@ section {
   font-size: 14px;
   font-family: inherit;
   background: #fff;
+}
+
+.campo input:hover,
+.campo select:hover,
+.campo textarea:hover,
+.busqueda input:hover,
+.selector-producto input:hover {
+  border-color: #93c5fd;
 }
 
 .campo input:focus,
@@ -844,6 +882,16 @@ section {
   margin-bottom: -2px;
 }
 
+.pestana:hover {
+  color: var(--acento);
+  background: var(--fondo);
+}
+
+.pestana:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
 .pestana-activa {
   color: var(--acento);
   border-bottom-color: var(--acento);
@@ -913,13 +961,18 @@ section {
   font-size: 14px;
 }
 
+.selector-seleccionado {
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .selector-lista {
   list-style: none;
   margin: 0;
   padding: 0;
   border: 1px solid var(--borde);
   border-radius: 8px;
-  max-height: 160px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -951,7 +1004,7 @@ section {
 /* --- línea de artículo --- */
 .linea-articulo {
   display: grid;
-  grid-template-columns: 130px minmax(180px, 1fr) 90px 70px;
+  grid-template-columns: 130px minmax(180px, 1fr) 90px 100px auto;
   gap: 10px;
   align-items: end;
   padding: 12px;

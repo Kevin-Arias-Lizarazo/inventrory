@@ -7,7 +7,7 @@ import SelectEmpleado from '../components/SelectEmpleado';
 import SubidaImagen from '../components/SubidaImagen';
 import SignaturePad from '../components/SignaturePad';
 
-const inicial = () => ({ fecha: hoy(), empleadoId: null, eppId: null, observacion: '', fotoUrl: null, firma: null });
+const inicial = () => ({ fecha: hoy(), empleadoId: null, eppId: null, fechaVencimiento: '', observacion: '', fotoUrl: null, firma: null });
 
 function aDominio(f) {
   const { empleadoId, eppId, ...resto } = f;
@@ -53,6 +53,7 @@ export default function EntregasEpp() {
       fecha: item.fecha,
       empleadoId: item.empleado?.id || null,
       eppId: item.epp?.id || null,
+      fechaVencimiento: item.fechaVencimiento || '',
       observacion: item.observacion,
       fotoUrl: item.fotoUrl,
       firma: item.firmaUrl,
@@ -105,6 +106,7 @@ export default function EntregasEpp() {
       titulo: 'EPP',
       render: (x) => (x.epp?.nombre ? <Badge tipo="azul">{x.epp.nombre}</Badge> : <Badge tipo="gris">sin epp</Badge>),
     },
+    { clave: 'fechaVencimiento', titulo: 'Vence', render: (x) => x.fechaVencimiento || <span className="sin-dato">&mdash;</span> },
     { clave: 'fotoUrl', titulo: 'Foto', render: (x) => <MiniImagen url={x.fotoUrl} alt="foto de la entrega" /> },
     { clave: 'firmaUrl', titulo: 'Firma', render: (x) => <MiniImagen url={x.firmaUrl} alt="firma" /> },
     { clave: 'observacion', titulo: 'Observación' },
@@ -212,6 +214,14 @@ export default function EntregasEpp() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="campo">
+            <label>Fecha de vencimiento</label>
+            <input
+              type="date"
+              value={form.fechaVencimiento}
+              onChange={(e) => setForm({ ...form, fechaVencimiento: e.target.value })}
+            />
           </div>
           <SubidaImagen
             etiqueta="Foto de la entrega"

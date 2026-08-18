@@ -56,6 +56,33 @@ docker compose down
 docker compose up --build -d
 ```
 
+## Despliegue productivo
+
+El despliegue productivo compila React dentro de una etapa Node 22, copia el estático al JAR de Spring Boot y ejecuta un único contenedor en `8080`:
+
+```powershell
+.\scripts\build.ps1
+.\scripts\deploy.ps1
+```
+
+Equivalente directo:
+
+```powershell
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+En Linux usar los scripts ejecutables:
+
+```bash
+chmod +x scripts/install.sh scripts/start.sh scripts/stop.sh
+./scripts/install.sh
+./scripts/start.sh
+```
+
+`install.sh` construye la imagen productiva y crea el contenedor; `start.sh` lo levanta sin reconstruir y abre el navegador cuando la API responde; `stop.sh` detiene el servicio sin borrar el volumen.
+
+No ejecutar `docker compose down -v` si se deben conservar la base de datos y los archivos subidos.
+
 ### Persistencia en Docker
 
 - La base de datos del contenedor vive en el volumen del compose y es **independiente** de `backend/inventario.db` local (el volumen se crea vacío).
@@ -103,5 +130,7 @@ Reglas:
 - Compra = entrada a stock sin precio (movimientos `"Compra #<id>"`); Factura fija `ultimoCosto` solo al facturar y lo recalcula al editar/eliminar.
 - Pagos de factura: `POST /api/facturas/{id}/pagos`, `DELETE /api/pagos-factura/{id}`; saldo = total − pagos; un pago no puede exceder el saldo. Factura expone `totalPagado`, `saldo`, `estadoPago` (PENDIENTE/PARCIAL/PAGADA).
 - Órdenes de compra simples: `CRUD /api/ordenes-compra` con líneas (`tipo`, `productoId` o `descripcion` para ropa, `cantidad`, `costoUnitario`), total calculado; **no** mueven stock.
+- Ajustes de inventario: las líneas nuevas pueden enviar `cantidadDisponible` como objetivo; el backend calcula el ingreso/egreso necesario sin alterar unidades asignadas, dañadas o perdidas de herramientas. El formato anterior (`tipoMovimiento` + `cantidad`) sigue siendo válido.
+- Herramientas: `POST /api/herramientas/{id}/reparar` devuelve una unidad dañada a disponible; `POST /api/herramientas/{id}/desechar-danada` la pasa de dañada a perdida y no vuelve a estar disponible; `POST /api/herramientas/{id}/perdida` marca una unidad disponible como perdida.
 - Otros: `GET /api/dashboard?desde&hasta`, `GET /api/empleados/{id}/equipamiento`, `GET /api/backup` + `POST /api/backup/restaurar` (multipart, copia el SQLite en `backups/`), `POST /api/importar/{recurso}` (CSV: proveedores, materiales, consumibles, epp), reportes PDF `GET /api/reportes/{inventario,facturas,valor-inventario,alertas-reposicion}.pdf` (OpenPDF).
 - El frontend del backup/restauración e importación vive en `frontend/src/pages/Mantenimiento.jsx`.

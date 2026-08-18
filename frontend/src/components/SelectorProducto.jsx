@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { get, post } from '../api';
+import { Badge } from './ui';
 
 const CATALOGO = {
   HERRAMIENTA: { base: '/api/herramientas', crear: (d) => ({ ...d, cantidadTotal: 1 }) },
@@ -8,12 +9,13 @@ const CATALOGO = {
   MATERIAL: { base: '/api/materiales', crear: (d) => ({ ...d }) },
 };
 
-export default function SelectorProducto({ tipo, onUsar, etiqueta = 'Producto' }) {
+export default function SelectorProducto({ tipo, onUsar, etiqueta = 'Producto', seleccionado = '' }) {
   const [lista, setLista] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [creando, setCreando] = useState(false);
   const [formNuevo, setFormNuevo] = useState({ nombre: '', marca: '' });
   const [error, setError] = useState(null);
+  const inputId = useId();
 
   useEffect(() => {
     if (tipo === 'ROPA' || !CATALOGO[tipo]) {
@@ -45,30 +47,52 @@ export default function SelectorProducto({ tipo, onUsar, etiqueta = 'Producto' }
         .slice(0, 8)
     : lista.slice(0, 8);
 
+  function elegir(x) {
+    onUsar({
+      tipo,
+      productoId: x.id,
+      nombre: x.nombre,
+      disponibleActual: tipo === 'HERRAMIENTA' ? x.cantidadDisponible : x.stock,
+    });
+    setBusqueda('');
+    setCreando(false);
+  }
+
   async function crearProducto(e) {
     e.preventDefault();
     setError(null);
     try {
       const cuerpo = CATALOGO[tipo].crear({ ...formNuevo });
       const creado = await post(CATALOGO[tipo].base, cuerpo);
-      onUsar({ tipo, productoId: creado.id, nombre: creado.nombre });
-      setCreando(false);
-      setBusqueda('');
+      elegir(creado);
       setFormNuevo({ nombre: '', marca: '' });
     } catch (err) {
       setError(err.message);
     }
   }
 
+  function teclaEnter(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (resultados.length > 0) elegir(resultados[0]);
+  }
+
   if (tipo === 'ROPA' || !CATALOGO[tipo]) return null;
 
   return (
     <div className="selector-producto">
-      <label>{etiqueta} (buscar o crear)</label>
+      <label htmlFor={inputId}>{etiqueta} (buscar o crear)</label>
+      {seleccionado && !busqueda.trim() && (
+        <div className="selector-seleccionado">
+          <Badge tipo="verde">Seleccionado: {seleccionado}</Badge>
+        </div>
+      )}
       <input
+        id={inputId}
         type="text"
         value={busqueda}
-        placeholder="Escribe para buscar…"
+        placeholder={seleccionado ? 'Escribe para cambiar…' : 'Escribe para buscar…'}
+        onKeyDown={teclaEnter}
         onChange={(e) => {
           setBusqueda(e.target.value);
           setCreando(false);
@@ -88,14 +112,7 @@ export default function SelectorProducto({ tipo, onUsar, etiqueta = 'Producto' }
                 {x.marca ? <small> · {x.marca}</small> : null}
                 {x.codigo ? <small> · {x.codigo}</small> : null}
               </span>
-              <button
-                type="button"
-                className="btn btn-borde btn-sm"
-                onClick={() => {
-                  onUsar({ tipo, productoId: x.id, nombre: x.nombre });
-                  setBusqueda('');
-                }}
-              >
+              <button type="button" className="btn btn-primario btn-sm" onClick={() => elegir(x)}>
                 Usar
               </button>
             </li>

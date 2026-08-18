@@ -207,6 +207,31 @@ export default function Herramientas() {
           >
             -1
           </button>
+          <button
+            type="button"
+            className="btn btn-peligro btn-mini"
+            title="Desechar 1 unidad dañada"
+            onClick={() => accion(h, '/desechar-danada')}
+          >
+            Desechar
+          </button>
+        </div>
+      ),
+    },
+    {
+      clave: 'cantidadPerdida',
+      titulo: 'Perdida',
+      render: (h) => (
+        <div className="acciones">
+          <span className="cantidad-num">{h.cantidadPerdida ?? 0}</span>
+          <button
+            type="button"
+            className="btn btn-peligro btn-mini"
+            title="Marcar 1 unidad como perdida"
+            onClick={() => accion(h, '/perdida')}
+          >
+            +1
+          </button>
         </div>
       ),
     },

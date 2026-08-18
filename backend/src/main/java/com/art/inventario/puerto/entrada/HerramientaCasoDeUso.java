@@ -22,6 +22,8 @@ public interface HerramientaCasoDeUso {
 
 	Herramienta reparar(Long id);
 
+	Herramienta desecharDanada(Long id);
+
 	Herramienta registrarPerdida(Long id);
 
 	List<MovimientoHerramienta> listarMovimientos(Long herramientaId);

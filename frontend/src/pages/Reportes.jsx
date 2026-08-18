@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { hoy } from '../api';
+import { hoy, primerDiaMes } from '../api';
 
 const REPORTES = [
   { id: 'inventario', etiqueta: 'Inventario completo', url: () => '/api/reportes/inventario.pdf' },
@@ -12,7 +12,7 @@ const REPORTES = [
 ];
 
 export default function Reportes() {
-  const [desde, setDesde] = useState(() => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); });
+  const [desde, setDesde] = useState(primerDiaMes);
   const [hasta, setHasta] = useState(hoy());
 
   return (

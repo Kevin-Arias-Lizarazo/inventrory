@@ -150,6 +150,20 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 
 	@Override
 	@Transactional
+	public Herramienta desecharDanada(Long id) {
+		Herramienta actual = persistencia.obtener(id);
+		if (danada(actual) <= 0) {
+			throw new DatosInvalidosExcepcion("No hay unidades dañadas para desechar");
+		}
+		actual.setCantidadDanada(danada(actual) - 1);
+		actual.setCantidadPerdida(perdida(actual) + 1);
+		Herramienta guardada = persistencia.guardar(actual);
+		notificador.publicar(CambiosNotificador.RECURSO_HERRAMIENTAS);
+		return guardada;
+	}
+
+	@Override
+	@Transactional
 	public Herramienta registrarPerdida(Long id) {
 		Herramienta actual = persistencia.obtener(id);
 		if (disponible(actual) <= 0) {

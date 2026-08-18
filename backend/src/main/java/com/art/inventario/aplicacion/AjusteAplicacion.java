@@ -9,6 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.art.inventario.dominio.Ajuste;
 import com.art.inventario.dominio.LineaAjuste;
+import com.art.inventario.dominio.Consumible;
+import com.art.inventario.dominio.Epp;
+import com.art.inventario.dominio.Herramienta;
+import com.art.inventario.dominio.Material;
 import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.dominio.MovimientoHerramienta;
@@ -57,6 +61,7 @@ public class AjusteAplicacion implements AjusteCasoDeUso {
 	public Ajuste crear(Ajuste ajuste) {
 		validarAjuste(ajuste);
 		validarProductos(ajuste.getLineas());
+		normalizarCantidadesDisponibles(ajuste.getLineas());
 		Ajuste creado = persistencia.guardar(ajuste);
 		aplicarMovimientos(creado.getId(), creado.getLineas(), creado.getFecha());
 		notificar(creado.getLineas());
@@ -81,15 +86,62 @@ public class AjusteAplicacion implements AjusteCasoDeUso {
 			throw new DatosInvalidosExcepcion("Debe agregar al menos una línea");
 		}
 		for (LineaAjuste linea : ajuste.getLineas()) {
-			if (linea.getCantidad() == null || linea.getCantidad() <= 0) {
-				throw new DatosInvalidosExcepcion("La cantidad debe ser mayor a cero");
-			}
-			validarTipoMovimiento(linea.getTipoMovimiento());
 			validarTipoProducto(linea.getTipoProducto());
 			if (linea.getProductoId() == null) {
 				throw new DatosInvalidosExcepcion("Seleccione un producto válido");
 			}
+			if (linea.getCantidadDisponible() != null) {
+				if (linea.getCantidadDisponible() < 0) {
+					throw new DatosInvalidosExcepcion("La cantidad disponible no puede ser negativa");
+				}
+			} else {
+				if (linea.getCantidad() == null || linea.getCantidad() <= 0) {
+					throw new DatosInvalidosExcepcion("La cantidad debe ser mayor a cero");
+				}
+				validarTipoMovimiento(linea.getTipoMovimiento());
+			}
 		}
+	}
+
+	private void normalizarCantidadesDisponibles(List<LineaAjuste> lineas) {
+		for (LineaAjuste linea : lineas) {
+			if (linea.getCantidadDisponible() == null) {
+				continue;
+			}
+			int disponibleActual = disponible(linea.getTipoProducto(), linea.getProductoId());
+			int diferencia = linea.getCantidadDisponible() - disponibleActual;
+			if (diferencia == 0) {
+				throw new DatosInvalidosExcepcion("La cantidad disponible ya coincide con el inventario actual");
+			}
+			linea.setTipoMovimiento(diferencia > 0 ? Ajuste.MOV_INGRESO : Ajuste.MOV_EGRESO);
+			linea.setCantidad(Math.abs(diferencia));
+		}
+	}
+
+	private int disponible(String tipoProducto, Long productoId) {
+		return switch (tipoProducto) {
+		case Ajuste.TIPO_HERRAMIENTA -> disponible(herramientas.obtener(productoId));
+		case Ajuste.TIPO_EPP -> stock(epps.obtener(productoId));
+		case Ajuste.TIPO_CONSUMIBLE -> stock(consumibles.obtener(productoId));
+		case Ajuste.TIPO_MATERIAL -> stock(materiales.obtener(productoId));
+		default -> 0;
+		};
+	}
+
+	private static int disponible(Herramienta herramienta) {
+		return herramienta.getCantidadDisponible() == null ? 0 : herramienta.getCantidadDisponible();
+	}
+
+	private static int stock(Epp epp) {
+		return epp.getStock() == null ? 0 : epp.getStock();
+	}
+
+	private static int stock(Consumible consumible) {
+		return consumible.getStock() == null ? 0 : consumible.getStock();
+	}
+
+	private static int stock(Material material) {
+		return material.getStock() == null ? 0 : material.getStock();
 	}
 
 	private void validarMotivo(String motivo) {

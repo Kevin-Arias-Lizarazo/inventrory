@@ -20,12 +20,12 @@ const TIPOS = [
 ];
 
 const lineaVacia = () => ({
-  tipoMovimiento: 'EGRESO',
   tipoProducto: 'MATERIAL',
   productoId: '',
   nombre: '',
   descripcion: '',
-  cantidad: '',
+  disponibleActual: null,
+  cantidadDisponible: '',
 });
 
 const inicial = () => ({
@@ -73,17 +73,21 @@ export default function Ajustes() {
   async function guardar(e) {
     e.preventDefault();
     setErrores(null);
+    const sinProducto = form.lineas.some((l) => !l.productoId);
+    if (sinProducto) {
+      setErrores(['Seleccione un producto en cada línea (usa el buscador "Usar")']);
+      return;
+    }
     try {
       const cuerpo = {
         fecha: form.fecha,
         motivo: form.motivo,
         observacion: form.observacion,
         lineas: form.lineas.map((l) => ({
-          tipoMovimiento: l.tipoMovimiento,
           tipoProducto: l.tipoProducto,
           productoId: Number(l.productoId),
           descripcion: l.descripcion || l.nombre || '',
-          cantidad: Number(l.cantidad),
+          cantidadDisponible: Number(l.cantidadDisponible),
         })),
       };
       await post('/api/ajustes', cuerpo);
@@ -118,7 +122,9 @@ export default function Ajustes() {
       titulo: 'Líneas',
       render: (a) =>
         (a.lineas || [])
-          .map((l) => `${l.tipoMovimiento} ${l.cantidad}× ${l.descripcion || l.tipoProducto}`)
+          .map((l) => l.cantidadDisponible != null
+            ? `${l.descripcion || l.tipoProducto} → disponible ${l.cantidadDisponible}`
+            : `${l.tipoMovimiento} ${l.cantidad}× ${l.descripcion || l.tipoProducto}`)
           .join('; ') || '—',
     },
     { clave: 'observacion', titulo: 'Obs.' },
@@ -191,21 +197,11 @@ export default function Ajustes() {
             <div key={i} className="linea-articulo">
               <div className="form-grid">
                 <div className="campo">
-                  <label>Movimiento</label>
-                  <select
-                    value={l.tipoMovimiento}
-                    onChange={(e) => setLinea(i, { tipoMovimiento: e.target.value })}
-                  >
-                    <option value="INGRESO">Ingreso (+)</option>
-                    <option value="EGRESO">Egreso (−)</option>
-                  </select>
-                </div>
-                <div className="campo">
                   <label>Tipo</label>
                   <select
                     value={l.tipoProducto}
                     onChange={(e) =>
-                      setLinea(i, { tipoProducto: e.target.value, productoId: '', nombre: '', descripcion: '' })
+                      setLinea(i, { tipoProducto: e.target.value, productoId: '', nombre: '', descripcion: '', disponibleActual: null })
                     }
                   >
                     {TIPOS.map((t) => (
@@ -216,23 +212,26 @@ export default function Ajustes() {
                   </select>
                 </div>
                 <div className="campo">
-                  <label>Cantidad *</label>
+                  <label>Disponible objetivo *</label>
                   <input
                     type="number"
-                    min="1"
-                    value={l.cantidad}
-                    onChange={(e) => setLinea(i, { cantidad: e.target.value })}
+                    min="0"
+                    value={l.cantidadDisponible}
+                    onChange={(e) => setLinea(i, { cantidadDisponible: e.target.value })}
                     required
                   />
                 </div>
               </div>
               <SelectorProducto
                 tipo={l.tipoProducto}
-                onUsar={({ productoId, nombre }) =>
-                  setLinea(i, { productoId, nombre, descripcion: nombre })
+                onUsar={({ productoId, nombre, disponibleActual }) =>
+                  setLinea(i, { productoId, nombre, descripcion: nombre, disponibleActual })
                 }
               />
               {l.nombre && <p className="texto-aviso">Producto: {l.nombre}</p>}
+              {l.nombre && l.disponibleActual != null && (
+                <p className="sin-dato">Disponible actual: {l.disponibleActual}</p>
+              )}
               {form.lineas.length > 1 && (
                 <button
                   type="button"

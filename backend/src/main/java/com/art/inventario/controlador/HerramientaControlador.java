@@ -65,6 +65,11 @@ public class HerramientaControlador {
 		return ResponseEntity.ok(servicio.reparar(id));
 	}
 
+	@PostMapping("/{id}/desechar-danada")
+	public ResponseEntity<Herramienta> desecharDanada(@PathVariable Long id) {
+		return ResponseEntity.ok(servicio.desecharDanada(id));
+	}
+
 	@PostMapping("/{id}/perdida")
 	public ResponseEntity<Herramienta> registrarPerdida(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.registrarPerdida(id));
