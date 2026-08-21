@@ -44,6 +44,28 @@ La aplicación queda en:
 http://localhost:8080
 ```
 
+Solo es accesible desde el mismo equipo (el puerto está atado a `127.0.0.1`).
+
+## Primera ejecución (asistente de instalación)
+
+En el primer arranque no existe la cuenta `root`, así que la app abre un **asistente de instalación** en el navegador:
+
+1. Define la **contraseña de root** (mínimo 8 caracteres) y su confirmación.
+2. Opcionalmente importa una **base SQLite** (`.db`) y/o una **carpeta de uploads** (`.zip`).
+3. Si importa datos, debe escribir `SOBRESCRIBIR` para confirmar el reemplazo.
+4. Se crea `root` y, si no existe, el `admin` con la misma contraseña.
+5. Se genera y **muestra una sola vez** el **secreto de recuperación** (guardado en `/data/.env.auth`). Guárdelo: solo sirve para restablecer la contraseña del `admin` desde la pantalla de inicio de sesión.
+
+Datos creados en el volumen `/data`:
+
+```text
+/data/inventario.db        BD operativa
+/data/uploads/             archivos subidos
+/data/sesiones/sesiones.db sesiones y tokens (temporal)
+/data/logs/                logs JSONL por día (log_dd_MM_yyyy.jsonl y log_get_...)
+/data/.env.auth            secreto raíz de recuperación
+```
+
 ## Inicio Normal
 
 Para iniciar sin reconstruir imágenes:

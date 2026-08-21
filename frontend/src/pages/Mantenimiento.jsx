@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { post } from '../api';
+import { descargar, post } from '../api';
 import { Microsofto } from '../components/ui';
 
 export default function Mantenimiento() {
@@ -27,11 +27,7 @@ export default function Mantenimiento() {
     try {
       const fd = new FormData();
       fd.append('archivo', file);
-      const res = await fetch('/api/backup/restaurar', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.mensaje || 'Error al restaurar');
-      }
+      await post('/api/backup/restaurar', fd);
       setMsg('Backup restaurado. Reinicia el contenedor del backend.');
     } catch (err) { setMsg(err.message); }
   }
@@ -42,7 +38,7 @@ export default function Mantenimiento() {
 
       <h3>Backup</h3>
       <div className="acciones" style={{ marginBottom: '1.5rem' }}>
-        <a className="btn btn-primario" href="/api/backup">Descargar backup (.db)</a>
+        <button type="button" className="btn btn-primario" onClick={() => descargar('/api/backup')}>Descargar backup (.db)</button>
         <label className="btn btn-borde">
           Restaurar backup
           <input type="file" accept=".db,application/octet-stream" style={{ display: 'none' }} onChange={restaurar} />

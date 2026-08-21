@@ -1,4 +1,5 @@
 const BASE = process.argv[2] || "http://localhost:8080";
+import { iniciar, para } from "./auth-lib.mjs";
 
 let fallos = 0;
 let pasos = 0;
@@ -15,6 +16,7 @@ function ok(name, cond, detalle = "") {
 
 async function request(path, { method = "GET", body, headers = {}, blob, bin, raw } = {}) {
   const opts = { method, headers: { ...headers } };
+  para(opts.headers, path, method);
   if (raw !== undefined) {
     opts.body = raw;
   } else if (body !== undefined) {
@@ -41,6 +43,7 @@ async function request(path, { method = "GET", body, headers = {}, blob, bin, ra
 
 async function main() {
   console.log(`\nAPI: ${BASE}\n`);
+  await iniciar(BASE);
   const runId = Date.now();
 
   const listaEmpleados = await request("/api/empleados");

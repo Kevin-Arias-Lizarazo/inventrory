@@ -1,4 +1,5 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
+import { useAuth } from './auth/auth-contexto';
 import Empleados from './pages/Empleados';
 import Minutas from './pages/Minutas';
 import Proyectos from './pages/Proyectos';
@@ -22,8 +23,13 @@ import CuentasPorPagar from './pages/CuentasPorPagar';
 import OrdenesCompra from './pages/OrdenesCompra';
 import Reportes from './pages/Reportes';
 import Mantenimiento from './pages/Mantenimiento';
+import Usuarios from './pages/Usuarios';
+import Auditoria from './pages/Auditoria';
+import MiCuenta from './pages/MiCuenta';
+import Login from './pages/Login';
+import Instalacion from './pages/Instalacion';
 
-const SECCIONES = [
+const SECCIONES_BASE = [
   {
     grupo: 'Inicio',
     items: [
@@ -75,7 +81,7 @@ const SECCIONES = [
     grupo: 'Reportes',
     items: [
       { clave: 'reportes', etiqueta: 'Reportes PDF', componente: Reportes },
-      { clave: 'mantenimiento', etiqueta: 'Mantenimiento', componente: Mantenimiento },
+      { clave: 'mantenimiento', etiqueta: 'Mantenimiento', componente: Mantenimiento, admin: true },
     ],
   },
   {
@@ -85,12 +91,47 @@ const SECCIONES = [
       { clave: 'codigos', etiqueta: 'Listado de códigos', componente: Codigos },
     ],
   },
+  {
+    grupo: 'Administración',
+    items: [
+      { clave: 'usuarios', etiqueta: 'Usuarios', componente: Usuarios, admin: true },
+      { clave: 'auditoria', etiqueta: 'Auditoría', componente: Auditoria, admin: true },
+    ],
+  },
+  {
+    grupo: 'Cuenta',
+    items: [{ clave: 'mi-cuenta', etiqueta: 'Mi cuenta', componente: MiCuenta }],
+  },
 ];
 
+const ETIQUETA_ROL = { ADMIN: 'Admin', USUARIO: 'Usuario', LECTOR: 'Lector' };
+
 export default function App() {
+  const { cargando, usuario, instalacion, logout } = useAuth();
   const [activa, setActiva] = useState('dashboard');
-  const activaItem = SECCIONES.flatMap((s) => s.items).find((i) => i.clave === activa);
-  const Pagina = activa ? activaItem.componente : null;
+
+  if (cargando) {
+    return <div className="login-pantalla"><p>Cargando…</p></div>;
+  }
+
+  if (instalacion) {
+    return <Instalacion />;
+  }
+
+  if (!usuario) {
+    return <Login />;
+  }
+
+  const esAdmin = usuario.rol === 'ADMIN';
+  const secciones = SECCIONES_BASE
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) => !i.admin || esAdmin),
+    }))
+    .filter((s) => s.items.length > 0);
+
+  const activaItem = secciones.flatMap((s) => s.items).find((i) => i.clave === activa);
+  const Pagina = activaItem ? activaItem.componente : null;
 
   return (
     <div className="app">
@@ -103,7 +144,7 @@ export default function App() {
           </div>
         </div>
         <nav>
-          {SECCIONES.map((s) => (
+          {secciones.map((s) => (
             <div key={s.grupo} className="grupo">
               <p className="grupo-titulo">{s.grupo}</p>
               {s.items.map((i) => (
@@ -120,7 +161,13 @@ export default function App() {
           ))}
         </nav>
         <div className="barra-pie">
-          <span>SQLite + Spring Boot + React</span>
+          <div style={{ marginBottom: '8px' }}>
+            <strong>{usuario.username}</strong>
+            <span style={{ display: 'block', color: '#94a3b8' }}>{ETIQUETA_ROL[usuario.rol] || usuario.rol}</span>
+          </div>
+          <button type="button" className="btn btn-borde" onClick={() => logout()} style={{ width: '100%' }}>
+            Cerrar sesión
+          </button>
         </div>
       </aside>
       <main className="contenido">

@@ -23,7 +23,7 @@ Write-Host '4/5 Esperando API y frontend...' -ForegroundColor Cyan
 $ready = $false
 for ($i = 0; $i -lt 36; $i++) {
     try {
-        $api = Invoke-WebRequest -UseBasicParsing "$base/api/empleados" -TimeoutSec 3
+        $api = Invoke-WebRequest -UseBasicParsing "$base/api/instalacion/estado" -TimeoutSec 3
         $web = Invoke-WebRequest -UseBasicParsing "$base/" -TimeoutSec 3
         if ($api.StatusCode -eq 200 -and $web.StatusCode -eq 200) {
             $ready = $true

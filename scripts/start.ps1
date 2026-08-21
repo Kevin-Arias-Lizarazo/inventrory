@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
@@ -12,7 +12,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host 'Esperando a que responda la API...' -ForegroundColor Cyan
 for ($i = 0; $i -lt 30; $i++) {
     try {
-        $response = Invoke-WebRequest -UseBasicParsing "$url/api/empleados" -TimeoutSec 2
+        $response = Invoke-WebRequest -UseBasicParsing "$url/api/instalacion/estado" -TimeoutSec 2
         if ($response.StatusCode -eq 200) {
             Start-Process $url
             Write-Host "Aplicación disponible en $url" -ForegroundColor Green

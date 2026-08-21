@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { hoy, primerDiaMes } from '../api';
+import { descargar, hoy, primerDiaMes } from '../api';
 
 const REPORTES = [
   { id: 'inventario', etiqueta: 'Inventario completo', url: () => '/api/reportes/inventario.pdf' },
@@ -15,6 +15,14 @@ export default function Reportes() {
   const [desde, setDesde] = useState(primerDiaMes);
   const [hasta, setHasta] = useState(hoy());
 
+  async function bajar(r) {
+    try {
+      await descargar(r.url(desde, hasta));
+    } catch (err) {
+      window.alert(err.message);
+    }
+  }
+
   return (
     <section>
       <div className="pagina-cabecera"><h2>Reportes PDF</h2></div>
@@ -26,7 +34,7 @@ export default function Reportes() {
         {REPORTES.map((r) => (
           <div className="valor-item" key={r.id}>
             <span>{r.etiqueta}</span>
-            <a className="btn btn-primario" href={r.url(desde, hasta)} target="_blank" rel="noreferrer">Descargar PDF</a>
+            <button type="button" className="btn btn-primario" onClick={() => bajar(r)}>Descargar PDF</button>
           </div>
         ))}
       </div>

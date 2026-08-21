@@ -94,15 +94,17 @@ chmod +x scripts/verify-deploy.sh
 ./scripts/verify-deploy.sh
 ```
 
-La verificación construye React + Java, levanta Docker, comprueba `/` y `/api/empleados`, y ejecuta las pruebas API/React/SSE dentro de Node 22 en la red Docker.
+La verificación construye React + Java, levanta Docker, comprueba `/` y `/api/instalacion/estado`, y ejecuta las pruebas API/React/SSE dentro de Node 22 en la red Docker (las pruebas crean la instalación inicial y se autentican con `admin`/`AdminTest2026` por defecto).
 
-No ejecutar `docker compose down -v` si se deben conservar la base de datos y los archivos subidos.
+No ejecutar `docker compose down -v` si se deben conservar la base de datos, sesiones, logs y los archivos subidos.
 
 ### Persistencia en Docker
 
 - La base de datos del contenedor vive en el volumen del compose y es **independiente** de `backend/inventario.db` local (el volumen se crea vacío).
-- Los archivos subidos van a `backend/uploads` (montado como volumen).
+- Los archivos subidos van a `/data/uploads` (montado como volumen).
 - `application.yaml` usa `ddl-auto: update`: las tablas nuevas se crean automáticamente al arrancar.
+- El puerto está atado a `127.0.0.1:8080`: **solo accesible desde el mismo equipo**.
+- Datos en `/data`: `inventario.db`, `uploads/`, `sesiones/sesiones.db`, `logs/`, `.env.auth` (secreto raíz).
 
 ## Verificación / build local
 
@@ -149,3 +151,13 @@ Reglas:
 - Herramientas: `POST /api/herramientas/{id}/reparar` devuelve una unidad dañada a disponible; `POST /api/herramientas/{id}/desechar-danada` la pasa de dañada a perdida y no vuelve a estar disponible; `POST /api/herramientas/{id}/perdida` marca una unidad disponible como perdida.
 - Otros: `GET /api/dashboard?desde&hasta`, `GET /api/empleados/{id}/equipamiento`, `GET /api/backup` + `POST /api/backup/restaurar` (multipart, copia el SQLite en `backups/`), `POST /api/importar/{recurso}` (CSV: proveedores, materiales, consumibles, epp), reportes PDF `GET /api/reportes/{inventario,facturas,valor-inventario,alertas-reposicion}.pdf` (OpenPDF).
 - El frontend del backup/restauración e importación vive en `frontend/src/pages/Mantenimiento.jsx`.
+
+## Autenticación, roles y trazabilidad
+
+- **Instalación**: si no existe la cuenta `root`, la app arranca en modo instalación (`GET /api/instalacion/estado` → `{pendiente:true}`). `POST /api/instalacion/completar` (multipart: `rootPassword`, opcional `db` .db y `uploads` .zip) crea `root` y `admin` (si no hay otro ADMIN), restaura DB/uploads si se envían y genera `AUTH_RECOVERY_SECRET` guardado en el archivo `AUTH_SECRET_FILE` (fuera de la BD). El asistente vive en `frontend/src/pages/Instalacion.jsx`.
+- **Cuentas**: `root` (recuperación; su secreto solo restablece las credenciales del `admin` desde el login, endpoint `POST /api/auth/recuperar-admin`), un único `admin` (gestiona usuarios, backup/restauración/importación, auditoría; no se toca a sí mismo ni a root), `USUARIO` (lectura + escritura operativa) y `LECTOR` (solo lectura; GET/HEAD y `logout`/`cambiar-contrasena`/`me`).
+- **Tokens opacos**: `access_token` (32 caracteres, hasheado SHA-256 en `sesiones.db`, válido 10 min, renovable) y `refresh_token` (cookie HttpOnly `refresh_token`, máx 12 h, se revoca al cerrar sesión/vencer/bloquear/cambiar permisos). Si el token no existe o está revocado → 401. Renovación: `POST /api/auth/renovar`. CSRF habilitado (token XOR de Spring Security 6: el header `X-XSRF-TOKEN` debe ser el token **del body** de `GET /api/auth/csrf`, no el de la cookie); login, recuperar-admin, csrf e instalación están exentos de CSRF.
+- **Bloqueos**: 10 intentos fallidos en 5 min (por usuario) bloquean el login 5 min. Cambiar rol/permisos o bloquear a un usuario invalida todas sus sesiones (inmediato). `admin` no puede crear otro ADMIN ni modificar `root` ni a sí mismo.
+- **Sesiones**: BD SQLite separada en `APP_SESIONES_DIR/sesiones.db` (`configuracion/SesionDataConfig` define la DataSource operativa `@Primary` y la de sesiones). Limpieza al primer arranque del día (marcador `ultimo-barrido.txt`): vuelca `FIN_SESION`/`BLOQUEO_SESION` al log y elimina filas; sin barrido durante el día.
+- **Logs**: `RegistroAuditoriaArchivo` escribe JSONL por día/año: `APP_LOGS_DIR/log_dd_MM_yyyy.jsonl` (eventos importantes) y `log_get_...` (peticiones GET). Campos: `fecha,usuario,rol,ip,metodo,ruta,recurso,accion,resultado,duracionMs,detalle`. `FiltroRegistroPeticiones` registra cada petición `/api/**` con status y duración. Nunca se registran contraseñas ni secretos. Retención opcional (`LOG_RETENCION_DIAS`); por defecto no se borran. Consulta: `GET /api/auditoria` (solo ADMIN, lee los JSONL).
+- **Frontend**: `frontend/src/auth/{token.js,auth-contexto.js,AuthContext.jsx}` gestiona sesión; `api.js` añade `Authorization: Bearer`, CSRF y renueva en 401; `Login.jsx` (con "Recuperar contraseña"), `Usuarios.jsx` y `Auditoria.jsx` (solo ADMIN), `MiCuenta.jsx` (cambio de clave propia), menú filtrado por rol en `App.jsx`. Las descargas usan `descargar()` (fetch autenticado), no `<a href>`.

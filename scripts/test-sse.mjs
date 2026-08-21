@@ -1,6 +1,9 @@
 const BASE = process.argv[2] || "http://localhost:8080";
+import { iniciar, para } from "./auth-lib.mjs";
 
 async function main() {
+  await iniciar(BASE);
+
   const recibidos = [];
   const res = await fetch(`${BASE}/api/cambios/suscripcion`);
   if (!res.ok) {
@@ -36,21 +39,30 @@ async function main() {
 
   await new Promise((r) => setTimeout(r, 800));
 
-  const m = await (
-    await fetch(`${BASE}/api/materiales`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: "Prueba SSE " + Date.now(), unidad: "unidad" }),
-    })
-  ).json();
+  async function api(path, { method = "GET", body } = {}) {
+    const headers = {};
+    para(headers, path, method);
+    if (body !== undefined) {
+      headers["Content-Type"] = "application/json";
+    }
+    return fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  }
 
-  await fetch(`${BASE}/api/materiales/${m.id}/movimientos`, {
+  const m = await (await api("/api/materiales", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tipo: "INGRESO", cantidad: 5, fecha: "2026-08-12", observacion: "test sse" }),
+    body: { nombre: "Prueba SSE " + Date.now(), unidad: "unidad" },
+  })).json();
+
+  await api(`/api/materiales/${m.id}/movimientos`, {
+    method: "POST",
+    body: { tipo: "INGRESO", cantidad: 5, fecha: "2026-08-12", observacion: "test sse" },
   });
 
-  await fetch(`${BASE}/api/materiales/${m.id}`, { method: "DELETE" });
+  await api(`/api/materiales/${m.id}`, { method: "DELETE" });
 
   await new Promise((r) => setTimeout(r, 1500));
 

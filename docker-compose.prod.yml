@@ -5,10 +5,13 @@ services:
       dockerfile: backend/Dockerfile.prod
     container_name: inventario
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       INVENTARIO_DB: /data/inventario.db
       APP_UPLOADS_DIR: /data/uploads
+      APP_SESIONES_DIR: /data/sesiones
+      APP_LOGS_DIR: /data/logs
+      AUTH_SECRET_FILE: /data/.env.auth
       TZ: America/Bogota
     volumes:
       - inventario-data:/data

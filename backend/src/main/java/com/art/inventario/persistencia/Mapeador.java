@@ -32,6 +32,7 @@ import com.art.inventario.dominio.OrdenCompra;
 import com.art.inventario.dominio.PagoFactura;
 import com.art.inventario.dominio.Proveedor;
 import com.art.inventario.dominio.Proyecto;
+import com.art.inventario.dominio.Usuario;
 import com.art.inventario.persistencia.entidad.EntidadAjuste;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionConsumible;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionHerramienta;
@@ -60,6 +61,7 @@ import com.art.inventario.persistencia.entidad.EntidadMovimientoHerramienta;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoMaterial;
 import com.art.inventario.persistencia.entidad.EntidadProveedor;
 import com.art.inventario.persistencia.entidad.EntidadProyecto;
+import com.art.inventario.persistencia.entidad.EntidadUsuario;
 
 public final class Mapeador {
 
@@ -922,5 +924,43 @@ public final class Mapeador {
 		d.setProveedor(aDominio(e.getProveedor()));
 		d.setLineas(lineas != null ? lineas : new ArrayList<>());
 		return d;
+	}
+
+	public static EntidadUsuario aEntidad(Usuario u) {
+		if (u == null) {
+			return null;
+		}
+		EntidadUsuario e = new EntidadUsuario();
+		e.setId(u.getId());
+		e.setUsername(u.getUsername());
+		e.setPasswordHash(u.getPasswordHash());
+		e.setNombre(u.getNombre());
+		e.setRol(u.getRol());
+		e.setActivo(u.getActivo());
+		e.setEsRoot(u.getEsRoot());
+		e.setFechaCreacion(u.getFechaCreacion());
+		e.setUltimoAcceso(u.getUltimoAcceso());
+		return e;
+	}
+
+	public static Usuario aDominio(EntidadUsuario e) {
+		if (e == null) {
+			return null;
+		}
+		Usuario d = new Usuario();
+		d.setId(e.getId());
+		d.setUsername(e.getUsername());
+		d.setPasswordHash(e.getPasswordHash());
+		d.setNombre(e.getNombre());
+		d.setRol(e.getRol());
+		d.setActivo(e.getActivo());
+		d.setEsRoot(e.getEsRoot());
+		d.setFechaCreacion(e.getFechaCreacion());
+		d.setUltimoAcceso(e.getUltimoAcceso());
+		return d;
+	}
+
+	public static List<Usuario> aDominioUsuarios(List<EntidadUsuario> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
 	}
 }

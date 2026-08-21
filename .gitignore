@@ -8,6 +8,9 @@ build/
 node_modules/
 frontend/dist/
 uploads/
+sesiones/
+logs/
+.env.auth
 *.db
 *.pid
 app_out.txt

@@ -1,9 +1,24 @@
 import { get, post, put, del } from '../frontend/src/api.js';
+import { setAccessToken, setCsrfToken } from '../frontend/src/auth/token.js';
+import { iniciar } from './auth-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8080';
+const sesion = await iniciar(BASE);
+setAccessToken(sesion.token);
+setCsrfToken(sesion.csrf);
+
 const fetchReal = globalThis.fetch;
-globalThis.fetch = (url, opts) =>
-  fetchReal(url.startsWith('http') ? url : BASE + url, opts);
+globalThis.fetch = (url, opts) => {
+  const h = { ...(opts?.headers || {}) };
+  if (!h.Cookie && sesion.cookie) h.Cookie = sesion.cookie;
+  return fetchReal(url.startsWith('http') ? url : BASE + url, { ...opts, headers: h });
+};
+
+globalThis.window = {
+  addEventListener() {},
+  removeEventListener() {},
+  dispatchEvent() {},
+};
 
 let fallos = 0;
 function ok(nombre, cond) {

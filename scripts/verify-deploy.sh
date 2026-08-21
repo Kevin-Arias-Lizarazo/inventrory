@@ -19,7 +19,7 @@ echo "3/5 Levantando contenedor..."
 echo "4/5 Esperando API y frontend..."
 ready=false
 for _ in $(seq 1 36); do
-  if curl --silent --fail --max-time 3 "$BASE/api/empleados" >/dev/null && \
+  if curl --silent --fail --max-time 3 "$BASE/api/instalacion/estado" >/dev/null && \
      curl --silent --fail --max-time 3 "$BASE/" >/dev/null; then
     ready=true
     break

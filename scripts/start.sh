@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,7 +33,7 @@ cd "$ROOT_DIR"
 
 echo "Esperando a que la API responda..."
 for _ in $(seq 1 30); do
-  if curl --silent --fail --max-time 2 "$URL/api/empleados" >/dev/null 2>&1; then
+  if curl --silent --fail --max-time 2 "$URL/api/instalacion/estado" >/dev/null 2>&1; then
     if command -v xdg-open >/dev/null 2>&1; then
       xdg-open "$URL" >/dev/null 2>&1 &
     elif command -v sensible-browser >/dev/null 2>&1; then

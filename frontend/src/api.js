@@ -1,3 +1,27 @@
+import { clearAccessToken, csrfToken, getAccessToken, setAccessToken } from './auth/token.js';
+
+const RUTAS_SIN_CSRF = new Set(['/api/auth/login', '/api/auth/recuperar-admin', '/api/instalacion/completar']);
+
+let renovando = null;
+
+async function renovarSesion() {
+  if (renovando) return renovando;
+  renovando = (async () => {
+    const res = await fetch('/api/auth/renovar', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-XSRF-TOKEN': csrfToken() || '' },
+    });
+    if (!res.ok) throw new Error('no-sesion');
+    const d = await res.json();
+    setAccessToken(d.accessToken);
+    return d.accessToken;
+  })().finally(() => {
+    renovando = null;
+  });
+  return renovando;
+}
+
 export async function peticion(path, opciones = {}) {
   const { cuerpo, encabezados, ...resto } = opciones;
   const headers = { ...(encabezados || {}) };
@@ -5,12 +29,37 @@ export async function peticion(path, opciones = {}) {
   if (cuerpo !== undefined && !esFormData) {
     headers['Content-Type'] = 'application/json';
   }
+  const metodo = resto.method || 'GET';
+  const requiereCsrf = metodo !== 'GET' && !RUTAS_SIN_CSRF.has(path);
+  if (requiereCsrf) {
+    headers['X-XSRF-TOKEN'] = csrfToken() || '';
+  }
+  const token = getAccessToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   const body = cuerpo === undefined || esFormData ? cuerpo : JSON.stringify(cuerpo);
-  const res = await fetch(path, {
-    ...resto,
-    headers,
-    body,
-  })
+
+  const ejecutar = async () => {
+    const res = await fetch(path, { ...resto, method: metodo, headers, body, credentials: 'include' });
+    return res;
+  };
+
+  let res = await ejecutar();
+  if (res.status === 401 && !path.startsWith('/api/auth/login') && !path.startsWith('/api/auth/recuperar-admin')) {
+    try {
+      await renovarSesion();
+      const tokenNuevo = getAccessToken();
+      if (tokenNuevo) {
+        headers['Authorization'] = `Bearer ${tokenNuevo}`;
+        res = await ejecutar();
+      }
+    } catch {
+      clearAccessToken();
+      window.dispatchEvent(new CustomEvent('auth:cerrada'));
+    }
+  }
+
   if (!res.ok) {
     let mensaje = 'Error del servidor';
     try {
@@ -34,6 +83,10 @@ export function post(path, cuerpo) {
   return peticion(path, { method: 'POST', cuerpo });
 }
 
+export function patch(path, cuerpo) {
+  return peticion(path, { method: 'PATCH', cuerpo });
+}
+
 export function put(path, cuerpo) {
   return peticion(path, { method: 'PUT', cuerpo });
 }
@@ -45,19 +98,42 @@ export function del(path) {
 export async function subirArchivo(archivo) {
   const fd = new FormData();
   fd.append('archivo', archivo);
-  const res = await fetch('/api/archivos', { method: 'POST', body: fd });
-  if (!res.ok) {
-    let mensaje = 'No se pudo subir el archivo';
+  const res = await peticion('/api/archivos', { method: 'POST', cuerpo: fd });
+  return res.url;
+}
+
+export async function descargar(path) {
+  let token = getAccessToken();
+  const ejecutar = () =>
+    fetch(path, {
+      method: 'GET',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  let res = await ejecutar();
+  if (res.status === 401) {
     try {
-      const d = await res.json();
-      if (d && d.mensaje) mensaje = d.mensaje;
+      await renovarSesion();
+      token = getAccessToken();
+      res = await ejecutar();
     } catch {
-      /* ignore */
+      clearAccessToken();
+      window.dispatchEvent(new CustomEvent('auth:cerrada'));
+      throw new Error('Sesión cerrada');
     }
-    throw new Error(mensaje);
   }
-  const d = await res.json();
-  return d.url;
+  if (!res.ok) {
+    throw new Error('No se pudo descargar el archivo');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = path.split('/').pop().split('?')[0] || 'descarga';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function hoy() {

@@ -19,6 +19,15 @@ spring:
 app:
   uploads:
     dir: ${APP_UPLOADS_DIR:uploads}
+  sesiones:
+    dir: ${APP_SESIONES_DIR:sesiones}
+  logs:
+    dir: ${APP_LOGS_DIR:logs}
+  auth:
+    secret:
+      file: ${AUTH_SECRET_FILE:.env.auth}
+  backups:
+    dir: ${APP_BACKUPS_DIR:backups}
 
 server:
   port: 8080
