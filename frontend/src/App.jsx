@@ -163,7 +163,7 @@ export default function App() {
         <div className="barra-pie">
           <div style={{ marginBottom: '8px' }}>
             <strong>{usuario.username}</strong>
-            <span style={{ display: 'block', color: '#94a3b8' }}>{ETIQUETA_ROL[usuario.nivel] || usuario.rol}</span>
+            <span style={{ display: 'block', color: '#94a3b8' }}>{ETIQUETA_ROL[usuario.nivel] || usuario.nivel}</span>
           </div>
           <button type="button" className="btn btn-borde" onClick={() => logout()} style={{ width: '100%' }}>
             Cerrar sesión
