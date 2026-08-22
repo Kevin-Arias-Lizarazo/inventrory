@@ -22,11 +22,11 @@ import com.art.inventario.aplicacion.dto.UsuarioRespuesta;
 import com.art.inventario.configuracion.SecretoRecuperacion;
 import com.art.inventario.dominio.Accion;
 import com.art.inventario.dominio.EventoLog;
-import com.art.inventario.dominio.Rol;
 import com.art.inventario.dominio.Usuario;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.BackupCasoDeUso;
 import com.art.inventario.puerto.entrada.InstalacionCasoDeUso;
+import com.art.inventario.puerto.salida.NivelAccesoPersistencia;
 import com.art.inventario.puerto.salida.RegistroAuditoria;
 import com.art.inventario.puerto.salida.UsuarioPersistencia;
 
@@ -37,16 +37,18 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 			.withZone(ZoneId.systemDefault());
 
 	private final UsuarioPersistencia usuarios;
+	private final NivelAccesoPersistencia niveles;
 	private final BackupCasoDeUso backup;
 	private final PasswordEncoder passwordEncoder;
 	private final SecretoRecuperacion secreto;
 	private final RegistroAuditoria auditoria;
 	private final String uploadsDir;
 
-	public InstalacionAplicacion(UsuarioPersistencia usuarios, BackupCasoDeUso backup,
-			PasswordEncoder passwordEncoder, SecretoRecuperacion secreto, RegistroAuditoria auditoria,
-			@Value("${app.uploads.dir:uploads}") String uploadsDir) {
+	public InstalacionAplicacion(UsuarioPersistencia usuarios, NivelAccesoPersistencia niveles,
+			BackupCasoDeUso backup, PasswordEncoder passwordEncoder, SecretoRecuperacion secreto,
+			RegistroAuditoria auditoria, @Value("${app.uploads.dir:uploads}") String uploadsDir) {
 		this.usuarios = usuarios;
+		this.niveles = niveles;
 		this.backup = backup;
 		this.passwordEncoder = passwordEncoder;
 		this.secreto = secreto;
@@ -56,7 +58,7 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 
 	@Override
 	public boolean pendiente() {
-		return !usuarios.existeRoot();
+		return niveles.usuarioRaizId().isEmpty();
 	}
 
 	@Override
@@ -91,24 +93,27 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 			root = opt.get();
 			root.setPasswordHash(passwordEncoder.encode(rootPassword));
 			root.setActivo(true);
-			root.setEsRoot(true);
-			root.setRol(Rol.ADMIN);
+			root.setNivelAcceso("ROOT");
 		} else {
 			root = new Usuario();
 			root.setUsername("root");
 			root.setNombre("Root");
 			root.setPasswordHash(passwordEncoder.encode(rootPassword));
 			root.setActivo(true);
-			root.setEsRoot(true);
-			root.setRol(Rol.ADMIN);
+			root.setNivelAcceso("ROOT");
 			root.setFechaCreacion(FORMATO.format(Instant.now()));
 		}
-		return usuarios.guardar(root);
+		Usuario guardado = usuarios.guardar(root);
+		niveles.porCodigo("ROOT").ifPresent(nivel -> {
+			nivel.setUsuarioRaizId(guardado.getId());
+			niveles.guardar(nivel);
+		});
+		return guardado;
 	}
 
 	private void asegurarAdmin(String rootPassword) {
 		boolean existeAdmin = usuarios.todos().stream()
-				.anyMatch(u -> !u.esRoot() && u.getRol() == Rol.ADMIN);
+				.anyMatch(u -> "ADMIN".equalsIgnoreCase(u.getNivelAcceso()));
 		if (existeAdmin) {
 			return;
 		}
@@ -117,8 +122,7 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 		admin.setNombre("Administrador");
 		admin.setPasswordHash(passwordEncoder.encode(rootPassword));
 		admin.setActivo(true);
-		admin.setEsRoot(false);
-		admin.setRol(Rol.ADMIN);
+		admin.setNivelAcceso("ADMIN");
 		admin.setFechaCreacion(FORMATO.format(Instant.now()));
 		usuarios.guardar(admin);
 	}
@@ -159,11 +163,12 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 		r.setId(u.getId());
 		r.setUsername(u.getUsername());
 		r.setNombre(u.getNombre());
-		r.setRol(u.getRol());
+		r.setNivel(u.getNivelAcceso());
 		r.setActivo(u.getActivo());
-		r.setEsRoot(u.getEsRoot());
 		r.setFechaCreacion(u.getFechaCreacion());
 		r.setUltimoAcceso(u.getUltimoAcceso());
+		r.setFechaBloqueo(u.getFechaBloqueo());
+		r.setMotivoBloqueo(u.getMotivoBloqueo());
 		return r;
 	}
 }

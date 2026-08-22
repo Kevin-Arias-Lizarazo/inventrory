@@ -30,7 +30,7 @@ public class SeguridadConfig {
 			"/api/auth/login",
 			"/api/auth/renovar",
 			"/api/auth/csrf",
-			"/api/auth/recuperar-admin",
+			"/api/auth/cambiar-contrasena-usuario",
 			"/api/instalacion/**",
 			"/api/cambios/**",
 			"/error"
@@ -77,7 +77,7 @@ public class SeguridadConfig {
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 				.ignoringRequestMatchers(
 						"/api/auth/login",
-						"/api/auth/recuperar-admin",
+						"/api/auth/cambiar-contrasena-usuario",
 						"/api/auth/csrf",
 						"/api/instalacion/**"))
 			.addFilterBefore(tokenFiltro, UsernamePasswordAuthenticationFilter.class)

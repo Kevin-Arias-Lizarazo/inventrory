@@ -6,11 +6,12 @@ public final class Usuario {
 	private String username;
 	private String passwordHash;
 	private String nombre;
-	private Rol rol;
+	private String nivelAcceso;
 	private Boolean activo;
-	private Boolean esRoot;
 	private String fechaCreacion;
 	private String ultimoAcceso;
+	private String fechaBloqueo;
+	private String motivoBloqueo;
 
 	public Long getId() {
 		return id;
@@ -44,12 +45,12 @@ public final class Usuario {
 		this.nombre = nombre;
 	}
 
-	public Rol getRol() {
-		return rol;
+	public String getNivelAcceso() {
+		return nivelAcceso;
 	}
 
-	public void setRol(Rol rol) {
-		this.rol = rol;
+	public void setNivelAcceso(String nivelAcceso) {
+		this.nivelAcceso = nivelAcceso;
 	}
 
 	public Boolean getActivo() {
@@ -58,14 +59,6 @@ public final class Usuario {
 
 	public void setActivo(Boolean activo) {
 		this.activo = activo;
-	}
-
-	public Boolean getEsRoot() {
-		return esRoot;
-	}
-
-	public void setEsRoot(Boolean esRoot) {
-		this.esRoot = esRoot;
 	}
 
 	public String getFechaCreacion() {
@@ -84,7 +77,23 @@ public final class Usuario {
 		this.ultimoAcceso = ultimoAcceso;
 	}
 
+	public String getFechaBloqueo() {
+		return fechaBloqueo;
+	}
+
+	public void setFechaBloqueo(String fechaBloqueo) {
+		this.fechaBloqueo = fechaBloqueo;
+	}
+
+	public String getMotivoBloqueo() {
+		return motivoBloqueo;
+	}
+
+	public void setMotivoBloqueo(String motivoBloqueo) {
+		this.motivoBloqueo = motivoBloqueo;
+	}
+
 	public boolean esRoot() {
-		return Boolean.TRUE.equals(esRoot);
+		return "ROOT".equalsIgnoreCase(nivelAcceso);
 	}
 }

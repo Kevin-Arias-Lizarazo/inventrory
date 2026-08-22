@@ -15,7 +15,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import com.art.inventario.dominio.Rol;
 import com.art.inventario.dominio.Sesion;
 import com.art.inventario.puerto.salida.SesionPersistencia;
 
@@ -44,7 +43,7 @@ public class SesionPersistenciaSqlite implements SesionPersistencia {
 	}
 
 	@Override
-	public Sesion crear(Long usuarioId, String username, Rol rol, String permisos, String accessHash, String refreshHash,
+	public Sesion crear(Long usuarioId, String username, String nivelAcceso, String permisos, String accessHash, String refreshHash,
 			Instant fechaCreacion, Instant fechaFin, Instant accessVence) {
 		KeyHolder kh = new GeneratedKeyHolder();
 		jdbc.update(con -> {
@@ -56,7 +55,7 @@ public class SesionPersistenciaSqlite implements SesionPersistencia {
 			ps.setString(3, accessVence.toString());
 			ps.setLong(4, usuarioId);
 			ps.setString(5, username);
-			ps.setString(6, rol.name());
+			ps.setString(6, nivelAcceso);
 			ps.setString(7, permisos);
 			ps.setString(8, fechaCreacion.toString());
 			ps.setString(9, fechaFin.toString());
@@ -69,7 +68,7 @@ public class SesionPersistenciaSqlite implements SesionPersistencia {
 		s.setAccessVence(accessVence.toString());
 		s.setUsuarioId(usuarioId);
 		s.setUsername(username);
-		s.setRol(rol);
+		s.setNivelAcceso(nivelAcceso);
 		s.setPermisos(permisos);
 		s.setFechaCreacion(fechaCreacion.toString());
 		s.setFechaFin(fechaFin.toString());
@@ -132,7 +131,7 @@ public class SesionPersistenciaSqlite implements SesionPersistencia {
 		s.setAccessVence(rs.getString("access_vence"));
 		s.setUsuarioId(rs.getLong("usuario_id"));
 		s.setUsername(rs.getString("username"));
-		s.setRol(Rol.valueOf(rs.getString("rol")));
+		s.setNivelAcceso(rs.getString("rol"));
 		s.setPermisos(rs.getString("permisos"));
 		s.setFechaCreacion(rs.getString("fecha_creacion"));
 		s.setFechaFin(rs.getString("fecha_fin"));

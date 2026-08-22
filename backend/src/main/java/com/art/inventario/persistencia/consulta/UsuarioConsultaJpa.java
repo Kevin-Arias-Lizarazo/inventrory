@@ -10,7 +10,5 @@ public interface UsuarioConsultaJpa extends JpaRepository<EntidadUsuario, Long> 
 
 	Optional<EntidadUsuario> findByUsername(String username);
 
-	boolean existsByEsRootTrue();
-
-	long countByEsRootTrue();
+	boolean existsByNivelAcceso(String nivelAcceso);
 }

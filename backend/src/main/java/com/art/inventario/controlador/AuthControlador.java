@@ -67,9 +67,11 @@ public class AuthControlador {
 		return ResponseEntity.noContent().build();
 	}
 
-	@PostMapping("/recuperar-admin")
-	public ResponseEntity<Void> recuperarAdmin(@RequestBody Map<String, String> cuerpo) {
-		servicio.recuperarAdmin(cuerpo.get("secretoRoot"), cuerpo.get("nuevaContrasenaAdmin"));
+	@PostMapping("/cambiar-contrasena-usuario")
+	public ResponseEntity<Void> cambiarContrasenaTercero(@RequestBody Map<String, String> cuerpo) {
+		String usuarioId = cuerpo.get("usuarioId");
+		Long objetivoId = usuarioId == null || usuarioId.isBlank() ? null : Long.parseLong(usuarioId);
+		servicio.cambiarContrasenaTercero(objetivoId, cuerpo.get("contrasena"), cuerpo.get("secretoRoot"));
 		return ResponseEntity.noContent().build();
 	}
 

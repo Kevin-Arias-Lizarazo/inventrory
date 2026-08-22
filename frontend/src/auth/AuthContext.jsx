@@ -65,7 +65,10 @@ export function AuthProveedor({ children }) {
   }, []);
 
   const recuperarAdmin = useCallback(async (secretoRoot, nuevaContrasenaAdmin) => {
-    await post('/api/auth/recuperar-admin', { secretoRoot, nuevaContrasenaAdmin });
+    await post('/api/auth/cambiar-contrasena-usuario', {
+      contrasena: nuevaContrasenaAdmin,
+      secretoRoot,
+    });
   }, []);
 
   const cambiarContrasena = useCallback(async (username, actual, nueva) => {

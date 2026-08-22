@@ -1,6 +1,6 @@
 import { clearAccessToken, csrfToken, getAccessToken, setAccessToken } from './auth/token.js';
 
-const RUTAS_SIN_CSRF = new Set(['/api/auth/login', '/api/auth/recuperar-admin', '/api/instalacion/completar']);
+const RUTAS_SIN_CSRF = new Set(['/api/auth/login', '/api/auth/cambiar-contrasena-usuario', '/api/instalacion/completar']);
 
 let renovando = null;
 

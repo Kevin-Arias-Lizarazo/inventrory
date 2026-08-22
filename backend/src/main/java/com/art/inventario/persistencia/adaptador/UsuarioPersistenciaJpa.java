@@ -47,15 +47,4 @@ public class UsuarioPersistenciaJpa implements UsuarioPersistencia {
 	public long contar() {
 		return consulta.count();
 	}
-
-	@Override
-	public boolean existeRoot() {
-		return consulta.existsByEsRootTrue();
-	}
-
-	@Override
-	@Transactional
-	public void eliminar(Usuario usuario) {
-		consulta.deleteById(usuario.getId());
-	}
 }

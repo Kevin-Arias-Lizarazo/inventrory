@@ -36,9 +36,9 @@ public class TokenAuthFiltro extends OncePerRequestFilter {
 			sesiones.porAccessHash(SeguridadUtil.hash(token)).ifPresent(sesion -> {
 				if (valida(sesion)) {
 					UsuarioAutenticado ua = new UsuarioAutenticado(
-							sesion.getUsuarioId(), sesion.getUsername(), sesion.getUsername(), sesion.getRol());
+							sesion.getUsuarioId(), sesion.getUsername(), sesion.getUsername(), sesion.getNivelAcceso());
 					var auth = new UsernamePasswordAuthenticationToken(ua, null,
-							List.of(new SimpleGrantedAuthority("ROLE_" + sesion.getRol().name())));
+							List.of(new SimpleGrantedAuthority("ROLE_" + sesion.getNivelAcceso())));
 					SecurityContextHolder.getContext().setAuthentication(auth);
 				}
 			});

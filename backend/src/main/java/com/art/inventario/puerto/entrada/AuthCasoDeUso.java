@@ -15,5 +15,5 @@ public interface AuthCasoDeUso {
 
 	void cambiarContrasena(String username, String contrasenaActual, String nuevaContrasena);
 
-	void recuperarAdmin(String secretoRoot, String nuevaContrasenaAdmin);
+	void cambiarContrasenaTercero(Long objetivoId, String nuevaContrasena, String secretoRoot);
 }

@@ -1,19 +1,17 @@
 package com.art.inventario.configuracion;
 
-import com.art.inventario.dominio.Rol;
-
 public class UsuarioAutenticado {
 
 	private final Long id;
 	private final String username;
 	private final String nombre;
-	private final Rol rol;
+	private final String nivel;
 
-	public UsuarioAutenticado(Long id, String username, String nombre, Rol rol) {
+	public UsuarioAutenticado(Long id, String username, String nombre, String nivel) {
 		this.id = id;
 		this.username = username;
 		this.nombre = nombre;
-		this.rol = rol;
+		this.nivel = nivel;
 	}
 
 	public Long getId() {
@@ -28,11 +26,11 @@ public class UsuarioAutenticado {
 		return nombre;
 	}
 
-	public Rol getRol() {
-		return rol;
+	public String getNivel() {
+		return nivel;
 	}
 
 	public boolean esRoot() {
-		return "root".equalsIgnoreCase(username);
+		return "ROOT".equalsIgnoreCase(nivel);
 	}
 }

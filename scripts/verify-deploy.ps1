@@ -40,6 +40,8 @@ if (-not $ready) {
 
 Write-Host '5/5 Ejecutando pruebas API dentro de Node 22...' -ForegroundColor Cyan
 $workspace = (Resolve-Path '.').Path
+docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-auth.mjs http://inventario:8080
+if ($LASTEXITCODE -ne 0) { throw 'Falló test-auth.mjs.' }
 docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-api.mjs http://inventario:8080
 if ($LASTEXITCODE -ne 0) { throw 'Falló test-api.mjs.' }
 docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-react-api.mjs http://inventario:8080

@@ -16,8 +16,4 @@ public interface UsuarioPersistencia {
 	Usuario guardar(Usuario usuario);
 
 	long contar();
-
-	boolean existeRoot();
-
-	void eliminar(Usuario usuario);
 }

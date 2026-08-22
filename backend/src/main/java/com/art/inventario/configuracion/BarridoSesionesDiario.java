@@ -50,7 +50,7 @@ public class BarridoSesionesDiario implements ApplicationRunner {
 				EventoLog e = new EventoLog();
 				e.setFecha(Instant.now().toString());
 				e.setUsuario(s.getUsername());
-				e.setRol(s.getRol().name());
+				e.setRol(s.getNivelAcceso());
 				e.setAccion(s.bloqueada() ? Accion.BLOQUEO_SESION : Accion.FIN_SESION);
 				e.setResultado("OK");
 				e.setDetalle("Barrido diario: sesión finalizada");

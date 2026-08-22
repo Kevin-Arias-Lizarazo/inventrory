@@ -1,17 +1,16 @@
 package com.art.inventario.aplicacion.dto;
 
-import com.art.inventario.dominio.Rol;
-
 public class UsuarioRespuesta {
 
 	private Long id;
 	private String username;
 	private String nombre;
-	private Rol rol;
+	private String nivel;
 	private Boolean activo;
-	private Boolean esRoot;
 	private String fechaCreacion;
 	private String ultimoAcceso;
+	private String fechaBloqueo;
+	private String motivoBloqueo;
 
 	public Long getId() {
 		return id;
@@ -37,12 +36,12 @@ public class UsuarioRespuesta {
 		this.nombre = nombre;
 	}
 
-	public Rol getRol() {
-		return rol;
+	public String getNivel() {
+		return nivel;
 	}
 
-	public void setRol(Rol rol) {
-		this.rol = rol;
+	public void setNivel(String nivel) {
+		this.nivel = nivel;
 	}
 
 	public Boolean getActivo() {
@@ -51,14 +50,6 @@ public class UsuarioRespuesta {
 
 	public void setActivo(Boolean activo) {
 		this.activo = activo;
-	}
-
-	public Boolean getEsRoot() {
-		return esRoot;
-	}
-
-	public void setEsRoot(Boolean esRoot) {
-		this.esRoot = esRoot;
 	}
 
 	public String getFechaCreacion() {
@@ -75,5 +66,21 @@ public class UsuarioRespuesta {
 
 	public void setUltimoAcceso(String ultimoAcceso) {
 		this.ultimoAcceso = ultimoAcceso;
+	}
+
+	public String getFechaBloqueo() {
+		return fechaBloqueo;
+	}
+
+	public void setFechaBloqueo(String fechaBloqueo) {
+		this.fechaBloqueo = fechaBloqueo;
+	}
+
+	public String getMotivoBloqueo() {
+		return motivoBloqueo;
+	}
+
+	public void setMotivoBloqueo(String motivoBloqueo) {
+		this.motivoBloqueo = motivoBloqueo;
 	}
 }

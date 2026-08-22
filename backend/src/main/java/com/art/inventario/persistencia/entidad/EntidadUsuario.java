@@ -2,14 +2,10 @@ package com.art.inventario.persistencia.entidad;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
-import com.art.inventario.dominio.Rol;
 
 @Entity
 @Table(name = "usuarios")
@@ -27,16 +23,18 @@ public class EntidadUsuario {
 
 	private String nombre;
 
-	@Enumerated(EnumType.STRING)
-	private Rol rol;
+	@Column(name = "nivel_acceso")
+	private String nivelAcceso;
 
 	private Boolean activo;
-
-	private Boolean esRoot;
 
 	private String fechaCreacion;
 
 	private String ultimoAcceso;
+
+	private String fechaBloqueo;
+
+	private String motivoBloqueo;
 
 	public Long getId() {
 		return id;
@@ -70,12 +68,12 @@ public class EntidadUsuario {
 		this.nombre = nombre;
 	}
 
-	public Rol getRol() {
-		return rol;
+	public String getNivelAcceso() {
+		return nivelAcceso;
 	}
 
-	public void setRol(Rol rol) {
-		this.rol = rol;
+	public void setNivelAcceso(String nivelAcceso) {
+		this.nivelAcceso = nivelAcceso;
 	}
 
 	public Boolean getActivo() {
@@ -84,14 +82,6 @@ public class EntidadUsuario {
 
 	public void setActivo(Boolean activo) {
 		this.activo = activo;
-	}
-
-	public Boolean getEsRoot() {
-		return esRoot;
-	}
-
-	public void setEsRoot(Boolean esRoot) {
-		this.esRoot = esRoot;
 	}
 
 	public String getFechaCreacion() {
@@ -108,5 +98,21 @@ public class EntidadUsuario {
 
 	public void setUltimoAcceso(String ultimoAcceso) {
 		this.ultimoAcceso = ultimoAcceso;
+	}
+
+	public String getFechaBloqueo() {
+		return fechaBloqueo;
+	}
+
+	public void setFechaBloqueo(String fechaBloqueo) {
+		this.fechaBloqueo = fechaBloqueo;
+	}
+
+	public String getMotivoBloqueo() {
+		return motivoBloqueo;
+	}
+
+	public void setMotivoBloqueo(String motivoBloqueo) {
+		this.motivoBloqueo = motivoBloqueo;
 	}
 }

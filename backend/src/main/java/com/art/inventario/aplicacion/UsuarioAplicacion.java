@@ -15,12 +15,12 @@ import com.art.inventario.aplicacion.dto.UsuarioRespuesta;
 import com.art.inventario.configuracion.UsuarioAutenticado;
 import com.art.inventario.dominio.Accion;
 import com.art.inventario.dominio.EventoLog;
-import com.art.inventario.dominio.Rol;
 import com.art.inventario.dominio.Usuario;
 import com.art.inventario.excepcion.ConflictoExcepcion;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.puerto.entrada.UsuarioCasoDeUso;
+import com.art.inventario.puerto.salida.NivelAccesoPersistencia;
 import com.art.inventario.puerto.salida.RegistroAuditoria;
 import com.art.inventario.puerto.salida.SesionPersistencia;
 import com.art.inventario.puerto.salida.UsuarioPersistencia;
@@ -32,13 +32,15 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 			.withZone(ZoneId.systemDefault());
 
 	private final UsuarioPersistencia usuarios;
+	private final NivelAccesoPersistencia niveles;
 	private final SesionPersistencia sesiones;
 	private final PasswordEncoder passwordEncoder;
 	private final RegistroAuditoria auditoria;
 
-	public UsuarioAplicacion(UsuarioPersistencia usuarios, SesionPersistencia sesiones,
-			PasswordEncoder passwordEncoder, RegistroAuditoria auditoria) {
+	public UsuarioAplicacion(UsuarioPersistencia usuarios, NivelAccesoPersistencia niveles,
+			SesionPersistencia sesiones, PasswordEncoder passwordEncoder, RegistroAuditoria auditoria) {
 		this.usuarios = usuarios;
+		this.niveles = niveles;
 		this.sesiones = sesiones;
 		this.passwordEncoder = passwordEncoder;
 		this.auditoria = auditoria;
@@ -46,22 +48,23 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 
 	@Override
 	public List<UsuarioRespuesta> listar() {
+		Long raiz = niveles.usuarioRaizId().orElse(null);
 		return usuarios.todos().stream()
-				.filter(u -> !u.esRoot())
+				.filter(u -> raiz == null || !raiz.equals(u.getId()))
 				.map(this::aRespuesta)
 				.toList();
 	}
 
 	@Override
 	@Transactional
-	public UsuarioRespuesta crear(String username, String nombre, String contrasena, Rol rol) {
+	public UsuarioRespuesta crear(String username, String nombre, String contrasena, String nivel) {
 		String usuario = username == null ? "" : username.trim().toLowerCase();
 		if (usuario.isBlank() || contrasena == null || contrasena.length() < 8) {
 			throw new DatosInvalidosExcepcion(
 					"El usuario es obligatorio y la contraseña debe tener al menos 8 caracteres");
 		}
-		if (rol == null || rol == Rol.ADMIN) {
-			throw new DatosInvalidosExcepcion("Solo se pueden crear usuarios con rol USUARIO o LECTOR");
+		if (!nivelValido(nivel)) {
+			throw new DatosInvalidosExcepcion("Solo se pueden crear usuarios con nivel USUARIO o LECTOR");
 		}
 		if (usuarios.porUsername(usuario).isPresent()) {
 			throw new ConflictoExcepcion("Ya existe un usuario con ese nombre");
@@ -70,27 +73,27 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 		u.setUsername(usuario);
 		u.setNombre(nombre);
 		u.setPasswordHash(passwordEncoder.encode(contrasena));
-		u.setRol(rol);
+		u.setNivelAcceso(nivel);
 		u.setActivo(true);
-		u.setEsRoot(false);
 		u.setFechaCreacion(FORMATO.format(Instant.now()));
 		Usuario creado = usuarios.guardar(u);
-		log(actual().getUsername(), "ADMIN", Accion.CREAR_USUARIO, "OK", "Usuario " + usuario + " con rol " + rol);
+		log(actual().getUsername(), "ADMIN", Accion.CREAR_USUARIO, "OK",
+				"Usuario " + usuario + " con nivel " + nivel);
 		return aRespuesta(creado);
 	}
 
 	@Override
 	@Transactional
-	public UsuarioRespuesta cambiarRol(Long id, Rol rol) {
-		if (rol == null || rol == Rol.ADMIN) {
-			throw new DatosInvalidosExcepcion("No se puede asignar el rol ADMIN");
+	public UsuarioRespuesta cambiarNivel(Long id, String nivel) {
+		if (!nivelValido(nivel)) {
+			throw new DatosInvalidosExcepcion("Solo se puede asignar el nivel USUARIO o LECTOR");
 		}
 		Usuario u = obtenerGestionable(id);
-		u.setRol(rol);
+		u.setNivelAcceso(nivel);
 		Usuario guardado = usuarios.guardar(u);
 		invalidarSesiones(u);
 		log(actual().getUsername(), "ADMIN", Accion.CAMBIAR_ROL, "OK",
-				"Rol de " + u.getUsername() + " ahora es " + rol);
+				"Nivel de " + u.getUsername() + " ahora es " + nivel);
 		return aRespuesta(guardado);
 	}
 
@@ -99,6 +102,8 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 	public UsuarioRespuesta bloquear(Long id) {
 		Usuario u = obtenerGestionable(id);
 		u.setActivo(false);
+		u.setFechaBloqueo(FORMATO.format(Instant.now()));
+		u.setMotivoBloqueo("Bloqueado por el administrador");
 		Usuario guardado = usuarios.guardar(u);
 		invalidarSesiones(u);
 		log(actual().getUsername(), "ADMIN", Accion.BLOQUEO_USUARIO, "OK", "Usuario " + u.getUsername() + " bloqueado");
@@ -110,31 +115,19 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 	public UsuarioRespuesta desbloquear(Long id) {
 		Usuario u = obtenerGestionable(id);
 		u.setActivo(true);
+		u.setFechaBloqueo(null);
+		u.setMotivoBloqueo(null);
 		Usuario guardado = usuarios.guardar(u);
 		log(actual().getUsername(), "ADMIN", Accion.DESBLOQUEO_USUARIO, "OK",
 				"Usuario " + u.getUsername() + " desbloqueado");
 		return aRespuesta(guardado);
 	}
 
-	@Override
-	@Transactional
-	public UsuarioRespuesta reestablecerContrasena(Long id, String nuevaContrasena) {
-		if (nuevaContrasena == null || nuevaContrasena.length() < 8) {
-			throw new DatosInvalidosExcepcion("La nueva contraseña debe tener al menos 8 caracteres");
-		}
-		Usuario u = obtenerGestionable(id);
-		u.setPasswordHash(passwordEncoder.encode(nuevaContrasena));
-		Usuario guardado = usuarios.guardar(u);
-		invalidarSesiones(u);
-		log(actual().getUsername(), "ADMIN", Accion.REESTABLECER_CLAVE, "OK",
-				"Contraseña restablecida para " + u.getUsername());
-		return aRespuesta(guardado);
-	}
-
 	private Usuario obtenerGestionable(Long id) {
 		Usuario u = usuarios.porId(id)
 				.orElseThrow(() -> new NoEncontradoExcepcion("Usuario no encontrado"));
-		if (u.esRoot()) {
+		Long raiz = niveles.usuarioRaizId().orElse(null);
+		if (raiz != null && raiz.equals(u.getId())) {
 			throw new ConflictoExcepcion("La cuenta root no se puede modificar");
 		}
 		UsuarioAutenticado actor = actual();
@@ -142,6 +135,10 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 			throw new ConflictoExcepcion("No puede modificar su propia cuenta desde administración");
 		}
 		return u;
+	}
+
+	private boolean nivelValido(String nivel) {
+		return "USUARIO".equalsIgnoreCase(nivel) || "LECTOR".equalsIgnoreCase(nivel);
 	}
 
 	private void invalidarSesiones(Usuario u) {
@@ -156,11 +153,11 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 		throw new NoEncontradoExcepcion("Sesión inválida");
 	}
 
-	private void log(String usuario, String rol, Accion accion, String resultado, String detalle) {
+	private void log(String usuario, String nivel, Accion accion, String resultado, String detalle) {
 		EventoLog e = new EventoLog();
 		e.setFecha(Instant.now().toString());
 		e.setUsuario(usuario);
-		e.setRol(rol);
+		e.setRol(nivel);
 		e.setAccion(accion);
 		e.setResultado(resultado);
 		e.setDetalle(detalle);
@@ -172,11 +169,12 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 		r.setId(u.getId());
 		r.setUsername(u.getUsername());
 		r.setNombre(u.getNombre());
-		r.setRol(u.getRol());
+		r.setNivel(u.getNivelAcceso());
 		r.setActivo(u.getActivo());
-		r.setEsRoot(u.getEsRoot());
 		r.setFechaCreacion(u.getFechaCreacion());
 		r.setUltimoAcceso(u.getUltimoAcceso());
+		r.setFechaBloqueo(u.getFechaBloqueo());
+		r.setMotivoBloqueo(u.getMotivoBloqueo());
 		return r;
 	}
 }

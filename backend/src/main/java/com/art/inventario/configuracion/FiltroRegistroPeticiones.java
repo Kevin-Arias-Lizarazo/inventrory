@@ -42,7 +42,7 @@ public class FiltroRegistroPeticiones extends OncePerRequestFilter {
 			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 			if (auth != null && auth.getPrincipal() instanceof UsuarioAutenticado ua) {
 				e.setUsuario(ua.getUsername());
-				e.setRol(ua.getRol().name());
+				e.setRol(ua.getNivel());
 			} else {
 				e.setUsuario("anonimo");
 			}

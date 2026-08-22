@@ -1,6 +1,6 @@
 const EXENTAS_CSRF = new Set([
   '/api/auth/login',
-  '/api/auth/recuperar-admin',
+  '/api/auth/cambiar-contrasena-usuario',
   '/api/auth/csrf',
   '/api/instalacion/completar',
 ]);

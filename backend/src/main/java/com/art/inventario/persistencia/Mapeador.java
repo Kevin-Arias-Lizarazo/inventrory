@@ -28,6 +28,7 @@ import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.dominio.MovimientoHerramienta;
 import com.art.inventario.dominio.MovimientoMaterial;
+import com.art.inventario.dominio.NivelAcceso;
 import com.art.inventario.dominio.OrdenCompra;
 import com.art.inventario.dominio.PagoFactura;
 import com.art.inventario.dominio.Proveedor;
@@ -52,6 +53,7 @@ import com.art.inventario.persistencia.entidad.EntidadLineaDevolucion;
 import com.art.inventario.persistencia.entidad.EntidadLineaFactura;
 import com.art.inventario.persistencia.entidad.EntidadLineaOrdenCompra;
 import com.art.inventario.persistencia.entidad.EntidadMaterial;
+import com.art.inventario.persistencia.entidad.EntidadNivelAcceso;
 import com.art.inventario.persistencia.entidad.EntidadOrdenCompra;
 import com.art.inventario.persistencia.entidad.EntidadPagoFactura;
 import com.art.inventario.persistencia.entidad.EntidadMinuta;
@@ -935,11 +937,12 @@ public final class Mapeador {
 		e.setUsername(u.getUsername());
 		e.setPasswordHash(u.getPasswordHash());
 		e.setNombre(u.getNombre());
-		e.setRol(u.getRol());
+		e.setNivelAcceso(u.getNivelAcceso());
 		e.setActivo(u.getActivo());
-		e.setEsRoot(u.getEsRoot());
 		e.setFechaCreacion(u.getFechaCreacion());
 		e.setUltimoAcceso(u.getUltimoAcceso());
+		e.setFechaBloqueo(u.getFechaBloqueo());
+		e.setMotivoBloqueo(u.getMotivoBloqueo());
 		return e;
 	}
 
@@ -952,15 +955,44 @@ public final class Mapeador {
 		d.setUsername(e.getUsername());
 		d.setPasswordHash(e.getPasswordHash());
 		d.setNombre(e.getNombre());
-		d.setRol(e.getRol());
+		d.setNivelAcceso(e.getNivelAcceso());
 		d.setActivo(e.getActivo());
-		d.setEsRoot(e.getEsRoot());
 		d.setFechaCreacion(e.getFechaCreacion());
 		d.setUltimoAcceso(e.getUltimoAcceso());
+		d.setFechaBloqueo(e.getFechaBloqueo());
+		d.setMotivoBloqueo(e.getMotivoBloqueo());
 		return d;
 	}
 
 	public static List<Usuario> aDominioUsuarios(List<EntidadUsuario> lista) {
+		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
+	}
+
+	public static EntidadNivelAcceso aEntidad(NivelAcceso n) {
+		if (n == null) {
+			return null;
+		}
+		EntidadNivelAcceso e = new EntidadNivelAcceso();
+		e.setId(n.getId());
+		e.setCodigo(n.getCodigo());
+		e.setNombre(n.getNombre());
+		e.setUsuarioRaizId(n.getUsuarioRaizId());
+		return e;
+	}
+
+	public static NivelAcceso aDominio(EntidadNivelAcceso e) {
+		if (e == null) {
+			return null;
+		}
+		NivelAcceso d = new NivelAcceso();
+		d.setId(e.getId());
+		d.setCodigo(e.getCodigo());
+		d.setNombre(e.getNombre());
+		d.setUsuarioRaizId(e.getUsuarioRaizId());
+		return d;
+	}
+
+	public static List<NivelAcceso> aDominioNiveles(List<EntidadNivelAcceso> lista) {
 		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
 	}
 }

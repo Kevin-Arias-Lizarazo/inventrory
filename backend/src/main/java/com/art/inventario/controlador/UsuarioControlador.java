@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.art.inventario.aplicacion.dto.UsuarioRespuesta;
-import com.art.inventario.dominio.Rol;
-import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.UsuarioCasoDeUso;
 
 @RestController
@@ -37,23 +35,12 @@ public class UsuarioControlador {
 	public ResponseEntity<UsuarioRespuesta> crear(@RequestBody Map<String, String> cuerpo) {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(servicio.crear(cuerpo.get("username"), cuerpo.get("nombre"), cuerpo.get("contrasena"),
-						rolDe(cuerpo.get("rol"))));
+						cuerpo.get("nivel")));
 	}
 
-	@PatchMapping("/{id}/rol")
-	public ResponseEntity<UsuarioRespuesta> cambiarRol(@PathVariable Long id, @RequestBody Map<String, String> cuerpo) {
-		return ResponseEntity.ok(servicio.cambiarRol(id, rolDe(cuerpo.get("rol"))));
-	}
-
-	private Rol rolDe(String valor) {
-		if (valor == null || valor.isBlank()) {
-			return null;
-		}
-		try {
-			return Rol.valueOf(valor.trim().toUpperCase());
-		} catch (IllegalArgumentException e) {
-			throw new DatosInvalidosExcepcion("Rol inválido: " + valor);
-		}
+	@PatchMapping("/{id}/nivel")
+	public ResponseEntity<UsuarioRespuesta> cambiarNivel(@PathVariable Long id, @RequestBody Map<String, String> cuerpo) {
+		return ResponseEntity.ok(servicio.cambiarNivel(id, cuerpo.get("nivel")));
 	}
 
 	@PostMapping("/{id}/bloquear")
@@ -64,10 +51,5 @@ public class UsuarioControlador {
 	@PostMapping("/{id}/desbloquear")
 	public ResponseEntity<UsuarioRespuesta> desbloquear(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.desbloquear(id));
-	}
-
-	@PostMapping("/{id}/reestablecer-contrasena")
-	public ResponseEntity<UsuarioRespuesta> reestablecer(@PathVariable Long id, @RequestBody Map<String, String> cuerpo) {
-		return ResponseEntity.ok(servicio.reestablecerContrasena(id, cuerpo.get("contrasena")));
 	}
 }

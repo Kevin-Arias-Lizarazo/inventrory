@@ -8,7 +8,7 @@ public final class Sesion {
 	private String accessVence;
 	private Long usuarioId;
 	private String username;
-	private Rol rol;
+	private String nivelAcceso;
 	private String permisos;
 	private String fechaCreacion;
 	private String fechaFin;
@@ -62,12 +62,12 @@ public final class Sesion {
 		this.username = username;
 	}
 
-	public Rol getRol() {
-		return rol;
+	public String getNivelAcceso() {
+		return nivelAcceso;
 	}
 
-	public void setRol(Rol rol) {
-		this.rol = rol;
+	public void setNivelAcceso(String nivelAcceso) {
+		this.nivelAcceso = nivelAcceso;
 	}
 
 	public String getPermisos() {

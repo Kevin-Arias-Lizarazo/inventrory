@@ -10,7 +10,7 @@ export default function Usuarios() {
   const [username, setUsername] = useState('');
   const [nombre, setNombre] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [rol, setRol] = useState('USUARIO');
+  const [nivel, setNivel] = useState('USUARIO');
 
   const cargar = useCallback(async () => {
     try {
@@ -29,11 +29,11 @@ export default function Usuarios() {
     setError(null);
     setMsg(null);
     try {
-      await post('/api/usuarios', { username, nombre, contrasena, rol });
+      await post('/api/usuarios', { username, nombre, contrasena, nivel });
       setUsername('');
       setNombre('');
       setContrasena('');
-      setRol('USUARIO');
+      setNivel('USUARIO');
       setMsg(`Usuario ${username} creado`);
       cargar();
     } catch (err) {
@@ -41,10 +41,10 @@ export default function Usuarios() {
     }
   }
 
-  async function cambiarRol(u, nuevoRol) {
+  async function cambiarNivel(u, nuevoNivel) {
     try {
-      await patch(`/api/usuarios/${u.id}/rol`, { rol: nuevoRol });
-      setMsg(`Rol de ${u.username} actualizado`);
+      await patch(`/api/usuarios/${u.id}/nivel`, { nivel: nuevoNivel });
+      setMsg(`Nivel de ${u.username} actualizado`);
       cargar();
     } catch (err) {
       setError(err.message);
@@ -75,7 +75,7 @@ export default function Usuarios() {
     const clave = window.prompt(`Nueva contraseña para ${u.username} (mínimo 8 caracteres):`);
     if (!clave) return;
     try {
-      await post(`/api/usuarios/${u.id}/reestablecer-contrasena`, { contrasena: clave });
+      await post('/api/auth/cambiar-contrasena-usuario', { usuarioId: u.id, contrasena: clave });
       setMsg(`Contraseña de ${u.username} restablecida`);
       cargar();
     } catch (err) {
@@ -103,8 +103,8 @@ export default function Usuarios() {
             <input id="u-contrasena" type="password" value={contrasena} onChange={(e) => setContrasena(e.target.value)} required />
           </div>
           <div className="campo">
-            <label htmlFor="u-rol">Rol</label>
-            <select id="u-rol" value={rol} onChange={(e) => setRol(e.target.value)}>
+            <label htmlFor="u-nivel">Nivel</label>
+            <select id="u-nivel" value={nivel} onChange={(e) => setNivel(e.target.value)}>
               <option value="USUARIO">Usuario</option>
               <option value="LECTOR">Lector</option>
             </select>
@@ -122,9 +122,9 @@ export default function Usuarios() {
           { titulo: 'Usuario', render: (u) => u.username },
           { titulo: 'Nombre', clave: 'nombre' },
           {
-            titulo: 'Rol',
+            titulo: 'Nivel',
             render: (u) => (
-              <select value={u.rol} onChange={(e) => cambiarRol(u, e.target.value)}>
+              <select value={u.nivel} onChange={(e) => cambiarNivel(u, e.target.value)}>
                 <option value="USUARIO">Usuario</option>
                 <option value="LECTOR">Lector</option>
               </select>

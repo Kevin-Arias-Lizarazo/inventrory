@@ -25,6 +25,7 @@ import com.art.inventario.dominio.Usuario;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.puerto.entrada.AuthCasoDeUso;
+import com.art.inventario.puerto.salida.NivelAccesoPersistencia;
 import com.art.inventario.puerto.salida.RegistroAuditoria;
 import com.art.inventario.puerto.salida.SesionPersistencia;
 import com.art.inventario.puerto.salida.UsuarioPersistencia;
@@ -36,18 +37,21 @@ public class AuthAplicacion implements AuthCasoDeUso {
 	private static final Duration DURACION_ACCESS = Duration.ofMinutes(10);
 	private static final DateTimeFormatter FORMATO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 			.withZone(ZoneId.systemDefault());
+	private static final String CLAVE_RECUPERACION = "__recuperar_admin__";
 
 	private final UsuarioPersistencia usuarios;
+	private final NivelAccesoPersistencia niveles;
 	private final SesionPersistencia sesiones;
 	private final PasswordEncoder passwordEncoder;
 	private final RegistroAuditoria auditoria;
 	private final ControlLogin controlLogin;
 	private final SecretoRecuperacion secreto;
 
-	public AuthAplicacion(UsuarioPersistencia usuarios, SesionPersistencia sesiones,
-			PasswordEncoder passwordEncoder, RegistroAuditoria auditoria, ControlLogin controlLogin,
-			SecretoRecuperacion secreto) {
+	public AuthAplicacion(UsuarioPersistencia usuarios, NivelAccesoPersistencia niveles,
+			SesionPersistencia sesiones, PasswordEncoder passwordEncoder, RegistroAuditoria auditoria,
+			ControlLogin controlLogin, SecretoRecuperacion secreto) {
 		this.usuarios = usuarios;
+		this.niveles = niveles;
 		this.sesiones = sesiones;
 		this.passwordEncoder = passwordEncoder;
 		this.auditoria = auditoria;
@@ -72,14 +76,19 @@ public class AuthAplicacion implements AuthCasoDeUso {
 			throw new DatosInvalidosExcepcion("Credenciales inválidas");
 		}
 		Usuario u = opt.get();
+		if (esRaiz(u.getId())) {
+			controlLogin.registrarFallo(nombre);
+			log(nombre, u.getNivelAcceso(), Accion.LOGIN_FALLIDO, "FALLIDO", ip, "La cuenta raíz no inicia sesión");
+			throw new DatosInvalidosExcepcion("Credenciales inválidas");
+		}
 		if (!Boolean.TRUE.equals(u.getActivo())) {
 			controlLogin.registrarFallo(nombre);
-			log(nombre, u.getRol().name(), Accion.LOGIN_FALLIDO, "FALLIDO", ip, "Cuenta inactiva o bloqueada");
+			log(nombre, u.getNivelAcceso(), Accion.LOGIN_FALLIDO, "FALLIDO", ip, "Cuenta inactiva o bloqueada");
 			throw new DatosInvalidosExcepcion("Credenciales inválidas");
 		}
 		if (!passwordEncoder.matches(password, u.getPasswordHash())) {
 			controlLogin.registrarFallo(nombre);
-			log(nombre, u.getRol().name(), Accion.LOGIN_FALLIDO, "FALLIDO", ip, "Contraseña incorrecta");
+			log(nombre, u.getNivelAcceso(), Accion.LOGIN_FALLIDO, "FALLIDO", ip, "Contraseña incorrecta");
 			throw new DatosInvalidosExcepcion("Credenciales inválidas");
 		}
 
@@ -90,10 +99,10 @@ public class AuthAplicacion implements AuthCasoDeUso {
 		String access = SeguridadUtil.generarToken(32);
 		String refresh = SeguridadUtil.generarToken(32);
 		Instant ahora = Instant.now();
-		sesiones.crear(u.getId(), u.getUsername(), u.getRol(), u.getRol().name(),
+		sesiones.crear(u.getId(), u.getUsername(), u.getNivelAcceso(), u.getNivelAcceso(),
 				SeguridadUtil.hash(access), SeguridadUtil.hash(refresh), ahora,
 				ahora.plus(DURACION_SESION), ahora.plus(DURACION_ACCESS));
-		log(u.getUsername(), u.getRol().name(), Accion.LOGIN_OK, "OK", ip, "Inicio de sesión");
+		log(u.getUsername(), u.getNivelAcceso(), Accion.LOGIN_OK, "OK", ip, "Inicio de sesión");
 		RespuestaLogin respuesta = new RespuestaLogin(access, aRespuesta(u));
 		respuesta.setRefreshToken(refresh);
 		return respuesta;
@@ -103,8 +112,11 @@ public class AuthAplicacion implements AuthCasoDeUso {
 	public void logout(String refreshToken) {
 		if (refreshToken != null && !refreshToken.isBlank()) {
 			sesiones.porRefreshHash(SeguridadUtil.hash(refreshToken)).ifPresent(s -> {
-				log(s.getUsername(), s.getRol().name(), Accion.FIN_SESION, "OK", null, "Cierre de sesión");
-				sesiones.terminar(s.getId());
+				UsuarioAutenticado ua = actual();
+				if (ua == null || ua.getId().equals(s.getUsuarioId())) {
+					log(s.getUsername(), s.getNivelAcceso(), Accion.FIN_SESION, "OK", null, "Cierre de sesión");
+					sesiones.terminar(s.getId());
+				}
 			});
 		}
 		log(actual() == null ? null : actual().getUsername(), null, Accion.LOGOUT, "OK", null, "Cierre de sesión");
@@ -162,42 +174,89 @@ public class AuthAplicacion implements AuthCasoDeUso {
 		String nombre = ua != null ? ua.getUsername() : (username == null ? "" : username);
 		Usuario u = usuarios.porUsername(nombre)
 				.orElseThrow(() -> new NoEncontradoExcepcion("Usuario no encontrado"));
+		if (esRaiz(u.getId())) {
+			throw new DatosInvalidosExcepcion("La cuenta raíz no puede cambiar su contraseña por aquí");
+		}
+		if (!controlLogin.permitido(nombre)) {
+			throw new DatosInvalidosExcepcion("Demasiados intentos fallidos. Espere unos minutos");
+		}
 		if (!passwordEncoder.matches(contrasenaActual, u.getPasswordHash())) {
+			controlLogin.registrarFallo(nombre);
 			throw new DatosInvalidosExcepcion("La contraseña actual no es correcta");
 		}
+		controlLogin.limpiar(nombre);
 		u.setPasswordHash(passwordEncoder.encode(nuevaContrasena));
 		usuarios.guardar(u);
 		controlLogin.registrarCambioClave(nombre);
-		log(nombre, u.getRol().name(), Accion.CAMBIO_CLAVE, "OK", null, "Cambio de contraseña propia");
+		log(nombre, u.getNivelAcceso(), Accion.CAMBIO_CLAVE, "OK", null, "Cambio de contraseña propia");
 	}
-
-	private static final String CLAVE_RECUPERACION = "__recuperar_admin__";
 
 	@Override
 	@Transactional
-	public void recuperarAdmin(String secretoRoot, String nuevaContrasenaAdmin) {
-		if (!controlLogin.permitido(CLAVE_RECUPERACION)) {
-			throw new DatosInvalidosExcepcion("Demasiados intentos. Espere unos minutos");
-		}
-		if (!secreto.valida(secretoRoot)) {
-			controlLogin.registrarFallo(CLAVE_RECUPERACION);
-			log("root", "ADMIN", Accion.RECUPERAR_ADMIN, "FALLIDO", null, "Secreto raíz inválido");
-			throw new DatosInvalidosExcepcion("Secreto raíz inválido");
-		}
-		if (nuevaContrasenaAdmin == null || nuevaContrasenaAdmin.length() < 8) {
+	public void cambiarContrasenaTercero(Long objetivoId, String nuevaContrasena, String secretoRoot) {
+		if (nuevaContrasena == null || nuevaContrasena.length() < 8) {
 			throw new DatosInvalidosExcepcion("La nueva contraseña debe tener al menos 8 caracteres");
 		}
-		controlLogin.limpiar(CLAVE_RECUPERACION);
-		Usuario admin = usuarios.todos().stream()
-				.filter(u -> !u.esRoot() && u.getRol() == com.art.inventario.dominio.Rol.ADMIN)
-				.findFirst()
-				.orElseThrow(() -> new NoEncontradoExcepcion("No existe una cuenta de administrador"));
-		admin.setPasswordHash(passwordEncoder.encode(nuevaContrasenaAdmin));
-		usuarios.guardar(admin);
-		controlLogin.registrarCambioClave(admin.getUsername());
-		sesiones.bloquearPorUsuario(admin.getId());
-		log("root", "ADMIN", Accion.RECUPERAR_ADMIN, "OK", null,
-				"Credenciales restablecidas para admin " + admin.getUsername());
+		boolean esRaizActor = false;
+		if (secretoRoot != null && !secretoRoot.isBlank()) {
+			if (!controlLogin.permitido(CLAVE_RECUPERACION)) {
+				throw new DatosInvalidosExcepcion("Demasiados intentos. Espere unos minutos");
+			}
+			if (!secreto.valida(secretoRoot)) {
+				controlLogin.registrarFallo(CLAVE_RECUPERACION);
+				log("root", "ROOT", Accion.RECUPERAR_ADMIN, "FALLIDO", null, "Secreto raíz inválido");
+				throw new DatosInvalidosExcepcion("Secreto raíz inválido");
+			}
+			controlLogin.limpiar(CLAVE_RECUPERACION);
+			esRaizActor = true;
+		}
+
+		Usuario objetivo;
+		if (esRaizActor) {
+			if (objetivoId != null) {
+				objetivo = usuarios.porId(objetivoId)
+						.orElseThrow(() -> new NoEncontradoExcepcion("Usuario no encontrado"));
+			} else {
+				objetivo = usuarios.todos().stream()
+						.filter(u -> "ADMIN".equalsIgnoreCase(u.getNivelAcceso()))
+						.findFirst()
+						.orElseThrow(() -> new NoEncontradoExcepcion("No existe una cuenta de administrador"));
+			}
+			if (esRaiz(objetivo.getId())) {
+				throw new DatosInvalidosExcepcion("No es posible cambiar la contraseña de root");
+			}
+			if (!"ADMIN".equalsIgnoreCase(objetivo.getNivelAcceso())) {
+				throw new DatosInvalidosExcepcion("ROOT solo puede restablecer la contraseña del admin");
+			}
+		} else {
+			UsuarioAutenticado ua = actual();
+			if (ua == null || !"ADMIN".equalsIgnoreCase(ua.getNivel())) {
+				throw new DatosInvalidosExcepcion("Acción permitida solo para administrador o root");
+			}
+			if (objetivoId == null) {
+				throw new DatosInvalidosExcepcion("Debe indicar el usuario de destino");
+			}
+			objetivo = usuarios.porId(objetivoId)
+					.orElseThrow(() -> new NoEncontradoExcepcion("Usuario no encontrado"));
+			if (esRaiz(objetivo.getId())) {
+				throw new DatosInvalidosExcepcion("No es posible cambiar la contraseña de root");
+			}
+			if (objetivo.getId().equals(ua.getId())) {
+				throw new DatosInvalidosExcepcion("Use Mi cuenta para cambiar su propia contraseña");
+			}
+		}
+
+		objetivo.setPasswordHash(passwordEncoder.encode(nuevaContrasena));
+		usuarios.guardar(objetivo);
+		controlLogin.registrarCambioClave(objetivo.getUsername());
+		sesiones.bloquearPorUsuario(objetivo.getId());
+		log(esRaizActor ? "root" : actual().getUsername(),
+				esRaizActor ? "ROOT" : actual().getNivel(), Accion.REESTABLECER_CLAVE, "OK", null,
+				"Contraseña restablecida para " + objetivo.getUsername());
+	}
+
+	private boolean esRaiz(Long usuarioId) {
+		return niveles.usuarioRaizId().map(id -> id.equals(usuarioId)).orElse(false);
 	}
 
 	private UsuarioAutenticado actual() {
@@ -208,11 +267,11 @@ public class AuthAplicacion implements AuthCasoDeUso {
 		return null;
 	}
 
-	private void log(String usuario, String rol, Accion accion, String resultado, String ip, String detalle) {
+	private void log(String usuario, String nivel, Accion accion, String resultado, String ip, String detalle) {
 		EventoLog e = new EventoLog();
 		e.setFecha(Instant.now().toString());
 		e.setUsuario(usuario);
-		e.setRol(rol);
+		e.setRol(nivel);
 		e.setIp(ip);
 		e.setAccion(accion);
 		e.setResultado(resultado);
@@ -225,11 +284,12 @@ public class AuthAplicacion implements AuthCasoDeUso {
 		r.setId(u.getId());
 		r.setUsername(u.getUsername());
 		r.setNombre(u.getNombre());
-		r.setRol(u.getRol());
+		r.setNivel(u.getNivelAcceso());
 		r.setActivo(u.getActivo());
-		r.setEsRoot(u.getEsRoot());
 		r.setFechaCreacion(u.getFechaCreacion());
 		r.setUltimoAcceso(u.getUltimoAcceso());
+		r.setFechaBloqueo(u.getFechaBloqueo());
+		r.setMotivoBloqueo(u.getMotivoBloqueo());
 		return r;
 	}
 }

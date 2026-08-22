@@ -33,7 +33,7 @@ export default function MiCuenta() {
     <section>
       <div className="pagina-cabecera"><h2>Mi cuenta</h2></div>
       <p className="texto-aviso">
-        Usuario: <strong>{usuario?.username}</strong> · Rol: <strong>{usuario?.rol}</strong>
+        Usuario: <strong>{usuario?.username}</strong> · Nivel: <strong>{usuario?.nivel}</strong>
       </p>
       <form className="form" onSubmit={guardar} style={{ maxWidth: '420px' }}>
         <div className="campo">

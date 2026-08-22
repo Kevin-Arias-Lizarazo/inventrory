@@ -34,6 +34,7 @@ if [ "$ready" != true ]; then
 fi
 
 echo "5/5 Ejecutando pruebas API dentro de Node 22..."
+docker run --rm --network inventario_default -v "$ROOT_DIR:/workspace:ro" node:22-alpine node /workspace/scripts/test-auth.mjs http://inventario:8080
 docker run --rm --network inventario_default -v "$ROOT_DIR:/workspace:ro" node:22-alpine node /workspace/scripts/test-api.mjs http://inventario:8080
 docker run --rm --network inventario_default -v "$ROOT_DIR:/workspace:ro" node:22-alpine node /workspace/scripts/test-react-api.mjs http://inventario:8080
 docker run --rm --network inventario_default -v "$ROOT_DIR:/workspace:ro" node:22-alpine node /workspace/scripts/test-sse.mjs http://inventario:8080
