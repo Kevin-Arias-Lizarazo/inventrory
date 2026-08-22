@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.art.inventario.aplicacion.dto.UsuarioRespuesta;
 import com.art.inventario.dominio.Rol;
+import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.UsuarioCasoDeUso;
 
 @RestController
@@ -34,15 +35,25 @@ public class UsuarioControlador {
 
 	@PostMapping
 	public ResponseEntity<UsuarioRespuesta> crear(@RequestBody Map<String, String> cuerpo) {
-		Rol rol = cuerpo.get("rol") == null ? null : Rol.valueOf(cuerpo.get("rol"));
 		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(servicio.crear(cuerpo.get("username"), cuerpo.get("nombre"), cuerpo.get("contrasena"), rol));
+				.body(servicio.crear(cuerpo.get("username"), cuerpo.get("nombre"), cuerpo.get("contrasena"),
+						rolDe(cuerpo.get("rol"))));
 	}
 
 	@PatchMapping("/{id}/rol")
 	public ResponseEntity<UsuarioRespuesta> cambiarRol(@PathVariable Long id, @RequestBody Map<String, String> cuerpo) {
-		Rol rol = cuerpo.get("rol") == null ? null : Rol.valueOf(cuerpo.get("rol"));
-		return ResponseEntity.ok(servicio.cambiarRol(id, rol));
+		return ResponseEntity.ok(servicio.cambiarRol(id, rolDe(cuerpo.get("rol"))));
+	}
+
+	private Rol rolDe(String valor) {
+		if (valor == null || valor.isBlank()) {
+			return null;
+		}
+		try {
+			return Rol.valueOf(valor.trim().toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new DatosInvalidosExcepcion("Rol inválido: " + valor);
+		}
 	}
 
 	@PostMapping("/{id}/bloquear")

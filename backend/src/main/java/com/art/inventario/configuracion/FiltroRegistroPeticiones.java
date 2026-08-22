@@ -48,12 +48,19 @@ public class FiltroRegistroPeticiones extends OncePerRequestFilter {
 			}
 			e.setIp(clienteIp(request));
 			e.setMetodo(request.getMethod());
-			e.setRuta(request.getRequestURI());
+			e.setRuta(rutaCompleta(request));
 			e.setAccion(Accion.PETICION);
 			e.setResultado(String.valueOf(response.getStatus()));
 			e.setDuracionMs((System.nanoTime() - inicio) / 1_000_000);
 			auditoria.registrar(e);
 		}
+	}
+
+	private String rutaCompleta(HttpServletRequest request) {
+		String query = request.getQueryString();
+		return query == null || query.isBlank()
+				? request.getRequestURI()
+				: request.getRequestURI() + "?" + query;
 	}
 
 	private String clienteIp(HttpServletRequest request) {

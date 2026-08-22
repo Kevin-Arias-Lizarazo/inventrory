@@ -16,7 +16,6 @@ import java.util.zip.ZipInputStream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.art.inventario.aplicacion.dto.RespuestaInstalacion;
 import com.art.inventario.aplicacion.dto.UsuarioRespuesta;
@@ -61,8 +60,10 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 	}
 
 	@Override
-	@Transactional
 	public RespuestaInstalacion completar(String rootPassword, byte[] dbArchivo, byte[] uploadsZip) {
+		if (!pendiente()) {
+			throw new DatosInvalidosExcepcion("La instalación ya fue completada");
+		}
 		if (rootPassword == null || rootPassword.length() < 8) {
 			throw new DatosInvalidosExcepcion("La contraseña de root debe tener al menos 8 caracteres");
 		}

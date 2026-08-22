@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.art.inventario.aplicacion.dto.RespuestaInstalacion;
+import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.InstalacionCasoDeUso;
 
 @RestController
@@ -42,7 +43,7 @@ public class InstalacionControlador {
 		try {
 			return archivo.getBytes();
 		} catch (Exception e) {
-			return null;
+			throw new DatosInvalidosExcepcion("No se pudo leer el archivo subido");
 		}
 	}
 }

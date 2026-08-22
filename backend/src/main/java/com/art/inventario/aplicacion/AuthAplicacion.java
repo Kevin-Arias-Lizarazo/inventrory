@@ -58,14 +58,14 @@ public class AuthAplicacion implements AuthCasoDeUso {
 	@Override
 	@Transactional
 	public RespuestaLogin login(String username, String password, String ip) {
-		String nombre = username == null ? "" : username.trim();
+		String nombre = username == null ? "" : username.trim().toLowerCase();
 		if (nombre.isBlank() || password == null || password.isBlank()) {
 			throw new DatosInvalidosExcepcion("Credenciales inválidas");
 		}
 		if (!controlLogin.permitido(nombre)) {
 			throw new DatosInvalidosExcepcion("Demasiados intentos fallidos. Espere unos minutos");
 		}
-		Optional<Usuario> opt = usuarios.porUsername(nombre.toLowerCase());
+		Optional<Usuario> opt = usuarios.porUsername(nombre);
 		if (opt.isEmpty()) {
 			controlLogin.registrarFallo(nombre);
 			log(nombre, null, Accion.LOGIN_FALLIDO, "FALLIDO", ip, "Usuario inexistente");
@@ -158,27 +158,36 @@ public class AuthAplicacion implements AuthCasoDeUso {
 		if (nuevaContrasena == null || nuevaContrasena.length() < 8) {
 			throw new DatosInvalidosExcepcion("La nueva contraseña debe tener al menos 8 caracteres");
 		}
-		Usuario u = usuarios.porUsername(username)
+		UsuarioAutenticado ua = actual();
+		String nombre = ua != null ? ua.getUsername() : (username == null ? "" : username);
+		Usuario u = usuarios.porUsername(nombre)
 				.orElseThrow(() -> new NoEncontradoExcepcion("Usuario no encontrado"));
 		if (!passwordEncoder.matches(contrasenaActual, u.getPasswordHash())) {
 			throw new DatosInvalidosExcepcion("La contraseña actual no es correcta");
 		}
 		u.setPasswordHash(passwordEncoder.encode(nuevaContrasena));
 		usuarios.guardar(u);
-		controlLogin.registrarCambioClave(username);
-		log(username, u.getRol().name(), Accion.CAMBIO_CLAVE, "OK", null, "Cambio de contraseña propia");
+		controlLogin.registrarCambioClave(nombre);
+		log(nombre, u.getRol().name(), Accion.CAMBIO_CLAVE, "OK", null, "Cambio de contraseña propia");
 	}
+
+	private static final String CLAVE_RECUPERACION = "__recuperar_admin__";
 
 	@Override
 	@Transactional
 	public void recuperarAdmin(String secretoRoot, String nuevaContrasenaAdmin) {
+		if (!controlLogin.permitido(CLAVE_RECUPERACION)) {
+			throw new DatosInvalidosExcepcion("Demasiados intentos. Espere unos minutos");
+		}
 		if (!secreto.valida(secretoRoot)) {
+			controlLogin.registrarFallo(CLAVE_RECUPERACION);
 			log("root", "ADMIN", Accion.RECUPERAR_ADMIN, "FALLIDO", null, "Secreto raíz inválido");
 			throw new DatosInvalidosExcepcion("Secreto raíz inválido");
 		}
 		if (nuevaContrasenaAdmin == null || nuevaContrasenaAdmin.length() < 8) {
 			throw new DatosInvalidosExcepcion("La nueva contraseña debe tener al menos 8 caracteres");
 		}
+		controlLogin.limpiar(CLAVE_RECUPERACION);
 		Usuario admin = usuarios.todos().stream()
 				.filter(u -> !u.esRoot() && u.getRol() == com.art.inventario.dominio.Rol.ADMIN)
 				.findFirst()

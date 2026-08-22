@@ -58,13 +58,16 @@ public class RegistroAuditoriaArchivo implements RegistroAuditoria, AuditoriaPer
 
 	@Override
 	public List<EventoLog> leer(String fecha, String usuario, String accion, String resultado) {
-		String prefijo = fecha != null && !fecha.isBlank() ? "log_" : "log_";
 		List<Path> archivos = new ArrayList<>();
 		if (fecha != null && !fecha.isBlank()) {
-			String nombre = prefijo + formatearFecha(fecha) + ".jsonl";
-			Path p = directorio.resolve(nombre);
-			if (Files.exists(p)) {
-				archivos.add(p);
+			String base = formatearFecha(fecha);
+			Path normal = directorio.resolve("log_" + base + ".jsonl");
+			Path get = directorio.resolve("log_get_" + base + ".jsonl");
+			if (Files.exists(normal)) {
+				archivos.add(normal);
+			}
+			if (Files.exists(get)) {
+				archivos.add(get);
 			}
 		} else {
 			try (DirectoryStream<Path> ds = Files.newDirectoryStream(directorio)) {
