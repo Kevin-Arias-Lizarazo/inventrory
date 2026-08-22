@@ -29,7 +29,13 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 cd "$ROOT_DIR"
-"${COMPOSE[@]}" -f "$COMPOSE_FILE" up -d
+
+if docker ps --filter "name=inventario" --filter "status=running" --format "{{.Names}}" | grep -q inventario; then
+  echo "El contenedor ya está en ejecución."
+else
+  echo "Levantando la aplicación..."
+  "${COMPOSE[@]}" -f "$COMPOSE_FILE" up -d
+fi
 
 echo "Esperando a que la API responda..."
 for _ in $(seq 1 30); do
