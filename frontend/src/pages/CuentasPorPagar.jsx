@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_COMPRAS } from '../secciones';
 import { useCallback, useEffect, useState } from 'react';
 import { get, post, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
@@ -105,6 +107,7 @@ export default function CuentasPorPagar() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_COMPRAS} />
       <div className="pagina-cabecera">
         <h2>Cuentas por pagar</h2>
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>

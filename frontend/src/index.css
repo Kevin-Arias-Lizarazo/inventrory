@@ -1087,3 +1087,154 @@ a:not(.btn):hover {
   gap: 12px;
   align-items: end;
 }
+
+/* --- navegación por rutas --- */
+.nav-item {
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: #cbd5e1;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.barra-superior {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 16px;
+}
+
+.busqueda-superior {
+  flex: 1;
+  max-width: 480px;
+}
+
+.busqueda-superior input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.seccion-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 10px;
+}
+
+.seccion-tab {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--gris);
+  text-decoration: none;
+  border: 1px solid var(--borde);
+  background: #fff;
+}
+
+.seccion-tab:hover {
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+.seccion-tab-activo,
+.seccion-tab-activo:hover {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: #fff;
+}
+
+/* --- Home --- */
+.grid-secciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.tarjeta-seccion {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.tarjeta-seccion h3 {
+  margin: 0 0 4px;
+}
+
+.lista-enlaces {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lista-enlaces a {
+  color: var(--azul);
+  text-decoration: none;
+}
+
+.lista-enlaces a:hover {
+  text-decoration: underline;
+}
+
+/* --- detalle --- */
+.grid-detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.panel-detalle {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.panel-detalle h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.panel-detalle h4 {
+  margin: 12px 0 6px;
+  font-size: 13px;
+}
+
+.dl-detalle {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.dl-detalle dt {
+  color: var(--gris);
+  font-size: 13px;
+}
+
+.dl-detalle dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+.lista-detalle {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}

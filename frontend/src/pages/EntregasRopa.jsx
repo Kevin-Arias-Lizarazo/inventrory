@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy, subirArchivo, firmaAArchivo } from '../api';
 import { useLista, useListaPaginada } from '../hooks';
@@ -104,6 +106,7 @@ const { lista: empleados } = useLista('empleados', '/api/empleados');
 
   return (
     <section>
+      <SeccionTabs items={TABS_EMPLEADOS} />
       <div className="pagina-cabecera">
         <h2>Entrega de ropa</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevo}>

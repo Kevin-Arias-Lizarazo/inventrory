@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_INVENTARIO } from '../secciones';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { get, post, put, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
@@ -244,6 +246,7 @@ export default function Inventario({ config, titulo }) {
 
   return (
     <section>
+      <SeccionTabs items={TABS_INVENTARIO} />
       <div className="pagina-cabecera">
         <h2>{titulo}</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevoItem}>

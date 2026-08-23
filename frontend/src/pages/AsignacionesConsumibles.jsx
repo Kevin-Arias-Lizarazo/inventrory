@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_PROYECTOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy } from '../api';
 import { useLista, useListaPaginada } from '../hooks';
@@ -113,6 +115,7 @@ export default function AsignacionesConsumibles() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_PROYECTOS} />
       <div className="pagina-cabecera">
         <h2>Asignación de consumibles</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevo}>

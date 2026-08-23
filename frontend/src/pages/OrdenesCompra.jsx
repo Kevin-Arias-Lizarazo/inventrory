@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_COMPRAS } from '../secciones';
 import { useCallback, useEffect, useState } from 'react';
 import { get, post, put, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
@@ -108,6 +110,7 @@ export default function OrdenesCompra() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_COMPRAS} />
       <div className="pagina-cabecera">
         <h2>Órdenes de compra</h2>
         <button type="button" className="btn btn-primario" onClick={() => { setEditando(null); setForm(inicial()); setErrores(null); setAbierto(true); }}>+ Nueva orden</button>

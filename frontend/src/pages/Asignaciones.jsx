@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy } from '../api';
 import { useLista, useListaPaginada } from '../hooks';
@@ -134,6 +136,7 @@ export default function Asignaciones() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_EMPLEADOS} />
       <div className="pagina-cabecera">
         <h2>Asignación de herramientas</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevo}>

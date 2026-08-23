@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_INVENTARIO } from '../secciones';
 import { useCallback, useEffect, useState } from 'react';
 import { get, post, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
@@ -141,6 +143,7 @@ export default function Ajustes() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_INVENTARIO} />
       <div className="pagina-cabecera">
         <h2>Ajustes de inventario</h2>
         <button

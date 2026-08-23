@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { get, post, put, del, hoy } from '../api';
-import { useListaPaginada } from '../hooks';
+import { useLista } from '../hooks';
 import { useEventos } from '../eventos-contexto';
 import Modal from '../components/Modal';
-import { Tabla, Microsofto, Badge, MiniImagen, Paginacion } from '../components/ui';
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_INVENTARIO } from '../secciones';
+import { Tabla, Microsofto, Badge, MiniImagen } from '../components/ui';
 import SubidaImagen from '../components/SubidaImagen';
 import QrCodigo from '../components/QrCodigo';
 
@@ -18,11 +21,21 @@ const inicialMov = () => ({
 
 export default function Herramientas() {
   const { suscribir } = useEventos();
-  const { lista, cargando, error, pagina, tamano, total, totalPaginas, setPagina, setTamano, recargar } =
-    useListaPaginada(
-      ['herramientas', 'asignaciones-herramientas', 'movimientos-herramientas'],
-      '/api/herramientas/paginado'
-    );
+  const { lista, cargando, error, recargar } = useLista(
+    ['herramientas', 'asignaciones-herramientas', 'movimientos-herramientas'],
+    '/api/herramientas'
+  );
+  const [params] = useSearchParams();
+  const estado = params.get('estado') || 'todas';
+
+  const filtradas = lista.filter((h) => {
+    if (estado === 'disponibles') return (h.cantidadDisponible ?? 0) > 0;
+    if (estado === 'asignadas') return (h.cantidadAsignada ?? 0) > 0;
+    if (estado === 'danadas') return (h.cantidadDanada ?? 0) > 0;
+    if (estado === 'perdidas') return (h.cantidadPerdida ?? 0) > 0;
+    return true;
+  });
+
   const [abierto, setAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
@@ -241,6 +254,9 @@ export default function Herramientas() {
       titulo: '',
       render: (h) => (
         <div className="acciones">
+          <Link to={`/inventario/herramientas/${h.id}`} className="btn btn-borde">
+            Detalle
+          </Link>
           <button type="button" className="btn btn-primario" onClick={() => abrirMovimientos(h)}>
             Movimientos
           </button>
@@ -290,23 +306,27 @@ export default function Herramientas() {
         </button>
       </div>
 
+      <SeccionTabs items={TABS_INVENTARIO} />
+
+      <SeccionTabs
+        items={[
+          { to: '/inventario/herramientas', label: 'Todas', end: true },
+          { to: '/inventario/herramientas?estado=disponibles', label: 'Disponibles' },
+          { to: '/inventario/herramientas?estado=asignadas', label: 'Asignadas' },
+          { to: '/inventario/herramientas?estado=danadas', label: 'Dañadas' },
+          { to: '/inventario/herramientas?estado=perdidas', label: 'Perdidas' },
+        ]}
+      />
+
       {cargando && <p className="vacio">Cargando…</p>}
       {!cargando && error && <p className="texto-error">{error}</p>}
       {!cargando && !error && (
         <Tabla
           columnas={columnas}
-          filas={lista}
-          vacio="No hay herramientas registradas. Crea la primera."
+          filas={filtradas}
+          vacio="No hay herramientas en este estado."
         />
       )}
-      <Paginacion
-        pagina={pagina}
-        total={total}
-        totalPaginas={totalPaginas}
-        tamano={tamano}
-        onPagina={setPagina}
-        onTamano={setTamano}
-      />
 
       <Modal
         titulo={editando ? 'Editar herramienta' : 'Nueva herramienta'}

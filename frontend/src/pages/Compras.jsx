@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_COMPRAS } from '../secciones';
 import { useCallback, useEffect, useState } from 'react';
 import { get, post, put, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
@@ -444,6 +446,7 @@ export default function Compras() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_COMPRAS} />
       <div className="pagina-cabecera">
         <h2>Compras</h2>
         <div className="acciones">

@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy, ahora } from '../api';
 import { useLista, useListaPaginada, useDebounce } from '../hooks';
@@ -179,6 +181,7 @@ export default function Minutas() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_EMPLEADOS} />
       <div className="pagina-cabecera">
         <h2>Minuta de empleados</h2>
         <div className="acciones">

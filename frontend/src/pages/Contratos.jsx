@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy } from '../api';
 import { useLista, useListaPaginada, useDebounce } from '../hooks';
@@ -119,6 +121,7 @@ export default function Contratos() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_EMPLEADOS} />
       <div className="pagina-cabecera">
         <h2>Contrataciones</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevo}>

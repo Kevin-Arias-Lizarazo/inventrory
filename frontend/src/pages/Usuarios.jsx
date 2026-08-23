@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import { get, patch, post } from '../api';
 import { Badge, Microsofto, Tabla } from '../components/ui';
 
@@ -105,6 +105,7 @@ export default function Usuarios() {
           <div className="campo">
             <label htmlFor="u-nivel">Nivel</label>
             <select id="u-nivel" value={nivel} onChange={(e) => setNivel(e.target.value)}>
+              <option value="SUPERVISOR">Supervisor</option>
               <option value="USUARIO">Usuario</option>
               <option value="LECTOR">Lector</option>
             </select>
@@ -125,6 +126,7 @@ export default function Usuarios() {
             titulo: 'Nivel',
             render: (u) => (
               <select value={u.nivel} onChange={(e) => cambiarNivel(u, e.target.value)}>
+                <option value="SUPERVISOR">Supervisor</option>
                 <option value="USUARIO">Usuario</option>
                 <option value="LECTOR">Lector</option>
               </select>

@@ -1,3 +1,5 @@
+import SeccionTabs from '../components/SeccionTabs';
+import { TABS_COMPRAS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del } from '../api';
 import { useListaPaginada } from '../hooks';
@@ -82,6 +84,7 @@ export default function Proveedores() {
 
   return (
     <section>
+      <SeccionTabs items={TABS_COMPRAS} />
       <div className="pagina-cabecera">
         <h2>Proveedores</h2>
         <button type="button" className="btn btn-primario" onClick={abrirNuevo}>

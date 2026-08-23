@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { get } from '../api';
 
 const SECCION_POR_RECURSO = {
-  proyecto: 'proyectos',
-  proveedor: 'proveedores',
-  material: 'materiales',
-  consumible: 'consumibles',
-  epp: 'inv-epp',
-  herramienta: 'inv-herramientas',
-  contrato: 'contratos',
-  minuta: 'minutas',
+  proyecto: '/proyectos',
+  proveedor: '/compras/proveedores',
+  material: '/inventario/materiales',
+  consumible: '/inventario/consumibles',
+  epp: '/inventario/epp',
+  herramienta: '/inventario/herramientas',
+  contrato: '/empleados/contratos',
+  minuta: '/empleados/minutas',
 };
 
 const NOMBRE_RECURSO = {
@@ -23,8 +24,10 @@ const NOMBRE_RECURSO = {
   minuta: 'Minuta',
 };
 
-export default function Busqueda({ onNavegar }) {
-  const [q, setQ] = useState('');
+export default function Busqueda() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [q, setQ] = useState(params.get('q') || '');
   const [resultados, setResultados] = useState([]);
   const [error, setError] = useState(null);
   const [buscado, setBuscado] = useState(false);
@@ -43,9 +46,9 @@ export default function Busqueda({ onNavegar }) {
   }
 
   function abrir(recurso) {
-    const clave = SECCION_POR_RECURSO[recurso];
-    if (clave && onNavegar) {
-      onNavegar(clave);
+    const ruta = SECCION_POR_RECURSO[recurso];
+    if (ruta) {
+      navigate(ruta);
     }
   }
 
