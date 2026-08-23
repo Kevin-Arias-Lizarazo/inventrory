@@ -20,15 +20,19 @@ public class InicializadorNivelesAcceso implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) {
-		if (!niveles.todos().isEmpty()) {
-			return;
-		}
+		List<String> codigosExistentes = niveles.todos().stream()
+				.map(NivelAcceso::getCodigo)
+				.map(String::toUpperCase)
+				.toList();
 		for (NivelAcceso n : List.of(
 				new NivelAcceso("ROOT", "Raíz"),
 				new NivelAcceso("ADMIN", "Administrador"),
+				new NivelAcceso("SUPERVISOR", "Supervisor"),
 				new NivelAcceso("USUARIO", "Usuario"),
 				new NivelAcceso("LECTOR", "Lector"))) {
-			niveles.guardar(n);
+			if (!codigosExistentes.contains(n.getCodigo())) {
+				niveles.guardar(n);
+			}
 		}
 	}
 }

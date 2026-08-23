@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +31,8 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 
 	private static final DateTimeFormatter FORMATO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 			.withZone(ZoneId.systemDefault());
+
+	public static final Set<String> PERMISOS_ESPECIALES = Set.of();
 
 	private final UsuarioPersistencia usuarios;
 	private final NivelAccesoPersistencia niveles;
@@ -64,7 +67,8 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 					"El usuario es obligatorio y la contraseña debe tener al menos 8 caracteres");
 		}
 		if (!nivelValido(nivel)) {
-			throw new DatosInvalidosExcepcion("Solo se pueden crear usuarios con nivel USUARIO o LECTOR");
+			throw new DatosInvalidosExcepcion(
+					"Solo se pueden crear usuarios con nivel SUPERVISOR, USUARIO o LECTOR");
 		}
 		if (usuarios.porUsername(usuario).isPresent()) {
 			throw new ConflictoExcepcion("Ya existe un usuario con ese nombre");
@@ -86,7 +90,7 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 	@Transactional
 	public UsuarioRespuesta cambiarNivel(Long id, String nivel) {
 		if (!nivelValido(nivel)) {
-			throw new DatosInvalidosExcepcion("Solo se puede asignar el nivel USUARIO o LECTOR");
+			throw new DatosInvalidosExcepcion("Solo se puede asignar el nivel SUPERVISOR, USUARIO o LECTOR");
 		}
 		Usuario u = obtenerGestionable(id);
 		u.setNivelAcceso(nivel);
@@ -138,7 +142,9 @@ public class UsuarioAplicacion implements UsuarioCasoDeUso {
 	}
 
 	private boolean nivelValido(String nivel) {
-		return "USUARIO".equalsIgnoreCase(nivel) || "LECTOR".equalsIgnoreCase(nivel);
+		return "SUPERVISOR".equalsIgnoreCase(nivel)
+				|| "USUARIO".equalsIgnoreCase(nivel)
+				|| "LECTOR".equalsIgnoreCase(nivel);
 	}
 
 	private void invalidarSesiones(Usuario u) {

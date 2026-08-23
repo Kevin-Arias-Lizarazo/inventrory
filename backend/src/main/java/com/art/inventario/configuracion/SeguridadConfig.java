@@ -70,9 +70,17 @@ public class SeguridadConfig {
 	}
 
 	@Bean
+	FilterRegistrationBean<SpaForwardFiltro> spaNoGlobal(SpaForwardFiltro filtro) {
+		FilterRegistrationBean<SpaForwardFiltro> rb = new FilterRegistrationBean<>(filtro);
+		rb.setEnabled(false);
+		return rb;
+	}
+
+	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http, TokenAuthFiltro tokenFiltro,
-			FiltroLectorSoloLectura soloLectura, FiltroRegistroPeticiones registro) throws Exception {
+			FiltroLectorSoloLectura soloLectura, FiltroRegistroPeticiones registro, SpaForwardFiltro spa) throws Exception {
 		http
+			.addFilterBefore(spa, org.springframework.security.web.csrf.CsrfFilter.class)
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 				.ignoringRequestMatchers(
