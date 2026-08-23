@@ -149,8 +149,9 @@ Reglas:
 - Órdenes de compra simples: `CRUD /api/ordenes-compra` con líneas (`tipo`, `productoId` o `descripcion` para ropa, `cantidad`, `costoUnitario`), total calculado; **no** mueven stock.
 - Ajustes de inventario: las líneas nuevas pueden enviar `cantidadDisponible` como objetivo; el backend calcula el ingreso/egreso necesario sin alterar unidades asignadas, dañadas o perdidas de herramientas. El formato anterior (`tipoMovimiento` + `cantidad`) sigue siendo válido.
 - Herramientas: `POST /api/herramientas/{id}/reparar` devuelve una unidad dañada a disponible; `POST /api/herramientas/{id}/desechar-danada` la pasa de dañada a perdida y no vuelve a estar disponible; `POST /api/herramientas/{id}/perdida` marca una unidad disponible como perdida.
-- Otros: `GET /api/dashboard?desde&hasta`, `GET /api/empleados/{id}/equipamiento`, `GET /api/backup` + `POST /api/backup/restaurar` (multipart, copia el SQLite en `backups/`), `POST /api/importar/{recurso}` (CSV: proveedores, materiales, consumibles, epp), reportes PDF `GET /api/reportes/{inventario,facturas,valor-inventario,alertas-reposicion}.pdf` (OpenPDF).
-- El frontend del backup/restauración e importación vive en `frontend/src/pages/Mantenimiento.jsx`.
+- Otros: `GET /api/dashboard?desde&hasta`, `GET /api/empleados/{id}/equipamiento`, `GET /api/backup` + `POST /api/backup/restaurar` (multipart, copia el SQLite en `backups/`), `POST /api/importar/{recurso}` (CSV: proveedores, materiales, consumibles, epp), reportes PDF `GET /api/reportes/{inventario,facturas,valor-inventario,alertas-reposicion}.pdf` (OpenPDF), y `GET /api/buscar?q=...` (búsqueda global: proyectos, proveedores, materiales, consumibles, epp, herramientas, contratos y minutas → `[{recurso,id,etiqueta}]`).
+- La mayoría de recursos tienen CRUD completo por id (`GET/POST /api/{recurso}`, `PUT/DELETE /api/{recurso}/{id}`) restringido por nivel (LECTOR solo lee; `USUARIO`/`ADMIN` editan). Los usuarios **no** tienen edición genérica ni borrado: se gestionan solo desde `/api/usuarios` (admin).
+- El frontend del backup/restauración e importación vive en `frontend/src/pages/Mantenimiento.jsx`; la búsqueda global en `frontend/src/pages/Busqueda.jsx`.
 
 ## Autenticación, roles y trazabilidad
 

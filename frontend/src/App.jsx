@@ -26,6 +26,7 @@ import Mantenimiento from './pages/Mantenimiento';
 import Usuarios from './pages/Usuarios';
 import Auditoria from './pages/Auditoria';
 import MiCuenta from './pages/MiCuenta';
+import Busqueda from './pages/Busqueda';
 import Login from './pages/Login';
 import Instalacion from './pages/Instalacion';
 
@@ -33,6 +34,7 @@ const SECCIONES_BASE = [
   {
     grupo: 'Inicio',
     items: [
+      { clave: 'busqueda', etiqueta: 'Búsqueda', componente: Busqueda },
       { clave: 'dashboard', etiqueta: 'Dashboard', componente: Dashboard },
       { clave: 'alertas', etiqueta: 'Alertas', componente: Alertas },
     ],
@@ -132,6 +134,7 @@ export default function App() {
 
   const activaItem = secciones.flatMap((s) => s.items).find((i) => i.clave === activa);
   const Pagina = activaItem ? activaItem.componente : null;
+  const conNavegar = activaItem && activaItem.clave === 'busqueda' ? { onNavegar: setActiva } : {};
 
   return (
     <div className="app">
@@ -171,7 +174,7 @@ export default function App() {
         </div>
       </aside>
       <main className="contenido">
-        {Pagina ? <Pagina /> : null}
+        {Pagina ? <Pagina {...conNavegar} /> : null}
       </main>
     </div>
   );

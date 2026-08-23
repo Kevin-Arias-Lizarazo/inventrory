@@ -96,6 +96,13 @@ async function main() {
   ok("POST proyecto", proy.status === 201 && proy.data.id > 0);
   ok("código auto de proyecto", proy.data.codigo === "P" + proy.data.id, `codigo=${proy.data.codigo}`);
 
+  const busqueda = await request(`/api/buscar?q=${encodeURIComponent("Edificio Norte")}`);
+  ok("búsqueda global de proyecto",
+    busqueda.status === 200 && busqueda.data.some((x) => x.recurso === "proyecto" && x.id === proy.data.id),
+    `status=${busqueda.status} ${JSON.stringify(busqueda.data)}`);
+  const busquedaVacia = await request("/api/buscar?q=");
+  ok("búsqueda global vacía (200)", busquedaVacia.status === 200 && Array.isArray(busquedaVacia.data), `status=${busquedaVacia.status}`);
+
   const minuta = await request("/api/minutas", {
     method: "POST",
     body: { proyecto: { id: proy.data.id }, hora: "07:30", fecha: "2026-08-12", empleado: { id: empId } },
