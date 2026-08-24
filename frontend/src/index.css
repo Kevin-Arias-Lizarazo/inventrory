@@ -115,6 +115,69 @@ body {
   font-size: 12px;
 }
 
+/* --- sidebar sectorizado --- */
+.grupo-sector {
+  margin-bottom: 2px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  padding: 9px 12px 9px 16px;
+  border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+  background: #1e293b;
+  border-left-color: #334155;
+}
+
+.nav-item-activo,
+.nav-item-activo:hover {
+  background: rgba(29, 78, 216, 0.14);
+  border-left-color: var(--azul);
+}
+
+.nav-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nav-descripcion {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.nav-item-activo .nav-descripcion {
+  color: #94a3b8;
+}
+
+.submenu {
+  padding: 4px 0 6px;
+}
+
+.submenu-item {
+  display: block;
+  padding: 6px 12px 6px 28px;
+  margin-left: 10px;
+  border-left: 1px solid #334155;
+  color: #94a3b8;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.submenu-item:hover {
+  color: #e2e8f0;
+}
+
+.submenu-item-activo {
+  color: #fff;
+  font-weight: 600;
+  border-left-color: var(--azul);
+}
+
 .contenido {
   flex: 1;
   padding: 24px 28px;
