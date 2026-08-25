@@ -9,7 +9,7 @@ public interface FacturaCasoDeUso {
 
 	List<Factura> listar();
 
-	PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha, String estado,
+	PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha, String estadoPago,
 			Integer pagina, Integer tamano);
 
 	Factura obtener(Long id);

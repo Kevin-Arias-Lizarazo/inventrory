@@ -52,7 +52,7 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 
 	@Override
 	public PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha,
-			String estado, Integer pagina, Integer tamano) {
+			String estadoPago, Integer pagina, Integer tamano) {
 		List<Factura> lista = listar();
 		if (q != null && !q.isBlank()) {
 			String criterio = q.toLowerCase();
@@ -71,9 +71,9 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 					.filter(f -> fecha.equals(f.getFecha()))
 					.toList();
 		}
-		if (estado != null && !estado.isBlank()) {
+		if (estadoPago != null && !estadoPago.isBlank()) {
 			lista = lista.stream()
-					.filter(f -> estado.equals(f.getEstadoPago()))
+					.filter(f -> estadoPago.equals(f.getEstadoPago()))
 					.toList();
 		}
 		return PaginaResultado.deLista(lista, pagina, tamano);

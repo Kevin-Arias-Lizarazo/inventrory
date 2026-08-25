@@ -1090,6 +1090,24 @@ async function main() {
   const backup = await request("/api/backup", { bin: true });
   ok("GET backup", backup.status === 200 && backup.bytes > 100, `status=${backup.status} bytes=${backup.bytes}`);
 
+  // ===== F4b Listados paginados con filtros (rediseno-ui) =====
+  const pagina = (r) => r.status === 200 && Array.isArray(r.data?.contenido) &&
+    typeof r.data?.total === "number" && typeof r.data?.totalPaginas === "number";
+  const facPag = await request("/api/facturas/paginado");
+  ok("paginado facturas", pagina(facPag), `status=${facPag.status} keys=${Object.keys(facPag.data || {})}`);
+  const facPagEstado = await request("/api/facturas/paginado?estadoPago=PENDIENTE");
+  ok("paginado facturas filtro estadoPago", pagina(facPagEstado), `status=${facPagEstado.status}`);
+  const compPag = await request("/api/compras/paginado?facturada=true");
+  ok("paginado compras filtro facturada", pagina(compPag), `status=${compPag.status}`);
+  const ordPag = await request("/api/ordenes-compra/paginado");
+  ok("paginado ordenes-compra", pagina(ordPag), `status=${ordPag.status}`);
+  const tope = await request("/api/facturas/paginado?tamano=9999");
+  ok("paginado tope tamano a 100", tope.status === 200 && tope.data?.tamano <= 100,
+    `status=${tope.status} tamano=${tope.data?.tamano}`);
+  const bkCompleto = await request("/api/backup/exportar-completo", { method: "POST", bin: true });
+  ok("POST backup exportar-completo", bkCompleto.status === 200 && bkCompleto.bytes > 100,
+    `status=${bkCompleto.status} bytes=${bkCompleto.bytes}`);
+
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);
 }

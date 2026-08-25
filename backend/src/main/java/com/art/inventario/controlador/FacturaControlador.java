@@ -42,10 +42,10 @@ public class FacturaControlador {
 			@RequestParam(required = false) String q,
 			@RequestParam(required = false) Long proveedorId,
 			@RequestParam(required = false) String fecha,
-			@RequestParam(required = false) String estado,
+			@RequestParam(required = false) String estadoPago,
 			@RequestParam(defaultValue = "0") int pagina,
 			@RequestParam(defaultValue = "30") int tamano) {
-		return ResponseEntity.ok(servicio.listarPagina(q, proveedorId, fecha, estado, pagina, tamano));
+		return ResponseEntity.ok(servicio.listarPagina(q, proveedorId, fecha, estadoPago, pagina, tamano));
 	}
 
 	@GetMapping("/{id}")
