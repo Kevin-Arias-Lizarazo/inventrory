@@ -244,6 +244,13 @@ public class AuthAplicacion implements AuthCasoDeUso {
 			if (objetivo.getId().equals(ua.getId())) {
 				throw new DatosInvalidosExcepcion("Use Mi cuenta para cambiar su propia contraseña");
 			}
+			// Política: un ADMIN solo puede restablecer claves de USUARIO o LECTOR.
+			// Se rechaza también ADMIN/SUPERVISOR para evitar escalada de privilegios.
+			String nivelObjetivo = objetivo.getNivelAcceso();
+			if (!"USUARIO".equalsIgnoreCase(nivelObjetivo) && !"LECTOR".equalsIgnoreCase(nivelObjetivo)) {
+				throw new DatosInvalidosExcepcion(
+						"Solo es posible cambiar la contraseña de usuarios USUARIO o LECTOR");
+			}
 		}
 
 		objetivo.setPasswordHash(passwordEncoder.encode(nuevaContrasena));
