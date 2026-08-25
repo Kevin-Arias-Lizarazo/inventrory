@@ -38,16 +38,23 @@ if (-not $ready) {
     throw 'La API o el frontend no respondieron.'
 }
 
-Write-Host '5/5 Ejecutando pruebas API dentro de Node 22...' -ForegroundColor Cyan
-$workspace = (Resolve-Path '.').Path
-docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-auth.mjs http://inventario:8080
-if ($LASTEXITCODE -ne 0) { throw 'Falló test-auth.mjs.' }
-docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-api.mjs http://inventario:8080
-if ($LASTEXITCODE -ne 0) { throw 'Falló test-api.mjs.' }
-docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-react-api.mjs http://inventario:8080
-if ($LASTEXITCODE -ne 0) { throw 'Falló test-react-api.mjs.' }
-docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-sse.mjs http://inventario:8080
-if ($LASTEXITCODE -ne 0) { throw 'Falló test-sse.mjs.' }
+Write-Host '5/5 Ejecutando pruebas...' -ForegroundColor Cyan
+$estado = Invoke-WebRequest -UseBasicParsing "$base/api/instalacion/estado" -TimeoutSec 5 | ConvertFrom-Json
+if ($estado.pendiente) {
+    Write-Host 'Instalación pendiente: entorno fresco, suite completa.' -ForegroundColor Yellow
+    $workspace = (Resolve-Path '.').Path
+    docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-auth.mjs http://inventario:8080
+    if ($LASTEXITCODE -ne 0) { throw 'Falló test-auth.mjs.' }
+    docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-api.mjs http://inventario:8080
+    if ($LASTEXITCODE -ne 0) { throw 'Falló test-api.mjs.' }
+    docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-react-api.mjs http://inventario:8080
+    if ($LASTEXITCODE -ne 0) { throw 'Falló test-react-api.mjs.' }
+    docker run --rm --network inventario_default -v "${workspace}:/workspace:ro" node:22-alpine node /workspace/scripts/test-sse.mjs http://inventario:8080
+    if ($LASTEXITCODE -ne 0) { throw 'Falló test-sse.mjs.' }
+} else {
+    Write-Host 'Instalación ya existente: los tests destructivos se omiten para no tocar datos.' -ForegroundColor Yellow
+    Write-Host 'Regresión completa disponible con scripts/run-tests.ps1 (BD temporal).' -ForegroundColor Yellow
+}
 
 Invoke-DockerCompose ps
 Write-Host "Verificación completa: $base" -ForegroundColor Green
