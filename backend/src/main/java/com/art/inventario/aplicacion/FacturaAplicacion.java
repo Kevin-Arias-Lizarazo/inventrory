@@ -95,6 +95,14 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 		}
 		validarFactura(datos);
 		completarSubtotales(datos);
+		// El nuevo total no puede quedar por debajo de lo ya pagado: de lo contrario
+		// totalPagado > total y el estado de pago quedaría inconsistente (PAGADA
+		// retroactiva) con pagos que ya no cubre la factura.
+		double pagado = pagos.sumaPorFactura(id);
+		if (pagado > datos.getTotal() + 0.001) {
+			throw new DatosInvalidosExcepcion(
+					"El total no puede ser menor a lo ya pagado (" + pagado + ") de la factura");
+		}
 		Set<LineaFactura> afectadas = new HashSet<>(actual.getLineas());
 		afectadas.addAll(datos.getLineas());
 		datos.setId(id);
