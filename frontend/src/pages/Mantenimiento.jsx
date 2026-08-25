@@ -27,8 +27,8 @@ export default function Mantenimiento() {
     try {
       const fd = new FormData();
       fd.append('archivo', file);
-      await post('/api/backup/restaurar', fd);
-      setMsg('Backup restaurado. Reinicia el contenedor del backend.');
+      const r = await post('/api/backup/restaurar', fd);
+      setMsg(r?.mensaje || 'Backup restaurado. Reinicia el contenedor del backend.');
     } catch (err) { setMsg(err.message); }
   }
 

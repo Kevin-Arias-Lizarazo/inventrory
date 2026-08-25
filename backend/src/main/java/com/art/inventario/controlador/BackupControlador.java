@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Map;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 import com.art.inventario.puerto.entrada.BackupCasoDeUso;
 
@@ -24,10 +25,12 @@ public class BackupControlador {
 	}
 
 	@PostMapping("/restaurar")
-	public ResponseEntity<Void> restaurar(@RequestParam("archivo") MultipartFile archivo) {
+	public ResponseEntity<Map<String, String>> restaurar(@RequestParam("archivo") MultipartFile archivo) {
 		try {
 			servicio.restaurar(archivo.getBytes());
-			return ResponseEntity.noContent().build();
+			return ResponseEntity.ok(Map.of(
+					"mensaje",
+					"Backup validado. La restauración se aplicará al reiniciar el servicio"));
 		} catch (Exception e) {
 			throw new DatosInvalidosExcepcion("No se pudo leer el archivo: " + e.getMessage());
 		}
