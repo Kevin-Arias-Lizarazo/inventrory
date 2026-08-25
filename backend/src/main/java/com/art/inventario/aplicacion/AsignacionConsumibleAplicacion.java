@@ -76,12 +76,30 @@ public class AsignacionConsumibleAplicacion implements AsignacionConsumibleCasoD
 		validarProyecto(proyectoId);
 		Consumible consumible = resolverConsumible(consumibleId);
 		validarCantidad(datos.getCantidad());
-		int ajuste = datos.getCantidad() - actual.getCantidad();
-		if (stock(consumible) - ajuste < 0) {
-			throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
+		Long consumibleAnteriorId = actual.getConsumible() == null ? null : actual.getConsumible().getId();
+		if (consumibleAnteriorId != null && !consumibleAnteriorId.equals(consumibleId)) {
+			// Cambió el consumible asignado: primero se devuelve la cantidad asignada
+			// al stock del consumible anterior y luego se descuenta la nueva cantidad
+			// del consumible nuevo. Sin esto, el stock del anterior quedaba corrupto
+			// (nunca se restauraba) y el ajuste se aplicaba contra el consumible nuevo.
+			Consumible anterior = consumiblePersistencia.obtener(consumibleAnteriorId);
+			anterior.setStock(stock(anterior) + actual.getCantidad());
+			consumiblePersistencia.guardar(anterior);
+			if (stock(consumible) - datos.getCantidad() < 0) {
+				throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
+			}
+			consumible.setStock(stock(consumible) - datos.getCantidad());
+			consumiblePersistencia.guardar(consumible);
+		} else {
+			// Mismo consumible: se mantiene el ajuste diferencial entre la cantidad
+			// nueva y la anterior, sin permitir stock negativo.
+			int ajuste = datos.getCantidad() - actual.getCantidad();
+			if (stock(consumible) - ajuste < 0) {
+				throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
+			}
+			consumible.setStock(stock(consumible) - ajuste);
+			consumiblePersistencia.guardar(consumible);
 		}
-		consumible.setStock(stock(consumible) - ajuste);
-		consumiblePersistencia.guardar(consumible);
 		actual.setCantidad(datos.getCantidad());
 		actual.setFecha(datos.getFecha());
 		actual.setObservacion(datos.getObservacion());
