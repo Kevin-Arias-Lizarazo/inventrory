@@ -1,5 +1,5 @@
 import SeccionTabs from '../components/SeccionTabs';
-import { TABS_INVENTARIO, TABS_CODIGOS } from '../secciones';
+import { TABS_INVENTARIO } from '../secciones';
 import { useMemo, useState } from 'react';
 import { post } from '../api';
 import { useLista } from '../hooks';
@@ -159,7 +159,6 @@ export default function Escaneo() {
   return (
     <section>
       <SeccionTabs items={TABS_INVENTARIO} />
-      <SeccionTabs items={TABS_CODIGOS} />
       <div className="pagina-cabecera">
         <h2>Escaneo de códigos</h2>
         <div className="acciones">

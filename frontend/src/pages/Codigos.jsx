@@ -1,5 +1,5 @@
 import SeccionTabs from '../components/SeccionTabs';
-import { TABS_INVENTARIO, TABS_CODIGOS } from '../secciones';
+import { TABS_INVENTARIO } from '../secciones';
 import { useMemo, useState } from 'react';
 import { useLista } from '../hooks';
 import QrCodigo from '../components/QrCodigo';
@@ -76,7 +76,6 @@ export default function Codigos() {
   return (
     <section className="codigos">
       <SeccionTabs items={TABS_INVENTARIO} />
-      <SeccionTabs items={TABS_CODIGOS} />
       <div className="pagina-cabecera">
         <h2>Listado de códigos</h2>
         <button type="button" className="btn btn-primario" onClick={() => window.print()}>

@@ -11,8 +11,6 @@ export const TABS_INVENTARIO = [
   { to: '/inventario/epp', label: 'EPP' },
   { to: '/inventario/materiales', label: 'Materiales' },
   { to: '/inventario/consumibles', label: 'Consumibles' },
-  { to: '/inventario/ajustes', label: 'Ajustes' },
-  { to: '/inventario/codigos', label: 'Códigos' },
 ];
 
 export const TABS_PROYECTOS = [
@@ -25,11 +23,6 @@ export const TABS_COMPRAS = [
   { to: '/compras/ordenes', label: 'Órdenes' },
   { to: '/compras/cuentas-pagar', label: 'Cuentas por pagar' },
   { to: '/compras/proveedores', label: 'Proveedores' },
-];
-
-export const TABS_CODIGOS = [
-  { to: '/inventario/codigos', label: 'Listado', end: true },
-  { to: '/inventario/codigos/escaneo', label: 'Escaneo' },
 ];
 
 export const NAV = [
