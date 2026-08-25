@@ -21,6 +21,9 @@ app.out.log
 app.err.log
 backend/src/main/resources/static/
 
+# Ejecutable generado localmente por scripts/Instalar-Accesos.ps1
+/Detener-Inventario.exe
+
 ### STS ###
 .apt_generated
 .classpath
