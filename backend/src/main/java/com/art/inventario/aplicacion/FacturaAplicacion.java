@@ -8,6 +8,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Factura;
 import com.art.inventario.dominio.LineaCompra;
@@ -47,6 +48,35 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 	@Override
 	public List<Factura> listar() {
 		return persistencia.listar().stream().map(this::enriquecerPagos).toList();
+	}
+
+	@Override
+	public PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha,
+			String estado, Integer pagina, Integer tamano) {
+		List<Factura> lista = listar();
+		if (q != null && !q.isBlank()) {
+			String criterio = q.toLowerCase();
+			lista = lista.stream()
+					.filter(f -> (f.getNumero() != null && f.getNumero().toLowerCase().contains(criterio))
+							|| (f.getObservacion() != null && f.getObservacion().toLowerCase().contains(criterio)))
+					.toList();
+		}
+		if (proveedorId != null) {
+			lista = lista.stream()
+					.filter(f -> f.getProveedor() != null && proveedorId.equals(f.getProveedor().getId()))
+					.toList();
+		}
+		if (fecha != null && !fecha.isBlank()) {
+			lista = lista.stream()
+					.filter(f -> fecha.equals(f.getFecha()))
+					.toList();
+		}
+		if (estado != null && !estado.isBlank()) {
+			lista = lista.stream()
+					.filter(f -> estado.equals(f.getEstadoPago()))
+					.toList();
+		}
+		return PaginaResultado.deLista(lista, pagina, tamano);
 	}
 
 	@Override

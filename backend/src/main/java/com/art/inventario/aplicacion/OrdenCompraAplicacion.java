@@ -1,8 +1,11 @@
 package com.art.inventario.aplicacion;
 
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.LineaOrdenCompra;
 import com.art.inventario.dominio.OrdenCompra;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
@@ -21,6 +24,30 @@ public class OrdenCompraAplicacion implements OrdenCompraCasoDeUso {
 	}
 
 	@Override public List<OrdenCompra> listar() { return persistencia.listar(); }
+
+	@Override
+	public PaginaResultado<OrdenCompra> listarPagina(String q, Long proveedorId, String fecha,
+			Integer pagina, Integer tamano) {
+		List<OrdenCompra> lista = listar();
+		if (q != null && !q.isBlank()) {
+			String criterio = q.toLowerCase();
+			lista = lista.stream()
+					.filter(o -> o.getObservacion() != null && o.getObservacion().toLowerCase().contains(criterio))
+					.toList();
+		}
+		if (proveedorId != null) {
+			lista = lista.stream()
+					.filter(o -> o.getProveedor() != null && proveedorId.equals(o.getProveedor().getId()))
+					.toList();
+		}
+		if (fecha != null && !fecha.isBlank()) {
+			lista = lista.stream()
+					.filter(o -> fecha.equals(o.getFecha()))
+					.toList();
+		}
+		return PaginaResultado.deLista(lista, pagina, tamano);
+	}
+
 	@Override public OrdenCompra obtener(Long id) { return persistencia.obtener(id); }
 
 	@Override @Transactional

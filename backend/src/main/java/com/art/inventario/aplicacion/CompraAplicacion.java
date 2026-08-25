@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.LineaCompra;
 import com.art.inventario.dominio.MovimientoConsumible;
@@ -53,6 +54,34 @@ public class CompraAplicacion implements CompraCasoDeUso {
 	@Override
 	public List<Compra> listar() {
 		return persistencia.listar();
+	}
+
+	@Override
+	public PaginaResultado<Compra> listarPagina(String q, Long proveedorId, String fecha,
+			Boolean facturada, Integer pagina, Integer tamano) {
+		List<Compra> lista = listar();
+		if (q != null && !q.isBlank()) {
+			String criterio = q.toLowerCase();
+			lista = lista.stream()
+					.filter(c -> c.getObservacion() != null && c.getObservacion().toLowerCase().contains(criterio))
+					.toList();
+		}
+		if (proveedorId != null) {
+			lista = lista.stream()
+					.filter(c -> c.getProveedor() != null && proveedorId.equals(c.getProveedor().getId()))
+					.toList();
+		}
+		if (fecha != null && !fecha.isBlank()) {
+			lista = lista.stream()
+					.filter(c -> fecha.equals(c.getFecha()))
+					.toList();
+		}
+		if (facturada != null) {
+			lista = lista.stream()
+					.filter(c -> facturada ? c.facturada() : !c.facturada())
+					.toList();
+		}
+		return PaginaResultado.deLista(lista, pagina, tamano);
 	}
 
 	@Override
