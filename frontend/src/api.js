@@ -102,13 +102,16 @@ export async function subirArchivo(archivo) {
   return res.url;
 }
 
-export async function descargar(path) {
+export async function descargar(path, { metodo = 'GET', nombreArchivo } = {}) {
   let token = getAccessToken();
   const ejecutar = () =>
     fetch(path, {
-      method: 'GET',
+      method: metodo,
       credentials: 'include',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(metodo !== 'GET' ? { 'X-XSRF-TOKEN': csrfToken() || '' } : {}),
+      },
     });
   let res = await ejecutar();
   if (res.status === 401) {
@@ -129,11 +132,29 @@ export async function descargar(path) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = path.split('/').pop().split('?')[0] || 'descarga';
+  a.download = nombreDeDescarga(res, path, nombreArchivo);
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function nombreDeDescarga(res, path, nombreArchivo) {
+  if (nombreArchivo) return nombreArchivo;
+  const disposicion = res.headers.get('Content-Disposition');
+  if (disposicion) {
+    const conEstrella = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(disposicion);
+    if (conEstrella) {
+      try {
+        return decodeURIComponent(conEstrella[1]);
+      } catch {
+        /* fall through to the plain filename */
+      }
+    }
+    const plano = /filename="?([^";]+)"?/i.exec(disposicion);
+    if (plano) return plano[1];
+  }
+  return path.split('/').pop().split('?')[0] || 'descarga';
 }
 
 export function hoy() {

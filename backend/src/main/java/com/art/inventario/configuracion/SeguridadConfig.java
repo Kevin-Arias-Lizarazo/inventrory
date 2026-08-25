@@ -95,6 +95,7 @@ public class SeguridadConfig {
 				.requestMatchers(PUBLICAS).permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/logout").authenticated()
 				.requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.POST, "/api/backup/exportar-completo").hasAnyRole("ADMIN", "ROOT")
 				.requestMatchers("/api/backup/**").hasRole("ADMIN")
 				.requestMatchers("/api/importar/**").hasRole("ADMIN")
 				.requestMatchers("/api/auditoria/**").hasRole("ADMIN")

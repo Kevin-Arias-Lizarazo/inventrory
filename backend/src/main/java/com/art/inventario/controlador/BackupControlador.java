@@ -1,5 +1,8 @@
 package com.art.inventario.controlador;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +15,12 @@ import com.art.inventario.puerto.entrada.BackupCasoDeUso;
 @RestController
 @RequestMapping("/api/backup")
 public class BackupControlador {
+
 	private final BackupCasoDeUso servicio;
-	public BackupControlador(BackupCasoDeUso servicio) { this.servicio = servicio; }
+
+	public BackupControlador(BackupCasoDeUso servicio) {
+		this.servicio = servicio;
+	}
 
 	@GetMapping
 	public ResponseEntity<byte[]> descargar() {
@@ -34,5 +41,16 @@ public class BackupControlador {
 		} catch (Exception e) {
 			throw new DatosInvalidosExcepcion("No se pudo leer el archivo: " + e.getMessage());
 		}
+	}
+
+	@PostMapping("/exportar-completo")
+	public ResponseEntity<byte[]> exportarCompleto() {
+		byte[] data = servicio.exportarCompleto();
+		String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION,
+						"attachment; filename=\"inventario-backup-completo-" + ts + ".zip\"")
+				.contentType(MediaType.APPLICATION_OCTET_STREAM)
+				.body(data);
 	}
 }

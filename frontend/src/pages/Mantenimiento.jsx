@@ -39,6 +39,13 @@ export default function Mantenimiento() {
       <h3>Backup</h3>
       <div className="acciones" style={{ marginBottom: '1.5rem' }}>
         <button type="button" className="btn btn-primario" onClick={() => descargar('/api/backup')}>Descargar backup (.db)</button>
+        <button
+          type="button"
+          className="btn btn-primario"
+          onClick={() => descargar('/api/backup/exportar-completo', { metodo: 'POST' })}
+        >
+          Descargar backup completo (.zip)
+        </button>
         <label className="btn btn-borde">
           Restaurar backup
           <input type="file" accept=".db,application/octet-stream" style={{ display: 'none' }} onChange={restaurar} />
