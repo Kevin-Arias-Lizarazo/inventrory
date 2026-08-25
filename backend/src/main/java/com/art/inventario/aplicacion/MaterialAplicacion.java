@@ -156,7 +156,13 @@ public void eliminar(Long id) {
 	public void eliminarMovimiento(Long id) {
 		MovimientoMaterial actual = persistencia.obtenerMovimiento(id);
 		Material material = actual.getMaterial();
-		material.setStock(stock(material) - signo(actual.getTipo()) * actual.getCantidad());
+		// Revertir un INGRESO (o una compra/ajuste/devolución asociada) descontaría
+		// el stock; se valida igual que en registrarMovimiento para no dejar negativo.
+		int nuevoStock = stock(material) - signo(actual.getTipo()) * actual.getCantidad();
+		if (nuevoStock < 0) {
+			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
+		}
+		material.setStock(nuevoStock);
 		persistencia.guardar(material);
 		persistencia.eliminarMovimiento(actual);
 		notificador.publicar(CambiosNotificador.RECURSO_MATERIALES);

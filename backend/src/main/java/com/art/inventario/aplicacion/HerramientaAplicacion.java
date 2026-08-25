@@ -257,7 +257,14 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 	public void eliminarMovimiento(Long id) {
 		MovimientoHerramienta actual = movimientoPersistencia.obtener(id);
 		Herramienta herramienta = persistencia.obtener(actual.getHerramienta().getId());
-		herramienta.setCantidadTotal(total(herramienta) - signo(actual.getTipo()) * actual.getCantidad());
+		// Revertir un INGRESO descuenta unidades del total; se valida igual que en
+		// registrarMovimiento para no dejar el total por debajo de las ocupadas.
+		int nuevoTotal = total(herramienta) - signo(actual.getTipo()) * actual.getCantidad();
+		if (nuevoTotal < ocupadas(herramienta)) {
+			throw new DatosInvalidosExcepcion(
+					"No se puede egresar: quedarían menos unidades que las en uso/dañadas/perdidas");
+		}
+		herramienta.setCantidadTotal(nuevoTotal);
 		persistencia.guardar(herramienta);
 		movimientoPersistencia.eliminar(id);
 		notificarMovimiento();

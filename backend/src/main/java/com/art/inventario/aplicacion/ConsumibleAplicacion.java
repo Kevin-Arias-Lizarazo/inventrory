@@ -158,7 +158,11 @@ public void eliminar(Long id) {
 	public void eliminarMovimiento(Long id) {
 		MovimientoConsumible actual = persistencia.obtenerMovimiento(id);
 		Consumible consumible = actual.getConsumible();
-		consumible.setStock(stock(consumible) - signo(actual.getTipo()) * actual.getCantidad());
+		int nuevoStock = stock(consumible) - signo(actual.getTipo()) * actual.getCantidad();
+		if (nuevoStock < 0) {
+			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
+		}
+		consumible.setStock(nuevoStock);
 		persistencia.guardar(consumible);
 		persistencia.eliminarMovimiento(actual);
 		notificador.publicar(CambiosNotificador.RECURSO_CONSUMIBLES);

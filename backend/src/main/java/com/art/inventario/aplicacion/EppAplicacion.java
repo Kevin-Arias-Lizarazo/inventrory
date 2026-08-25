@@ -162,7 +162,11 @@ public class EppAplicacion implements EppCasoDeUso {
 	public void eliminarMovimiento(Long id) {
 		MovimientoEpp actual = persistencia.obtenerMovimiento(id);
 		Epp epp = actual.getEpp();
-		epp.setStock(stock(epp) - signo(actual.getTipo()) * actual.getCantidad());
+		int nuevoStock = stock(epp) - signo(actual.getTipo()) * actual.getCantidad();
+		if (nuevoStock < 0) {
+			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
+		}
+		epp.setStock(nuevoStock);
 		persistencia.guardar(epp);
 		persistencia.eliminarMovimiento(actual);
 		notificador.publicar(CambiosNotificador.RECURSO_EPP);
