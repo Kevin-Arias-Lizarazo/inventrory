@@ -44,13 +44,6 @@ public class EntregaEppControlador {
 		return ResponseEntity.ok(servicio.listarFiltradas(fecha, empleadoId, eppId, orden, pagina, tamano));
 	}
 
-		@GetMapping("/paginado")
-	public ResponseEntity<PaginaResultado<EntregaEpp>> listarPagina(
-		@RequestParam(defaultValue = "0") int pagina,
-		@RequestParam(defaultValue = "30") int tamano) {
-		return ResponseEntity.ok(servicio.listarPagina(pagina, tamano));
-	}
-
 @GetMapping("/{id}")
 	public ResponseEntity<EntregaEpp> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.obtener(id));

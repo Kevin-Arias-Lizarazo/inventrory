@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +16,7 @@ import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.puerto.entrada.ConsumibleCasoDeUso;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/movimientos-consumibles")
 public class MovimientoConsumibleControlador {
 
 	private final ConsumibleCasoDeUso servicio;
@@ -26,27 +25,18 @@ public class MovimientoConsumibleControlador {
 		this.servicio = servicio;
 	}
 
-	@GetMapping("/consumibles/{id}/movimientos")
-	public ResponseEntity<List<MovimientoConsumible>> porConsumible(@PathVariable Long id) {
-		return ResponseEntity.ok(servicio.listarMovimientos(id));
-	}
-
-	@PostMapping("/consumibles/{id}/movimientos")
-	public ResponseEntity<MovimientoConsumible> crear(@PathVariable Long id, @RequestBody MovimientoConsumible movimiento) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.registrarMovimiento(id, movimiento));
-	}
-
-	@GetMapping("/movimientos-consumibles")
+	@GetMapping
 	public ResponseEntity<List<MovimientoConsumible>> todos() {
 		return ResponseEntity.ok(servicio.listarTodosMovimientos());
 	}
 
-	@PutMapping("/movimientos-consumibles/{id}")
-	public ResponseEntity<MovimientoConsumible> actualizar(@PathVariable Long id, @RequestBody MovimientoConsumible datos) {
+	@PutMapping("/{id}")
+	public ResponseEntity<MovimientoConsumible> actualizar(@PathVariable Long id,
+			@RequestBody MovimientoConsumible datos) {
 		return ResponseEntity.ok(servicio.actualizarMovimiento(id, datos));
 	}
 
-	@DeleteMapping("/movimientos-consumibles/{id}")
+	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		servicio.eliminarMovimiento(id);
 		return ResponseEntity.noContent().build();

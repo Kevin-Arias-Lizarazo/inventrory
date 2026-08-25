@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Epp;
+import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.puerto.entrada.EppCasoDeUso;
 
 @RestController
@@ -33,14 +34,14 @@ public class EppControlador {
 		return ResponseEntity.ok(servicio.listar());
 	}
 
-		@GetMapping("/paginado")
+	@GetMapping("/paginado")
 	public ResponseEntity<PaginaResultado<Epp>> listarPagina(
-		@RequestParam(defaultValue = "0") int pagina,
-		@RequestParam(defaultValue = "30") int tamano) {
+			@RequestParam(defaultValue = "0") int pagina,
+			@RequestParam(defaultValue = "30") int tamano) {
 		return ResponseEntity.ok(servicio.listarPagina(pagina, tamano));
 	}
 
-@GetMapping("/{id}")
+	@GetMapping("/{id}")
 	public ResponseEntity<Epp> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.obtener(id));
 	}
@@ -59,5 +60,16 @@ public class EppControlador {
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		servicio.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/{id}/movimientos")
+	public ResponseEntity<List<MovimientoEpp>> listarMovimientos(@PathVariable Long id) {
+		return ResponseEntity.ok(servicio.listarMovimientos(id));
+	}
+
+	@PostMapping("/{id}/movimientos")
+	public ResponseEntity<MovimientoEpp> crearMovimiento(@PathVariable Long id,
+			@RequestBody MovimientoEpp movimiento) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.registrarMovimiento(id, movimiento));
 	}
 }

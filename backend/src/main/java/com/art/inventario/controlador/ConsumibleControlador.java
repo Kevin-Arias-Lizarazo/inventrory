@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Consumible;
+import com.art.inventario.dominio.MovimientoConsumible;
 import com.art.inventario.puerto.entrada.ConsumibleCasoDeUso;
 
 @RestController
@@ -33,14 +34,14 @@ public class ConsumibleControlador {
 		return ResponseEntity.ok(servicio.listar());
 	}
 
-		@GetMapping("/paginado")
+	@GetMapping("/paginado")
 	public ResponseEntity<PaginaResultado<Consumible>> listarPagina(
-		@RequestParam(defaultValue = "0") int pagina,
-		@RequestParam(defaultValue = "30") int tamano) {
+			@RequestParam(defaultValue = "0") int pagina,
+			@RequestParam(defaultValue = "30") int tamano) {
 		return ResponseEntity.ok(servicio.listarPagina(pagina, tamano));
 	}
 
-@GetMapping("/{id}")
+	@GetMapping("/{id}")
 	public ResponseEntity<Consumible> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.obtener(id));
 	}
@@ -59,5 +60,16 @@ public class ConsumibleControlador {
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		servicio.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/{id}/movimientos")
+	public ResponseEntity<List<MovimientoConsumible>> listarMovimientos(@PathVariable Long id) {
+		return ResponseEntity.ok(servicio.listarMovimientos(id));
+	}
+
+	@PostMapping("/{id}/movimientos")
+	public ResponseEntity<MovimientoConsumible> crearMovimiento(@PathVariable Long id,
+			@RequestBody MovimientoConsumible movimiento) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.registrarMovimiento(id, movimiento));
 	}
 }

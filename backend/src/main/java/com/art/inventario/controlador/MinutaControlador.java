@@ -52,14 +52,6 @@ public class MinutaControlador {
 		return ResponseEntity.ok(servicio.listarFiltradas(fecha, empleadoId, q, orden, pagina, tamano));
 	}
 
-		@GetMapping("/paginado")
-	public ResponseEntity<PaginaResultado<Minuta>> listarPagina(
-		@RequestParam(required = false) String q,
-		@RequestParam(defaultValue = "0") int pagina,
-		@RequestParam(defaultValue = "30") int tamano) {
-		return ResponseEntity.ok(servicio.listarPagina(q, pagina, tamano));
-	}
-
 @GetMapping("/{id}")
 	public ResponseEntity<Minuta> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.obtener(id));

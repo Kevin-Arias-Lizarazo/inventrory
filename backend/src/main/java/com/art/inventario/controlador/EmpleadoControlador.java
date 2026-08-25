@@ -35,16 +35,16 @@ public class EmpleadoControlador {
 		return ResponseEntity.ok(servicio.listar(q, Boolean.TRUE.equals(contratados)));
 	}
 
-		@GetMapping("/paginado")
+	@GetMapping("/paginado")
 	public ResponseEntity<PaginaResultado<Empleado>> listarPagina(
-		@RequestParam(required = false) String q,
-		@RequestParam(required = false) Boolean contratados,
-		@RequestParam(defaultValue = "0") int pagina,
-		@RequestParam(defaultValue = "30") int tamano) {
+			@RequestParam(required = false) String q,
+			@RequestParam(required = false) Boolean contratados,
+			@RequestParam(defaultValue = "0") int pagina,
+			@RequestParam(defaultValue = "30") int tamano) {
 		return ResponseEntity.ok(servicio.listarPagina(q, Boolean.TRUE.equals(contratados), pagina, tamano));
 	}
 
-@GetMapping("/{id}")
+	@GetMapping("/{id}")
 	public ResponseEntity<Empleado> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.obtener(id));
 	}

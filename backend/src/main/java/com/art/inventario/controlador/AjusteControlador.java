@@ -30,11 +30,6 @@ public class AjusteControlador {
 		return ResponseEntity.ok(servicio.listar());
 	}
 
-	@GetMapping("/{id}")
-	public ResponseEntity<Ajuste> obtener(@PathVariable Long id) {
-		return ResponseEntity.ok(servicio.obtener(id));
-	}
-
 	@PostMapping
 	public ResponseEntity<Ajuste> crear(@RequestBody Ajuste ajuste) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.crear(ajuste));
