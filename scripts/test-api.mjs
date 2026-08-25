@@ -1107,6 +1107,11 @@ async function main() {
   const bkCompleto = await request("/api/backup/exportar-completo", { method: "POST", bin: true });
   ok("POST backup exportar-completo", bkCompleto.status === 200 && bkCompleto.bytes > 100,
     `status=${bkCompleto.status} bytes=${bkCompleto.bytes}`);
+  const fdZip = new FormData();
+  fdZip.append("archivo", new Blob([bkCompleto.data], { type: "application/zip" }), "uploads.zip");
+  const restUp = await request("/api/backup/restaurar-uploads", { method: "POST", blob: fdZip });
+  ok("POST backup restaurar-uploads", restUp.status === 200 && typeof restUp.data?.mensaje === "string",
+    `status=${restUp.status}`);
 
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);

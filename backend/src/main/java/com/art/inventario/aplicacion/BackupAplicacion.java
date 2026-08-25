@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -102,6 +104,41 @@ public class BackupAplicacion implements BackupCasoDeUso {
 			Files.move(tmp, staging, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (IOException e) {
 			throw new DatosInvalidosExcepcion("No se pudo preparar la restauración: " + e.getMessage());
+		}
+	}
+
+	@Override
+	public void restaurarUploads(byte[] zip) {
+		if (zip == null || zip.length == 0) {
+			throw new DatosInvalidosExcepcion("Archivo ZIP vacío");
+		}
+		Path dir = uploadsDir.toAbsolutePath().normalize();
+		try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
+			Files.createDirectories(dir);
+			ZipEntry entrada;
+			while ((entrada = zis.getNextEntry()) != null) {
+				if (entrada.isDirectory()) {
+					continue;
+				}
+				String nombre = entrada.getName();
+				if ("inventario.db".equals(nombre)) {
+					continue;
+				}
+				if (nombre.startsWith("uploads/")) {
+					nombre = nombre.substring("uploads/".length());
+				}
+				if (nombre.isEmpty()) {
+					continue;
+				}
+				Path salida = dir.resolve(nombre).normalize();
+				if (!salida.startsWith(dir)) {
+					throw new DatosInvalidosExcepcion("El archivo comprimido contiene rutas no válidas");
+				}
+				Files.createDirectories(salida.getParent());
+				Files.copy(zis, salida, StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException e) {
+			throw new DatosInvalidosExcepcion("No se pudo restaurar uploads: " + e.getMessage());
 		}
 	}
 }

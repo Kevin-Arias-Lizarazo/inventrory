@@ -32,6 +32,20 @@ export default function Mantenimiento() {
     } catch (err) { setMsg(err.message); }
   }
 
+  async function restaurarUploads(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    if (!window.confirm('¿Restaurar las imágenes/archivos subidos con este ZIP?')) return;
+    setMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append('archivo', file);
+      const r = await post('/api/backup/restaurar-uploads', fd);
+      setMsg(r?.mensaje || 'Uploads restaurados.');
+    } catch (err) { setMsg(err.message); }
+  }
+
   return (
     <section>
       <div className="pagina-cabecera"><h2>Mantenimiento</h2></div>
@@ -49,6 +63,10 @@ export default function Mantenimiento() {
         <label className="btn btn-borde">
           Restaurar backup
           <input type="file" accept=".db,application/octet-stream" style={{ display: 'none' }} onChange={restaurar} />
+        </label>
+        <label className="btn btn-borde">
+          Restaurar uploads (.zip)
+          <input type="file" accept=".zip,application/zip" style={{ display: 'none' }} onChange={restaurarUploads} />
         </label>
       </div>
       {msg && <p className="texto-aviso">{msg}</p>}
