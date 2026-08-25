@@ -32,11 +32,12 @@ public class InstalacionControlador {
 	@PostMapping("/completar")
 	public ResponseEntity<RespuestaInstalacion> completar(
 			@RequestParam("rootPassword") String rootPassword,
+			@RequestParam(name = "adminPassword", required = false) String adminPassword,
 			@RequestParam(name = "db", required = false) MultipartFile db,
 			@RequestParam(name = "uploads", required = false) MultipartFile uploads) {
 		byte[] dbBytes = db == null || db.isEmpty() ? null : leer(db);
 		byte[] uploadsBytes = uploads == null || uploads.isEmpty() ? null : leer(uploads);
-		return ResponseEntity.ok(servicio.completar(rootPassword, dbBytes, uploadsBytes));
+		return ResponseEntity.ok(servicio.completar(rootPassword, adminPassword, dbBytes, uploadsBytes));
 	}
 
 	private byte[] leer(MultipartFile archivo) {

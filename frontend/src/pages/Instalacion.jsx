@@ -3,6 +3,7 @@ import { useState } from 'react';
 export default function Instalacion() {
   const [rootPassword, setRootPassword] = useState('');
   const [confirmar, setConfirmar] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [dbArchivo, setDbArchivo] = useState(null);
   const [uploadsArchivo, setUploadsArchivo] = useState(null);
   const [sobrescribir, setSobrescribir] = useState('');
@@ -27,6 +28,7 @@ export default function Instalacion() {
     try {
       const fd = new FormData();
       fd.append('rootPassword', rootPassword);
+      if (adminPassword) fd.append('adminPassword', adminPassword);
       if (dbArchivo) fd.append('db', dbArchivo);
       if (uploadsArchivo) fd.append('uploads', uploadsArchivo);
       const res = await fetch('/api/instalacion/completar', { method: 'POST', body: fd });
@@ -50,6 +52,16 @@ export default function Instalacion() {
           <p className="texto-aviso">
             Usuario raíz: <strong>{resultado.usuario?.username}</strong>
           </p>
+          {resultado.adminPasswordTemporal && (
+            <div className="campo">
+              <label>Contraseña temporal del admin</label>
+              <textarea readOnly value={resultado.adminPasswordTemporal} rows={1}
+                style={{ width: '100%', fontFamily: 'monospace' }} />
+              <p className="texto-aviso" role="alert">
+                Guárdela ahora: se genera automáticamente y solo se muestra una vez.
+              </p>
+            </div>
+          )}
           <div className="campo">
             <label>Secreto de recuperación</label>
             <textarea readOnly value={resultado.secretoRecuperacion || ''} rows={2}
@@ -85,6 +97,11 @@ export default function Instalacion() {
             <label htmlFor="inst-confirmar">Confirmar contraseña</label>
             <input id="inst-confirmar" type="password" value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)} autoComplete="new-password" required />
+          </div>
+          <div className="campo">
+            <label htmlFor="inst-admin">Contraseña del admin (opcional; si se deja vacío se genera una automática)</label>
+            <input id="inst-admin" type="password" value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)} autoComplete="new-password" />
           </div>
 
           <h3 style={{ margin: '1rem 0 .5rem' }}>Importar datos (opcional)</h3>

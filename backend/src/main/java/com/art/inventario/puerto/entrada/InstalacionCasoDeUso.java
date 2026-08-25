@@ -6,5 +6,5 @@ public interface InstalacionCasoDeUso {
 
 	boolean pendiente();
 
-	RespuestaInstalacion completar(String rootPassword, byte[] dbArchivo, byte[] uploadsZip);
+	RespuestaInstalacion completar(String rootPassword, String adminPassword, byte[] dbArchivo, byte[] uploadsZip);
 }

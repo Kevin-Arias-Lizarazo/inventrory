@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -36,6 +37,9 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 	private static final DateTimeFormatter FORMATO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 			.withZone(ZoneId.systemDefault());
 
+	private static final String CARACTERES_CLAVE = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*";
+	private static final SecureRandom ALEATORIO = new SecureRandom();
+
 	private final UsuarioPersistencia usuarios;
 	private final NivelAccesoPersistencia niveles;
 	private final BackupCasoDeUso backup;
@@ -62,7 +66,7 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 	}
 
 	@Override
-	public RespuestaInstalacion completar(String rootPassword, byte[] dbArchivo, byte[] uploadsZip) {
+	public RespuestaInstalacion completar(String rootPassword, String adminPassword, byte[] dbArchivo, byte[] uploadsZip) {
 		if (!pendiente()) {
 			throw new DatosInvalidosExcepcion("La instalación ya fue completada");
 		}
@@ -76,14 +80,18 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 			extraerZip(uploadsZip, uploadsDir);
 		}
 		Usuario root = asegurarRoot(rootPassword);
-		asegurarAdmin(rootPassword);
+		String claveAdminGenerada = asegurarAdmin(adminPassword);
 		String secretoGenerado = secreto.obtener();
 		if (secretoGenerado == null || secretoGenerado.isBlank()) {
 			secretoGenerado = secreto.generar();
 		}
 		auditoria.registrar(evento("root", Accion.INSTALACION, "OK",
 				"Instalación completada. Root: " + root.getUsername()));
-		return new RespuestaInstalacion(aRespuesta(root), secretoGenerado);
+		RespuestaInstalacion respuesta = new RespuestaInstalacion(aRespuesta(root), secretoGenerado);
+		// La clave temporal del admin se devuelve UNA vez (solo si fue generada) para
+		// que el operador la guarde. Nunca se registra en logs.
+		respuesta.setAdminPasswordTemporal(claveAdminGenerada);
+		return respuesta;
 	}
 
 	private Usuario asegurarRoot(String rootPassword) {
@@ -111,20 +119,38 @@ public class InstalacionAplicacion implements InstalacionCasoDeUso {
 		return guardado;
 	}
 
-	private void asegurarAdmin(String rootPassword) {
+	private String asegurarAdmin(String adminPassword) {
 		boolean existeAdmin = usuarios.todos().stream()
 				.anyMatch(u -> "ADMIN".equalsIgnoreCase(u.getNivelAcceso()));
 		if (existeAdmin) {
-			return;
+			return null;
+		}
+		// Si el operador indicó una contraseña se usa; si no, se genera una aleatoria
+		// y segura que se devuelve una única vez en la respuesta (nunca en logs).
+		String clave = adminPassword;
+		if (clave == null || clave.isBlank()) {
+			clave = generarClaveTemporal();
+		}
+		if (clave.length() < 8) {
+			throw new DatosInvalidosExcepcion("La contraseña del admin debe tener al menos 8 caracteres");
 		}
 		Usuario admin = new Usuario();
 		admin.setUsername("admin");
 		admin.setNombre("Administrador");
-		admin.setPasswordHash(passwordEncoder.encode(rootPassword));
+		admin.setPasswordHash(passwordEncoder.encode(clave));
 		admin.setActivo(true);
 		admin.setNivelAcceso("ADMIN");
 		admin.setFechaCreacion(FORMATO.format(Instant.now()));
 		usuarios.guardar(admin);
+		return (adminPassword == null || adminPassword.isBlank()) ? clave : null;
+	}
+
+	private static String generarClaveTemporal() {
+		StringBuilder sb = new StringBuilder(14);
+		for (int i = 0; i < 14; i++) {
+			sb.append(CARACTERES_CLAVE.charAt(ALEATORIO.nextInt(CARACTERES_CLAVE.length())));
+		}
+		return sb.toString();
 	}
 
 	private void extraerZip(byte[] zip, String destino) {

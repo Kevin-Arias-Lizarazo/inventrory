@@ -4,6 +4,7 @@ public class RespuestaInstalacion {
 
 	private UsuarioRespuesta usuario;
 	private String secretoRecuperacion;
+	private String adminPasswordTemporal;
 
 	public RespuestaInstalacion() {
 	}
@@ -27,5 +28,13 @@ public class RespuestaInstalacion {
 
 	public void setSecretoRecuperacion(String secretoRecuperacion) {
 		this.secretoRecuperacion = secretoRecuperacion;
+	}
+
+	public String getAdminPasswordTemporal() {
+		return adminPasswordTemporal;
+	}
+
+	public void setAdminPasswordTemporal(String adminPasswordTemporal) {
+		this.adminPasswordTemporal = adminPasswordTemporal;
 	}
 }
