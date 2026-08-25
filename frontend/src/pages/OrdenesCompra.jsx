@@ -1,10 +1,10 @@
 import SeccionTabs from '../components/SeccionTabs';
 import { TABS_COMPRAS } from '../secciones';
-import { useCallback, useEffect, useState } from 'react';
-import { get, post, put, del, hoy } from '../api';
-import { useEventos } from '../eventos-contexto';
+import { useState } from 'react';
+import { post, put, del, hoy } from '../api';
+import { useLista, useListaPaginada } from '../hooks';
 import Modal from '../components/Modal';
-import { Tabla, Microsofto } from '../components/ui';
+import { Tabla, Microsofto, Paginacion, FilterBar } from '../components/ui';
 import SelectorProducto from '../components/SelectorProducto';
 
 const TIPOS = [
@@ -18,29 +18,16 @@ const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP',
 const fmt = (n) => COP.format(n || 0);
 const lineaVacia = () => ({ tipo: 'MATERIAL', productoId: '', descripcion: '', cantidad: '', costoUnitario: '' });
 const inicial = () => ({ fecha: hoy(), observacion: '', proveedorId: '', lineas: [lineaVacia()] });
+const filtrosIniciales = { proveedorId: '', fecha: '', q: '' };
 
 export default function OrdenesCompra() {
-  const { suscribir } = useEventos();
-  const [lista, setLista] = useState([]);
-  const [proveedores, setProveedores] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const { lista: proveedores } = useLista('proveedores', '/api/proveedores');
+  const { lista, cargando, error, pagina, tamano, total, totalPaginas, filtros, setFiltros, setPagina, setTamano, recargar } =
+    useListaPaginada(['ordenes-compra', 'proveedores'], '/api/ordenes-compra/paginado', 30, filtrosIniciales);
   const [abierto, setAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
   const [errores, setErrores] = useState(null);
-
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    try {
-      const [o, p] = await Promise.all([get('/api/ordenes-compra'), get('/api/proveedores')]);
-      setLista(o); setProveedores(p); setError(null);
-    } catch (e) { setError(e.message); }
-    finally { setCargando(false); }
-  }, []);
-
-  useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => suscribir(['ordenes-compra'], () => cargar()), [suscribir, cargar]);
 
   function setLinea(i, patch) {
     setForm((f) => { const lineas = [...f.lineas]; lineas[i] = { ...lineas[i], ...patch }; return { ...f, lineas }; });
@@ -69,13 +56,13 @@ export default function OrdenesCompra() {
       };
       if (editando) await put(`/api/ordenes-compra/${editando.id}`, cuerpo);
       else await post('/api/ordenes-compra', cuerpo);
-      setAbierto(false); await cargar();
+      setAbierto(false); await recargar();
     } catch (err) { setErrores([err.message]); }
   }
 
   async function eliminar(item) {
     if (!window.confirm(`¿Eliminar orden #${item.id}?`)) return;
-    try { await del(`/api/ordenes-compra/${item.id}`); await cargar(); }
+    try { await del(`/api/ordenes-compra/${item.id}`); await recargar(); }
     catch (err) { window.alert(err.message); }
   }
 
@@ -116,9 +103,35 @@ export default function OrdenesCompra() {
         <button type="button" className="btn btn-primario" onClick={() => { setEditando(null); setForm(inicial()); setErrores(null); setAbierto(true); }}>+ Nueva orden</button>
       </div>
       <p className="texto-aviso">Documento simple con costos estimados. No mueve stock.</p>
+      <FilterBar
+        campos={[
+          {
+            tipo: 'select',
+            clave: 'proveedorId',
+            etiqueta: 'Filtrar por proveedor',
+            opciones: [
+              { valor: '', etiqueta: 'Todos los proveedores' },
+              ...proveedores.map((p) => ({ valor: String(p.id), etiqueta: p.nombre })),
+            ],
+          },
+          { tipo: 'date', clave: 'fecha', etiqueta: 'Filtrar por fecha' },
+          { tipo: 'search', clave: 'q', etiqueta: 'Buscar…' },
+        ]}
+        filtros={filtros}
+        onCambio={(nuevos) => setFiltros({ ...nuevos, q: (nuevos.q || '').trim() })}
+        onLimpiar={() => setFiltros(filtrosIniciales)}
+      />
       {cargando && <p className="vacio">Cargando…</p>}
       {!cargando && error && <p className="texto-error">{error}</p>}
       {!cargando && !error && <Tabla columnas={columnas} filas={lista} vacio="No hay órdenes." />}
+      <Paginacion
+        pagina={pagina}
+        total={total}
+        totalPaginas={totalPaginas}
+        tamano={tamano}
+        onPagina={setPagina}
+        onTamano={setTamano}
+      />
       <Modal titulo={editando ? 'Editar orden' : 'Nueva orden'} abierto={abierto} onCerrar={() => setAbierto(false)} ancho={760}>
         <form className="form" onSubmit={guardar}>
           <div className="form-grid">

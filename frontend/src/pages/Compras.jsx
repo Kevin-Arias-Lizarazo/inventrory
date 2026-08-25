@@ -3,8 +3,9 @@ import { TABS_COMPRAS } from '../secciones';
 import { useCallback, useEffect, useState } from 'react';
 import { get, post, put, del, hoy } from '../api';
 import { useEventos } from '../eventos-contexto';
+import { useListaPaginada } from '../hooks';
 import Modal from '../components/Modal';
-import { Tabla, Microsofto, Badge } from '../components/ui';
+import { Tabla, Microsofto, Badge, Paginacion, FilterBar } from '../components/ui';
 import SelectorProducto from '../components/SelectorProducto';
 
 const TIPOS = [
@@ -46,21 +47,30 @@ const inicialFactura = () => ({
   lineas: [inicialLinea()],
 });
 
+const filtrosComprasIniciales = { facturada: '', proveedorId: '', fecha: '', q: '' };
+const filtrosFacturasIniciales = { estadoPago: '', proveedorId: '', fecha: '', q: '' };
+
 export default function Compras() {
   const { suscribir } = useEventos();
   const [pestana, setPestana] = useState('compras');
-  const [compras, setCompras] = useState([]);
-  const [facturas, setFacturas] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [comprasSinFacturar, setComprasSinFacturar] = useState([]);
   const [valor, setValor] = useState({ total: 0, sinPrecio: 0, sinFacturar: 0 });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  const [filtroEstado, setFiltroEstado] = useState('todas');
-  const [filtroProveedor, setFiltroProveedor] = useState('');
-  const [filtroFecha, setFiltroFecha] = useState('');
-  const [busqueda, setBusqueda] = useState('');
+  const comprasPaginado = useListaPaginada(
+    ['compras', 'facturas', 'proveedores'],
+    '/api/compras/paginado',
+    30,
+    filtrosComprasIniciales
+  );
+  const facturasPaginado = useListaPaginada(
+    ['facturas', 'compras', 'proveedores'],
+    '/api/facturas/paginado',
+    30,
+    filtrosFacturasIniciales
+  );
 
   const [compraAbierto, setCompraAbierto] = useState(false);
   const [editandoCompra, setEditandoCompra] = useState(null);
@@ -87,17 +97,14 @@ export default function Compras() {
   const cargarTodo = useCallback(async ({ silencioso = false } = {}) => {
     if (!silencioso) setCargando(true);
     try {
-      const [cs, fs, ps, hs, es, csu, ms] = await Promise.all([
+      const [cs, ps, hs, es, csu, ms] = await Promise.all([
         get('/api/compras'),
-        get('/api/facturas'),
         get('/api/proveedores'),
         get('/api/herramientas'),
         get('/api/epp'),
         get('/api/consumibles'),
         get('/api/materiales'),
       ]);
-      setCompras(cs || []);
-      setFacturas(fs || []);
       setProveedores(ps || []);
       setComprasSinFacturar((cs || []).filter((c) => !c.facturaId));
       const productos = [...(hs || []), ...(es || []), ...(csu || []), ...(ms || [])];
@@ -358,24 +365,6 @@ export default function Compras() {
     setFacturaAbierto(true);
   }
 
-  const comprasFiltradas = compras.filter((c) => {
-    if (filtroEstado === 'sin-facturar' && c.facturaId) return false;
-    if (filtroEstado === 'facturadas' && !c.facturaId) return false;
-    if (filtroProveedor && (!c.proveedor || String(c.proveedor.id) !== filtroProveedor)) return false;
-    if (filtroFecha && c.fecha !== filtroFecha) return false;
-    return true;
-  });
-
-  const facturasFiltradas = facturas.filter((f) => {
-    if (filtroProveedor && (!f.proveedor || String(f.proveedor.id) !== filtroProveedor)) return false;
-    if (filtroFecha && f.fecha !== filtroFecha) return false;
-    if (busqueda.trim()) {
-      const q = busqueda.toLowerCase();
-      if (!((f.numero || '') + (f.observacion || '')).toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
-
   const colCompra = [
     { clave: 'fecha', titulo: 'Fecha' },
     { clave: 'proveedor', titulo: 'Proveedor', render: (c) => (c.proveedor ? c.proveedor.nombre : <span className="sin-dato">&mdash;</span>) },
@@ -499,38 +488,107 @@ export default function Compras() {
         </button>
       </div>
 
-      <div className="filtros">
-        <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-          <option value="todas">Todos los estados</option>
-          <option value="sin-facturar">Sin facturar</option>
-          <option value="facturadas">Facturadas</option>
-        </select>
-        <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
-          <option value="">Todos los proveedores</option>
-          {proveedores.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nombre}
-            </option>
-          ))}
-        </select>
-        <input type="date" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} />
-        {pestana === 'facturas' && (
-          <input
-            type="text"
-            placeholder="Buscar por N° u observación…"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        )}
-      </div>
+      {pestana === 'compras' && (
+        <FilterBar
+          campos={[
+            {
+              tipo: 'select',
+              clave: 'facturada',
+              etiqueta: 'Filtrar por estado',
+              opciones: [
+                { valor: '', etiqueta: 'Todos los estados' },
+                { valor: 'false', etiqueta: 'Sin facturar' },
+                { valor: 'true', etiqueta: 'Facturadas' },
+              ],
+            },
+            {
+              tipo: 'select',
+              clave: 'proveedorId',
+              etiqueta: 'Filtrar por proveedor',
+              opciones: [
+                { valor: '', etiqueta: 'Todos los proveedores' },
+                ...proveedores.map((p) => ({ valor: String(p.id), etiqueta: p.nombre })),
+              ],
+            },
+            { tipo: 'date', clave: 'fecha', etiqueta: 'Filtrar por fecha' },
+            { tipo: 'search', clave: 'q', etiqueta: 'Buscar…' },
+          ]}
+          filtros={comprasPaginado.filtros}
+          onCambio={(nuevos) => comprasPaginado.setFiltros({ ...nuevos, q: (nuevos.q || '').trim() })}
+          onLimpiar={() => comprasPaginado.setFiltros(filtrosComprasIniciales)}
+        />
+      )}
+      {pestana === 'facturas' && (
+        <FilterBar
+          campos={[
+            {
+              tipo: 'select',
+              clave: 'estadoPago',
+              etiqueta: 'Filtrar por estado de pago',
+              opciones: [
+                { valor: '', etiqueta: 'Todos los estados' },
+                { valor: 'PENDIENTE', etiqueta: 'Pendiente' },
+                { valor: 'PARCIAL', etiqueta: 'Parcial' },
+                { valor: 'PAGADA', etiqueta: 'Pagada' },
+              ],
+            },
+            {
+              tipo: 'select',
+              clave: 'proveedorId',
+              etiqueta: 'Filtrar por proveedor',
+              opciones: [
+                { valor: '', etiqueta: 'Todos los proveedores' },
+                ...proveedores.map((p) => ({ valor: String(p.id), etiqueta: p.nombre })),
+              ],
+            },
+            { tipo: 'date', clave: 'fecha', etiqueta: 'Filtrar por fecha' },
+            { tipo: 'search', clave: 'q', etiqueta: 'Buscar por N° u observación…' },
+          ]}
+          filtros={facturasPaginado.filtros}
+          onCambio={(nuevos) => facturasPaginado.setFiltros({ ...nuevos, q: (nuevos.q || '').trim() })}
+          onLimpiar={() => facturasPaginado.setFiltros(filtrosFacturasIniciales)}
+        />
+      )}
 
       {cargando && <p className="vacio">Cargando…</p>}
       {!cargando && error && <p className="texto-error">{error}</p>}
       {!cargando && !error && pestana === 'compras' && (
-        <Tabla columnas={colCompra} filas={comprasFiltradas} vacio="No hay compras registradas." />
+        <>
+          {comprasPaginado.cargando && <p className="vacio">Cargando…</p>}
+          {!comprasPaginado.cargando && comprasPaginado.error && (
+            <p className="texto-error">{comprasPaginado.error}</p>
+          )}
+          {!comprasPaginado.cargando && !comprasPaginado.error && (
+            <Tabla columnas={colCompra} filas={comprasPaginado.lista} vacio="No hay compras registradas." />
+          )}
+          <Paginacion
+            pagina={comprasPaginado.pagina}
+            total={comprasPaginado.total}
+            totalPaginas={comprasPaginado.totalPaginas}
+            tamano={comprasPaginado.tamano}
+            onPagina={comprasPaginado.setPagina}
+            onTamano={comprasPaginado.setTamano}
+          />
+        </>
       )}
       {!cargando && !error && pestana === 'facturas' && (
-        <Tabla columnas={colFactura} filas={facturasFiltradas} vacio="No hay facturas registradas." />
+        <>
+          {facturasPaginado.cargando && <p className="vacio">Cargando…</p>}
+          {!facturasPaginado.cargando && facturasPaginado.error && (
+            <p className="texto-error">{facturasPaginado.error}</p>
+          )}
+          {!facturasPaginado.cargando && !facturasPaginado.error && (
+            <Tabla columnas={colFactura} filas={facturasPaginado.lista} vacio="No hay facturas registradas." />
+          )}
+          <Paginacion
+            pagina={facturasPaginado.pagina}
+            total={facturasPaginado.total}
+            totalPaginas={facturasPaginado.totalPaginas}
+            tamano={facturasPaginado.tamano}
+            onPagina={facturasPaginado.setPagina}
+            onTamano={facturasPaginado.setTamano}
+          />
+        </>
       )}
 
       <Modal
