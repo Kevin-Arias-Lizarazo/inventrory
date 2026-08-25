@@ -23,6 +23,11 @@ backend/src/main/resources/static/
 
 # Ejecutable generado localmente por scripts/Instalar-Accesos.ps1
 /Detener-Inventario.exe
+# Artefactos del modo JAR (generados localmente)
+/app.jar
+/Iniciar-JAR.exe
+/Detener-JAR.exe
+/data/
 
 ### STS ###
 .apt_generated
