@@ -2,9 +2,9 @@ import SeccionTabs from '../components/SeccionTabs';
 import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy, ahora } from '../api';
-import { useLista, useListaPaginada, useDebounce } from '../hooks';
+import { useLista, useListaPaginada } from '../hooks';
 import Modal from '../components/Modal';
-import { Tabla, Microsofto, Badge, Paginacion } from '../components/ui';
+import { Tabla, Microsofto, Badge, Paginacion, FilterBar } from '../components/ui';
 import SelectEmpleado from '../components/SelectEmpleado';
 
 const inicial = () => ({
@@ -36,20 +36,9 @@ export default function Minutas() {
   const { lista: empleados } = useLista('empleados', '/api/empleados?contratados=true');
   const { lista: empleadosFiltro } = useLista('empleados', '/api/empleados');
   const { lista: proyectos } = useLista('proyectos', '/api/proyectos');
-  const [busqueda, setBusqueda] = useState('');
-  const [fechaFiltro, setFechaFiltro] = useState('');
-  const [empleadoFiltro, setEmpleadoFiltro] = useState('');
-  const [orden, setOrden] = useState('desc');
-  const q = useDebounce(busqueda, 300);
-  const fecha = useDebounce(fechaFiltro, 300);
-  const parametros = new URLSearchParams();
-  if (q.trim()) parametros.set('q', q.trim());
-  if (fecha) parametros.set('fecha', fecha);
-  if (empleadoFiltro) parametros.set('empleadoId', empleadoFiltro);
-  parametros.set('orden', orden);
-  const url = `/api/minutas/filtradas?${parametros.toString()}`;
-  const { lista, cargando, error, pagina, tamano, total, totalPaginas, setPagina, setTamano, recargar } =
-    useListaPaginada(['minutas', 'proyectos'], url);
+  const filtrosIniciales = { q: '', fecha: '', empleadoId: '', orden: 'desc' };
+  const { lista, cargando, error, pagina, tamano, total, totalPaginas, filtros, setFiltros, setPagina, setTamano, recargar } =
+    useListaPaginada(['minutas', 'proyectos'], '/api/minutas/filtradas', 30, filtrosIniciales);
   const [abierto, setAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
@@ -194,27 +183,33 @@ export default function Minutas() {
         </div>
       </div>
 
-      <div className="minuta-filtros">
-        <input
-          type="search"
-          placeholder="Buscar por proyecto o empleado…"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-        <input type="date" value={fechaFiltro} onChange={(e) => setFechaFiltro(e.target.value)} title="Filtrar por día" />
-        <select value={empleadoFiltro} onChange={(e) => setEmpleadoFiltro(e.target.value)} title="Filtrar por empleado">
-          <option value="">Todos los empleados</option>
-          {empleadosFiltro.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.nombre}
-            </option>
-          ))}
-        </select>
-        <select value={orden} onChange={(e) => setOrden(e.target.value)} title="Orden por fecha">
-          <option value="desc">Más reciente primero</option>
-          <option value="asc">Más antigua primero</option>
-        </select>
-      </div>
+      <FilterBar
+        campos={[
+          { tipo: 'search', clave: 'q', etiqueta: 'Buscar por proyecto o empleado…' },
+          { tipo: 'date', clave: 'fecha', etiqueta: 'Filtrar por día' },
+          {
+            tipo: 'select',
+            clave: 'empleadoId',
+            etiqueta: 'Filtrar por empleado',
+            opciones: [
+              { valor: '', etiqueta: 'Todos los empleados' },
+              ...empleadosFiltro.map((e) => ({ valor: String(e.id), etiqueta: e.nombre })),
+            ],
+          },
+          {
+            tipo: 'orden',
+            clave: 'orden',
+            etiqueta: 'Orden por fecha',
+            opciones: [
+              { valor: 'desc', etiqueta: 'Más reciente primero' },
+              { valor: 'asc', etiqueta: 'Más antigua primero' },
+            ],
+          },
+        ]}
+        filtros={filtros}
+        onCambio={(nuevos) => setFiltros({ ...nuevos, q: (nuevos.q || '').trim() })}
+        onLimpiar={() => setFiltros(filtrosIniciales)}
+      />
 
       {cargando && <p className="vacio">Cargando…</p>}
       {!cargando && error && <p className="texto-error">{error}</p>}

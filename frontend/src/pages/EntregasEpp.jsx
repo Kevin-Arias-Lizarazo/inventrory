@@ -2,9 +2,9 @@ import SeccionTabs from '../components/SeccionTabs';
 import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
 import { post, put, del, hoy, subirArchivo, firmaAArchivo } from '../api';
-import { useLista, useListaPaginada, useDebounce } from '../hooks';
+import { useLista, useListaPaginada } from '../hooks';
 import Modal from '../components/Modal';
-import { Tabla, Microsofto, Badge, MiniImagen, Paginacion } from '../components/ui';
+import { Tabla, Microsofto, Badge, MiniImagen, Paginacion, FilterBar } from '../components/ui';
 import SelectEmpleado from '../components/SelectEmpleado';
 import SubidaImagen from '../components/SubidaImagen';
 import SignaturePad from '../components/SignaturePad';
@@ -24,19 +24,9 @@ export default function EntregasEpp() {
   const { lista: empleados } = useLista('empleados', '/api/empleados?contratados=true');
   const { lista: empleadosFiltro } = useLista('empleados', '/api/empleados');
   const { lista: epps } = useLista(['epp', 'entregas-epp'], '/api/epp');
-  const [fechaFiltro, setFechaFiltro] = useState('');
-  const [empleadoFiltro, setEmpleadoFiltro] = useState('');
-  const [eppFiltro, setEppFiltro] = useState('');
-  const [orden, setOrden] = useState('desc');
-  const fecha = useDebounce(fechaFiltro, 300);
-  const parametros = new URLSearchParams();
-  if (fecha) parametros.set('fecha', fecha);
-  if (empleadoFiltro) parametros.set('empleadoId', empleadoFiltro);
-  if (eppFiltro) parametros.set('eppId', eppFiltro);
-  parametros.set('orden', orden);
-  const url = `/api/entregas-epp/filtradas?${parametros.toString()}`;
-  const { lista, cargando, error, pagina, tamano, total, totalPaginas, setPagina, setTamano, recargar } =
-    useListaPaginada(['entregas-epp', 'epp'], url);
+  const filtrosIniciales = { fecha: '', empleadoId: '', eppId: '', orden: 'desc' };
+  const { lista, cargando, error, pagina, tamano, total, totalPaginas, filtros, setFiltros, setPagina, setTamano, recargar } =
+    useListaPaginada(['entregas-epp', 'epp'], '/api/entregas-epp/filtradas', 30, filtrosIniciales);
   const [abierto, setAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
@@ -138,29 +128,41 @@ export default function EntregasEpp() {
         </button>
       </div>
 
-      <div className="minuta-filtros">
-        <input type="date" value={fechaFiltro} onChange={(e) => setFechaFiltro(e.target.value)} title="Filtrar por día" />
-        <select value={empleadoFiltro} onChange={(e) => setEmpleadoFiltro(e.target.value)} title="Filtrar por empleado">
-          <option value="">Todos los empleados</option>
-          {empleadosFiltro.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.nombre}
-            </option>
-          ))}
-        </select>
-        <select value={eppFiltro} onChange={(e) => setEppFiltro(e.target.value)} title="Filtrar por EPP">
-          <option value="">Todos los EPP</option>
-          {epps.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.nombre}
-            </option>
-          ))}
-        </select>
-        <select value={orden} onChange={(e) => setOrden(e.target.value)} title="Orden por fecha">
-          <option value="desc">Más reciente primero</option>
-          <option value="asc">Más antigua primero</option>
-        </select>
-      </div>
+      <FilterBar
+        campos={[
+          { tipo: 'date', clave: 'fecha', etiqueta: 'Filtrar por día' },
+          {
+            tipo: 'select',
+            clave: 'empleadoId',
+            etiqueta: 'Filtrar por empleado',
+            opciones: [
+              { valor: '', etiqueta: 'Todos los empleados' },
+              ...empleadosFiltro.map((e) => ({ valor: String(e.id), etiqueta: e.nombre })),
+            ],
+          },
+          {
+            tipo: 'select',
+            clave: 'eppId',
+            etiqueta: 'Filtrar por EPP',
+            opciones: [
+              { valor: '', etiqueta: 'Todos los EPP' },
+              ...epps.map((e) => ({ valor: String(e.id), etiqueta: e.nombre })),
+            ],
+          },
+          {
+            tipo: 'orden',
+            clave: 'orden',
+            etiqueta: 'Orden por fecha',
+            opciones: [
+              { valor: 'desc', etiqueta: 'Más reciente primero' },
+              { valor: 'asc', etiqueta: 'Más antigua primero' },
+            ],
+          },
+        ]}
+        filtros={filtros}
+        onCambio={setFiltros}
+        onLimpiar={() => setFiltros(filtrosIniciales)}
+      />
 
       {cargando && <p className="vacio">Cargando…</p>}
       {!cargando && error && <p className="texto-error">{error}</p>}

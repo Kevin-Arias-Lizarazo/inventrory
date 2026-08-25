@@ -87,3 +87,51 @@ export function Paginacion({ pagina, total, totalPaginas, tamano, onPagina, onTa
     </div>
   );
 }
+
+export function FilterBar({ campos, filtros = {}, onCambio, onLimpiar }) {
+  return (
+    <div className="minuta-filtros">
+      {campos.map((campo) => {
+        const valor = filtros[campo.clave] ?? '';
+        const cambiar = (e) => onCambio({ ...filtros, [campo.clave]: e.target.value });
+        if (campo.tipo === 'search') {
+          return (
+            <input
+              key={campo.clave}
+              type="search"
+              placeholder={campo.etiqueta}
+              value={valor}
+              onChange={cambiar}
+            />
+          );
+        }
+        if (campo.tipo === 'date') {
+          return (
+            <input
+              key={campo.clave}
+              type="date"
+              value={valor}
+              title={campo.etiqueta}
+              onChange={cambiar}
+            />
+          );
+        }
+        if (campo.tipo === 'select' || campo.tipo === 'orden') {
+          return (
+            <select key={campo.clave} value={valor} title={campo.etiqueta} onChange={cambiar}>
+              {(campo.opciones || []).map((op) => (
+                <option key={op.valor} value={op.valor}>
+                  {op.etiqueta}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        return null;
+      })}
+      <button type="button" className="btn btn-borde" onClick={onLimpiar}>
+        Limpiar
+      </button>
+    </div>
+  );
+}

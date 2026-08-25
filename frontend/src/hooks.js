@@ -41,7 +41,7 @@ export function useLista(recurso, url) {
   return { lista, cargando, error, recargar };
 }
 
-export function useListaPaginada(recurso, url, tamanoInicial = 30) {
+export function useListaPaginada(recurso, url, tamanoInicial = 30, filtros = {}) {
   const { suscribir } = useEventos();
   const [lista, setLista] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -50,8 +50,11 @@ export function useListaPaginada(recurso, url, tamanoInicial = 30) {
   const [tamano, setTamano] = useState(tamanoInicial);
   const [total, setTotal] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
+  const [filtrosEstado, setFiltrosEstado] = useState(filtros || {});
   const ultimaRef = useRef(0);
   const urlRef = useRef(url);
+  const filtrosDeb = useDebounce(filtrosEstado, 300);
+  const filtrosDebRef = useRef(filtrosDeb);
 
   useEffect(() => {
     if (urlRef.current !== url) {
@@ -60,13 +63,36 @@ export function useListaPaginada(recurso, url, tamanoInicial = 30) {
     }
   }, [url]);
 
+  // Reset to first page when the debounced filters change.
+  useEffect(() => {
+    if (filtrosDebRef.current !== filtrosDeb) {
+      filtrosDebRef.current = filtrosDeb;
+      setPagina(0);
+    }
+  }, [filtrosDeb]);
+
+  const construirConsulta = useCallback(
+    (p, t) => {
+      const params = new URLSearchParams();
+      Object.entries(filtrosDeb).forEach(([clave, valor]) => {
+        if (valor !== '' && valor !== null && valor !== undefined) {
+          params.set(clave, String(valor));
+        }
+      });
+      params.set('pagina', p);
+      params.set('tamano', t);
+      return params.toString();
+    },
+    [filtrosDeb]
+  );
+
   const cargar = useCallback(
     async (p, t, { silencioso = false } = {}) => {
       ultimaRef.current = Date.now();
       if (!silencioso) setCargando(true);
       const sep = url.includes('?') ? '&' : '?';
       try {
-        const d = await get(`${url}${sep}pagina=${p}&tamano=${t}`);
+        const d = await get(`${url}${sep}${construirConsulta(p, t)}`);
         setLista(d.contenido);
         setTotal(d.total);
         setTotalPaginas(d.totalPaginas);
@@ -77,7 +103,7 @@ export function useListaPaginada(recurso, url, tamanoInicial = 30) {
         if (!silencioso) setCargando(false);
       }
     },
-    [url]
+    [url, construirConsulta]
   );
 
   useEffect(() => {
@@ -93,6 +119,8 @@ export function useListaPaginada(recurso, url, tamanoInicial = 30) {
     [recurso, suscribir, pagina, tamano, cargar]
   );
 
+  const limpiarFiltros = useCallback(() => setFiltrosEstado({}), []);
+
   return {
     lista,
     cargando,
@@ -101,6 +129,9 @@ export function useListaPaginada(recurso, url, tamanoInicial = 30) {
     tamano,
     total,
     totalPaginas,
+    filtros: filtrosEstado,
+    setFiltros: setFiltrosEstado,
+    limpiarFiltros,
     setPagina,
     setTamano,
     recargar: () => cargar(pagina, tamano),
