@@ -37,14 +37,14 @@ public class AuthControlador {
 			HttpServletResponse response) {
 		String ip = request.getRemoteAddr();
 		RespuestaLogin r = servicio.login(cuerpo.get("username"), cuerpo.get("password"), ip);
-		guardarRefreshCookie(response, r.getRefreshToken());
+		guardarRefreshCookie(response, r.getRefreshToken(), request.isSecure());
 		return ResponseEntity.ok(r);
 	}
 
 	@PostMapping("/renovar")
 	public ResponseEntity<RespuestaLogin> renovar(HttpServletRequest request, HttpServletResponse response) {
 		RespuestaLogin r = servicio.renovar(refreshDe(request));
-		guardarRefreshCookie(response, r.getRefreshToken());
+		guardarRefreshCookie(response, r.getRefreshToken(), request.isSecure());
 		return ResponseEntity.ok(r);
 	}
 
@@ -56,6 +56,7 @@ public class AuthControlador {
 				.path("/api/auth")
 				.maxAge(0)
 				.sameSite("Strict")
+				.secure(request.isSecure())
 				.build();
 		response.addHeader("Set-Cookie", cookie.toString());
 		return ResponseEntity.noContent().build();
@@ -85,12 +86,13 @@ public class AuthControlador {
 		return ResponseEntity.ok(Map.of("token", token.getToken()));
 	}
 
-	private void guardarRefreshCookie(HttpServletResponse response, String refreshToken) {
+	private void guardarRefreshCookie(HttpServletResponse response, String refreshToken, boolean esSeguro) {
 		ResponseCookie cookie = ResponseCookie.from(COOKIE_REFRESH, refreshToken)
 				.httpOnly(true)
 				.path("/api/auth")
 				.maxAge(MAX_AGE_REFRESH)
 				.sameSite("Strict")
+				.secure(esSeguro)
 				.build();
 		response.addHeader("Set-Cookie", cookie.toString());
 	}
