@@ -60,7 +60,7 @@ async function main() {
   let r = await peticion("/api/instalacion/estado", { cookie: false });
   ok("instalacion pendiente al inicio", r.status === 200 && r.data.pendiente === true, JSON.stringify(r.data));
 
-  r = await peticion("/api/instalacion/completar", { method: "POST", body: { rootPassword: ROOT_PWD }, cookie: false, formData: true });
+  r = await peticion("/api/instalacion/completar", { method: "POST", body: { rootPassword: ROOT_PWD, adminPassword: ROOT_PWD }, cookie: false, formData: true });
   ok("completar instalacion", r.status === 200 && r.data.usuario?.username === "root", `status=${r.status}`);
   const secretoRoot = r.data.secretoRecuperacion;
   const rootId = r.data.usuario?.id;

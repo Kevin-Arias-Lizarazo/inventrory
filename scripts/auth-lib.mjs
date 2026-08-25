@@ -44,6 +44,9 @@ export async function iniciar(BASE, rootPassword = 'AdminTest2026') {
   if (estado.data && estado.data.pendiente) {
     const fd = new FormData();
     fd.append('rootPassword', rootPassword);
+    // El backend genera una clave aleatoria para admin si no se provee adminPassword
+    // (cambio dc5b8a9); los tests esperan admin/AdminTest2026.
+    fd.append('adminPassword', rootPassword);
     await raw('/api/instalacion/completar', { method: 'POST', body: fd });
   }
 
