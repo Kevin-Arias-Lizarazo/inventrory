@@ -88,3 +88,33 @@ En la máquina de desarrollo:
 
 En el destino: copiar el nuevo `.tar`, ejecutar `load-y-levanta.ps1` con él.
 El contenedor se recrea con la imagen nueva; el volumen conserva los datos.
+
+## Uso para el usuario final (sin terminal, doble clic)
+
+El usuario final no debe abrir Docker ni usar PowerShell. Tras el despliegue,
+ejecutar UNA vez (en la maquina destino):
+
+```powershell
+.\scripts\Instalar-Accesos.ps1 -AutoInicio
+```
+
+Esto crea en el **escritorio** dos iconos:
+
+| Icono | Que hace |
+|---|---|
+| **Inventario - Iniciar** | Arranca Docker Desktop si hace falta, levanta el contenedor y abre http://localhost:8080 en el navegador |
+| **Inventario - Detener** | Detiene el contenedor de forma limpia (los datos se conservan) — para usarlo **antes de apagar la maquina** |
+
+Con `-AutoInicio`, además, Docker Desktop queda en el arranque de Windows y el
+contenedor (`restart: unless-stopped`) sube **solo al encender la maquina**: el
+usuario final solo abre el navegador en http://localhost:8080, sin doble clic.
+
+**Rutina de apagado recomendada**: doble clic en "Inventario - Detener" y esperar
+el mensaje "Contenedor detenido correctamente" antes de apagar Windows. Esto evita
+cortes bruscos sobre la base SQLite. Si el usuario apaga sin detener, el contenedor
+se detiene con Windows y SQLite se recupera solo (journal/WAL), pero es preferible
+el apagado limpio.
+
+> Nota: no existe boton "apagar Docker" dentro de la UI porque el contenedor no
+> tiene acceso al motor de Docker (montar el socket seria un riesgo de seguridad).
+> Los iconos del escritorio cubren ese flujo de forma segura.
