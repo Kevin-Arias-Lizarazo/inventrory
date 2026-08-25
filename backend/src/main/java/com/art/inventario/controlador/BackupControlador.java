@@ -32,13 +32,13 @@ public class BackupControlador {
 				.body(data);
 	}
 
-	@PostMapping("/exportar-completo")
-	public ResponseEntity<byte[]> exportarCompleto() {
-		byte[] data = servicio.exportarCompleto();
+	@PostMapping("/exportar-uploads")
+	public ResponseEntity<byte[]> exportarUploads() {
+		byte[] data = servicio.exportarUploads();
 		String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment; filename=\"inventario-backup-completo-" + ts + ".zip\"")
+						"attachment; filename=\"inventario-uploads-" + ts + ".zip\"")
 				.contentType(MediaType.APPLICATION_OCTET_STREAM)
 				.body(data);
 	}

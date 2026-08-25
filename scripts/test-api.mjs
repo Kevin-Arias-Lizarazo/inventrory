@@ -1104,11 +1104,11 @@ async function main() {
   const tope = await request("/api/facturas/paginado?tamano=9999");
   ok("paginado tope tamano a 100", tope.status === 200 && tope.data?.tamano <= 100,
     `status=${tope.status} tamano=${tope.data?.tamano}`);
-  const bkCompleto = await request("/api/backup/exportar-completo", { method: "POST", bin: true });
-  ok("POST backup exportar-completo", bkCompleto.status === 200 && bkCompleto.bytes > 100,
-    `status=${bkCompleto.status} bytes=${bkCompleto.bytes}`);
+  const bkZip = await request("/api/backup/exportar-uploads", { method: "POST", bin: true });
+  ok("POST backup exportar-uploads", bkZip.status === 200 && bkZip.bytes > 20,
+    `status=${bkZip.status} bytes=${bkZip.bytes}`);
   const fdZip = new FormData();
-  fdZip.append("archivo", new Blob([bkCompleto.data], { type: "application/zip" }), "uploads.zip");
+  fdZip.append("archivo", new Blob([bkZip.data], { type: "application/zip" }), "uploads.zip");
   const restUp = await request("/api/backup/restaurar-uploads", { method: "POST", blob: fdZip });
   ok("POST backup restaurar-uploads", restUp.status === 200 && typeof restUp.data?.mensaje === "string",
     `status=${restUp.status}`);

@@ -56,9 +56,9 @@ export default function Mantenimiento() {
         <button
           type="button"
           className="btn btn-primario"
-          onClick={() => descargar('/api/backup/exportar-completo', { metodo: 'POST' })}
+          onClick={() => descargar('/api/backup/exportar-uploads', { metodo: 'POST' })}
         >
-          Descargar backup completo (.zip)
+          Descargar uploads (.zip)
         </button>
         <label className="btn btn-borde">
           Restaurar backup

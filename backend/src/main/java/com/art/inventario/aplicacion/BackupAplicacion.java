@@ -52,25 +52,17 @@ public class BackupAplicacion implements BackupCasoDeUso {
 	}
 
 	@Override
-	public byte[] exportarCompleto() {
+	public byte[] exportarUploads() {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ZipOutputStream zos = new ZipOutputStream(baos);
-
-			// Add database file
-			Path dbFile = Paths.get(dbPath);
-			if (Files.exists(dbFile)) {
-				zos.putNextEntry(new ZipEntry("inventario.db"));
-				Files.copy(dbFile, zos);
-				zos.closeEntry();
-			}
 
 			// Add uploads directory contents (skip subdirectories)
 			if (Files.isDirectory(uploadsDir)) {
 				try (var stream = Files.list(uploadsDir)) {
 					for (Path entry : stream.toList()) {
 						if (Files.isRegularFile(entry)) {
-							zos.putNextEntry(new ZipEntry("uploads/" + entry.getFileName().toString()));
+							zos.putNextEntry(new ZipEntry(entry.getFileName().toString()));
 							Files.copy(entry, zos);
 							zos.closeEntry();
 						}
@@ -82,7 +74,7 @@ public class BackupAplicacion implements BackupCasoDeUso {
 			zos.close();
 			return baos.toByteArray();
 		} catch (IOException e) {
-			throw new DatosInvalidosExcepcion("No se pudo crear el backup completo: " + e.getMessage());
+			throw new DatosInvalidosExcepcion("No se pudo crear el backup de uploads: " + e.getMessage());
 		}
 	}
 
