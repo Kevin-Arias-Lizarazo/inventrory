@@ -1,5 +1,7 @@
 package com.art.inventario.persistencia.entidad;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,7 +18,7 @@ public class EntidadAsignacionConsumible {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private Integer cantidad;
+	private BigDecimal cantidad;
 	private String fecha;
 	private String observacion;
 
@@ -36,11 +38,11 @@ public class EntidadAsignacionConsumible {
 		this.id = id;
 	}
 
-	public Integer getCantidad() {
+	public BigDecimal getCantidad() {
 		return cantidad;
 	}
 
-	public void setCantidad(Integer cantidad) {
+	public void setCantidad(BigDecimal cantidad) {
 		this.cantidad = cantidad;
 	}
 

@@ -183,7 +183,7 @@ public class DevolucionAplicacion implements DevolucionCasoDeUso {
 		}
 		case Compra.TIPO_CONSUMIBLE -> {
 			Consumible c = consumibles.obtener(productoId);
-			yield c.getStock() == null ? 0 : c.getStock();
+			yield c.getStock() == null ? 0 : c.getStock().intValue();
 		}
 		case Compra.TIPO_MATERIAL -> {
 			Material m = materiales.obtener(productoId);
@@ -234,7 +234,7 @@ public class DevolucionAplicacion implements DevolucionCasoDeUso {
 		case Compra.TIPO_CONSUMIBLE -> {
 			MovimientoConsumible m = new MovimientoConsumible();
 			m.setTipo("EGRESO");
-			m.setCantidad(cantidad);
+			m.setCantidad(java.math.BigDecimal.valueOf(cantidad));
 			m.setFecha(fecha);
 			m.setObservacion(etiqueta);
 			consumibles.registrarMovimiento(productoId, m);

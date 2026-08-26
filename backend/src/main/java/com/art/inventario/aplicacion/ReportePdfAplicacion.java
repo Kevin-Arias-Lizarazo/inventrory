@@ -59,7 +59,7 @@ public class ReportePdfAplicacion implements ReportePdfCasoDeUso {
 					filas.add(filaInv("MATERIAL", m.getNombre(), m.getMarca(), m.getStock(), m.getUltimoCosto()));
 				}
 				for (Consumible c : consumibles.listar()) {
-					filas.add(filaInv("CONSUMIBLE", c.getNombre(), c.getMarca(), c.getStock(), c.getUltimoCosto()));
+					filas.add(filaInv("CONSUMIBLE", c.getNombre(), c.getMarca(), c.getStock() == null ? null : c.getStock().intValue(), c.getUltimoCosto()));
 				}
 				for (Epp e : epps.listar()) {
 					filas.add(filaInv("EPP", e.getNombre(), e.getMarca(), e.getStock(), e.getUltimoCosto()));
@@ -101,7 +101,7 @@ public class ReportePdfAplicacion implements ReportePdfCasoDeUso {
 					filas.add(f);
 				}
 				for (Consumible c : consumibles.listar()) {
-					String[] f = filaValor("CONSUMIBLE", c.getNombre(), c.getStock(), c.getUltimoCosto());
+					String[] f = filaValor("CONSUMIBLE", c.getNombre(), c.getStock() == null ? null : c.getStock().intValue(), c.getUltimoCosto());
 					total += parseValor(f[4]);
 					filas.add(f);
 				}

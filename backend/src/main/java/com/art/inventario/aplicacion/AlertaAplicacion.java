@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -45,28 +46,32 @@ public class AlertaAplicacion implements AlertaCasoDeUso {
 	public List<AlertaReposicion> listarReposicion() {
 		List<AlertaReposicion> alertas = new ArrayList<>();
 		for (Material m : materiales.listar()) {
-			if (bajoMinimo(stock(m.getStock()), m.getStockMinimo())) {
-				alertas.add(alerta("MATERIAL", m.getId(), m.getNombre(), m.getMarca(), stock(m.getStock()),
-						m.getStockMinimo()));
+			int stockInt = stock(m.getStock());
+			if (bajoMinimo(BigDecimal.valueOf(stockInt), m.getStockMinimo() == null ? null : BigDecimal.valueOf(m.getStockMinimo()))) {
+				alertas.add(alerta("MATERIAL", m.getId(), m.getNombre(), m.getMarca(), BigDecimal.valueOf(stockInt),
+						m.getStockMinimo() == null ? null : BigDecimal.valueOf(m.getStockMinimo())));
 			}
 		}
 		for (Consumible c : consumibles.listar()) {
-			if (bajoMinimo(stock(c.getStock()), c.getStockMinimo())) {
-				alertas.add(alerta("CONSUMIBLE", c.getId(), c.getNombre(), c.getMarca(), stock(c.getStock()),
-						c.getStockMinimo()));
+			BigDecimal stockVal = stockDecimal(c.getStock());
+			if (bajoMinimo(stockVal, c.getStockMinimo())) {
+				alertas.add(alerta("CONSUMIBLE", c.getId(), c.getNombre(), c.getMarca(), stockVal, c.getStockMinimo()));
 			}
 		}
 		for (Epp e : epps.listar()) {
-			if (bajoMinimo(stock(e.getStock()), e.getStockMinimo())) {
-				alertas.add(alerta("EPP", e.getId(), e.getNombre(), e.getMarca(), stock(e.getStock()), e.getStockMinimo()));
+			int stockInt = stock(e.getStock());
+			if (bajoMinimo(BigDecimal.valueOf(stockInt), e.getStockMinimo() == null ? null : BigDecimal.valueOf(e.getStockMinimo()))) {
+				alertas.add(alerta("EPP", e.getId(), e.getNombre(), e.getMarca(), BigDecimal.valueOf(stockInt),
+						e.getStockMinimo() == null ? null : BigDecimal.valueOf(e.getStockMinimo())));
 			}
 		}
 		for (Herramienta h : herramientas.listar()) {
 			int disponible = h.getCantidadDisponible() != null ? h.getCantidadDisponible()
 					: stock(h.getCantidadTotal()) - stock(h.getCantidadDanada()) - stock(h.getCantidadPerdida())
 							- stock(h.getCantidadAsignada());
-			if (bajoMinimo(disponible, h.getStockMinimo())) {
-				alertas.add(alerta("HERRAMIENTA", h.getId(), h.getNombre(), h.getMarca(), disponible, h.getStockMinimo()));
+			if (bajoMinimo(BigDecimal.valueOf(disponible), h.getStockMinimo() == null ? null : BigDecimal.valueOf(h.getStockMinimo()))) {
+				alertas.add(alerta("HERRAMIENTA", h.getId(), h.getNombre(), h.getMarca(), BigDecimal.valueOf(disponible),
+						h.getStockMinimo() == null ? null : BigDecimal.valueOf(h.getStockMinimo())));
 			}
 		}
 		alertas.sort(Comparator.comparing(AlertaReposicion::getTipo).thenComparing(AlertaReposicion::getNombre,
@@ -117,19 +122,23 @@ public class AlertaAplicacion implements AlertaCasoDeUso {
 		}
 	}
 
-	private static boolean bajoMinimo(int stock, Integer minimo) {
-		if (minimo == null || minimo <= 0) {
+	private static boolean bajoMinimo(BigDecimal stock, BigDecimal minimo) {
+		if (minimo == null || minimo.compareTo(BigDecimal.ZERO) <= 0) {
 			return false;
 		}
-		return stock <= minimo;
+		return stock.compareTo(minimo) <= 0;
 	}
 
 	private static int stock(Integer valor) {
 		return valor == null ? 0 : valor;
 	}
 
-	private static AlertaReposicion alerta(String tipo, Long id, String nombre, String marca, int stock,
-			Integer minimo) {
+	private static BigDecimal stockDecimal(BigDecimal valor) {
+		return valor == null ? BigDecimal.ZERO : valor;
+	}
+
+	private static AlertaReposicion alerta(String tipo, Long id, String nombre, String marca, BigDecimal stock,
+			BigDecimal minimo) {
 		AlertaReposicion a = new AlertaReposicion();
 		a.setTipo(tipo);
 		a.setProductoId(id);

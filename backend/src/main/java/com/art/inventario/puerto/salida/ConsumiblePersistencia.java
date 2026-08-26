@@ -18,6 +18,8 @@ public interface ConsumiblePersistencia {
 
 	Consumible obtenerPorCodigo(String codigo);
 
+	boolean existePorCodigo(String codigo);
+
 	Consumible guardar(Consumible consumible);
 
 	void eliminar(Long id);

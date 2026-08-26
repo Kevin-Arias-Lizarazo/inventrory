@@ -221,7 +221,7 @@ public class CompraAplicacion implements CompraCasoDeUso {
 		case Compra.TIPO_CONSUMIBLE -> {
 			MovimientoConsumible m = new MovimientoConsumible();
 			m.setTipo("INGRESO");
-			m.setCantidad(cantidad);
+			m.setCantidad(java.math.BigDecimal.valueOf(cantidad));
 			m.setFecha(fecha);
 			m.setObservacion(etiqueta);
 			consumibles.registrarMovimiento(productoId, m);

@@ -49,6 +49,11 @@ public class ProyectoPersistenciaJpa implements ProyectoPersistencia {
 	}
 
 	@Override
+	public boolean existePorCodigo(String codigo) {
+		return consulta.findByCodigo(codigo) != null;
+	}
+
+	@Override
 	@Transactional
 	public Proyecto guardar(Proyecto proyecto) {
 		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(proyecto)));

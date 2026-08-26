@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -55,11 +56,11 @@ public class AsignacionConsumibleAplicacion implements AsignacionConsumibleCasoD
 		validarProyecto(proyectoId);
 		Consumible consumible = resolverConsumible(consumibleId);
 		validarCantidad(asignacion.getCantidad());
-		int stock = stock(consumible);
-		if (stock < asignacion.getCantidad()) {
+		BigDecimal stockActual = stock(consumible);
+		if (stockActual.compareTo(asignacion.getCantidad()) < 0) {
 			throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
 		}
-		consumible.setStock(stock - asignacion.getCantidad());
+		consumible.setStock(stockActual.subtract(asignacion.getCantidad()));
 		consumiblePersistencia.guardar(consumible);
 		asignacion.setConsumible(consumible);
 		AsignacionConsumible creada = persistencia.guardar(asignacion);
@@ -78,26 +79,20 @@ public class AsignacionConsumibleAplicacion implements AsignacionConsumibleCasoD
 		validarCantidad(datos.getCantidad());
 		Long consumibleAnteriorId = actual.getConsumible() == null ? null : actual.getConsumible().getId();
 		if (consumibleAnteriorId != null && !consumibleAnteriorId.equals(consumibleId)) {
-			// Cambió el consumible asignado: primero se devuelve la cantidad asignada
-			// al stock del consumible anterior y luego se descuenta la nueva cantidad
-			// del consumible nuevo. Sin esto, el stock del anterior quedaba corrupto
-			// (nunca se restauraba) y el ajuste se aplicaba contra el consumible nuevo.
 			Consumible anterior = consumiblePersistencia.obtener(consumibleAnteriorId);
-			anterior.setStock(stock(anterior) + actual.getCantidad());
+			anterior.setStock(stock(anterior).add(actual.getCantidad()));
 			consumiblePersistencia.guardar(anterior);
-			if (stock(consumible) - datos.getCantidad() < 0) {
+			if (stock(consumible).compareTo(datos.getCantidad()) < 0) {
 				throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
 			}
-			consumible.setStock(stock(consumible) - datos.getCantidad());
+			consumible.setStock(stock(consumible).subtract(datos.getCantidad()));
 			consumiblePersistencia.guardar(consumible);
 		} else {
-			// Mismo consumible: se mantiene el ajuste diferencial entre la cantidad
-			// nueva y la anterior, sin permitir stock negativo.
-			int ajuste = datos.getCantidad() - actual.getCantidad();
-			if (stock(consumible) - ajuste < 0) {
+			BigDecimal ajuste = datos.getCantidad().subtract(actual.getCantidad());
+			if (stock(consumible).subtract(ajuste).compareTo(BigDecimal.ZERO) < 0) {
 				throw new DatosInvalidosExcepcion("Stock insuficiente para asignar esa cantidad");
 			}
-			consumible.setStock(stock(consumible) - ajuste);
+			consumible.setStock(stock(consumible).subtract(ajuste));
 			consumiblePersistencia.guardar(consumible);
 		}
 		actual.setCantidad(datos.getCantidad());
@@ -115,7 +110,7 @@ public class AsignacionConsumibleAplicacion implements AsignacionConsumibleCasoD
 	public void eliminar(Long id) {
 		AsignacionConsumible actual = persistencia.obtener(id);
 		Consumible consumible = consumiblePersistencia.obtener(actual.getConsumible().getId());
-		consumible.setStock(stock(consumible) + actual.getCantidad());
+		consumible.setStock(stock(consumible).add(actual.getCantidad()));
 		consumiblePersistencia.guardar(consumible);
 		persistencia.eliminar(id);
 		notificar();
@@ -148,13 +143,14 @@ public class AsignacionConsumibleAplicacion implements AsignacionConsumibleCasoD
 		}
 	}
 
-	private void validarCantidad(Integer cantidad) {
-		if (cantidad == null || cantidad <= 0) {
+	private void validarCantidad(BigDecimal cantidad) {
+		if (cantidad == null || cantidad.compareTo(BigDecimal.ZERO) <= 0) {
 			throw new DatosInvalidosExcepcion("La cantidad debe ser mayor a cero");
 		}
+		ConsumibleAplicacion.validarPrecision(cantidad);
 	}
 
-	private static int stock(Consumible consumible) {
-		return consumible.getStock() == null ? 0 : consumible.getStock();
+	private static BigDecimal stock(Consumible consumible) {
+		return consumible.getStock() == null ? BigDecimal.ZERO : consumible.getStock();
 	}
 }

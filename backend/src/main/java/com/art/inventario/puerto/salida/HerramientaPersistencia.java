@@ -17,6 +17,8 @@ public interface HerramientaPersistencia {
 
 	Herramienta obtenerPorCodigo(String codigo);
 
+	boolean existePorCodigo(String codigo);
+
 	Herramienta guardar(Herramienta herramienta);
 
 	void eliminar(Long id);

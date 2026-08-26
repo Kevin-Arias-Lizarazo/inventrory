@@ -57,7 +57,11 @@ public class AsignacionHerramientaAplicacion implements AsignacionHerramientaCas
 		validarEmpleado(empleadoId);
 		validarContratado(empleadoId);
 		Long herramientaId = asignacion.getHerramienta() == null ? null : asignacion.getHerramienta().getId();
-		validarDisponible(herramientaId, null);
+		int cant = derivarCantidad(asignacion);
+		asignacion.setCantidad(cant);
+		if (cant > 0) {
+			validarDisponible(herramientaId, null, Math.abs(cant));
+		}
 		AsignacionHerramienta creada = persistencia.guardar(asignacion);
 		notificar();
 		return creada;
@@ -69,16 +73,31 @@ public class AsignacionHerramientaAplicacion implements AsignacionHerramientaCas
 		AsignacionHerramienta actual = persistencia.obtener(id);
 		Long empleadoId = datos.getEmpleado() == null ? null : datos.getEmpleado().getId();
 		validarEmpleado(empleadoId);
-		boolean devolucion = Boolean.TRUE.equals(datos.getDevuelta());
+		int nuevaCantidad = derivarCantidad(datos);
+		boolean devolucion = nuevaCantidad < 0;
 		if (!devolucion) {
 			validarContratado(empleadoId);
 		}
 		Long herramientaId = datos.getHerramienta() == null ? null : datos.getHerramienta().getId();
-		validarDisponible(herramientaId, id);
+		if (herramientaId != null && nuevaCantidad > 0) {
+			Herramienta herramienta = herramientaPersistencia.obtener(herramientaId);
+			int total = herramienta.getCantidadTotal() == null ? 0 : herramienta.getCantidadTotal();
+			int danada = herramienta.getCantidadDanada() == null ? 0 : herramienta.getCantidadDanada();
+			int perdida = herramienta.getCantidadPerdida() == null ? 0 : herramienta.getCantidadPerdida();
+			long sum = persistencia.contarAsignacionesActivas(herramientaId, -1L);
+			long ocupadasActual = actual.getCantidad() != null && actual.getCantidad() > 0 ? actual.getCantidad() : 0;
+			int ocupadas = (int) (sum - ocupadasActual) + danada + perdida;
+			if (total - ocupadas < nuevaCantidad) {
+				throw new DatosInvalidosExcepcion("No hay unidades disponibles de esta herramienta");
+			}
+		}
+		actual.setCantidad(nuevaCantidad);
+		actual.setDevuelta(devolucion);
+		if (devolucion && actual.getFechaDevolucion() == null) {
+			actual.setFechaDevolucion(java.time.LocalDate.now().toString());
+		}
 		actual.setLugar(datos.getLugar());
 		actual.setFecha(datos.getFecha());
-		actual.setDevuelta(datos.getDevuelta());
-		actual.setFechaDevolucion(datos.getFechaDevolucion());
 		actual.setEmpleado(datos.getEmpleado());
 		actual.setHerramienta(datos.getHerramienta());
 		AsignacionHerramienta guardada = persistencia.guardar(actual);
@@ -130,14 +149,25 @@ public class AsignacionHerramientaAplicacion implements AsignacionHerramientaCas
 	}
 
 	private void validarDisponible(Long herramientaId, Long excluirId) {
+		validarDisponible(herramientaId, excluirId, 1);
+	}
+
+	private void validarDisponible(Long herramientaId, Long excluirId, int requerida) {
 		validarHerramienta(herramientaId);
 		Herramienta herramienta = herramientaPersistencia.obtener(herramientaId);
 		long asignada = persistencia.contarAsignacionesActivas(herramientaId, excluirId);
 		int total = herramienta.getCantidadTotal() == null ? 0 : herramienta.getCantidadTotal();
 		int danada = herramienta.getCantidadDanada() == null ? 0 : herramienta.getCantidadDanada();
 		int perdida = herramienta.getCantidadPerdida() == null ? 0 : herramienta.getCantidadPerdida();
-		if (total - (int) asignada - danada - perdida <= 0) {
+		if (total - (int) asignada - danada - perdida < requerida) {
 			throw new DatosInvalidosExcepcion("No hay unidades disponibles de esta herramienta");
 		}
+	}
+
+	private static int derivarCantidad(AsignacionHerramienta a) {
+		if (a.getCantidad() != null && a.getCantidad() != 0) {
+			return a.getCantidad();
+		}
+		return Boolean.TRUE.equals(a.getDevuelta()) ? -1 : 1;
 	}
 }

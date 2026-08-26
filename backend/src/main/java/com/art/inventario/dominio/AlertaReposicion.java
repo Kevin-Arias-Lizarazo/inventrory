@@ -1,13 +1,15 @@
 package com.art.inventario.dominio;
 
+import java.math.BigDecimal;
+
 public final class AlertaReposicion {
 
 	private String tipo;
 	private Long productoId;
 	private String nombre;
 	private String marca;
-	private Integer stock;
-	private Integer stockMinimo;
+	private BigDecimal stock;
+	private BigDecimal stockMinimo;
 
 	public String getTipo() {
 		return tipo;
@@ -41,19 +43,19 @@ public final class AlertaReposicion {
 		this.marca = marca;
 	}
 
-	public Integer getStock() {
+	public BigDecimal getStock() {
 		return stock;
 	}
 
-	public void setStock(Integer stock) {
+	public void setStock(BigDecimal stock) {
 		this.stock = stock;
 	}
 
-	public Integer getStockMinimo() {
+	public BigDecimal getStockMinimo() {
 		return stockMinimo;
 	}
 
-	public void setStockMinimo(Integer stockMinimo) {
+	public void setStockMinimo(BigDecimal stockMinimo) {
 		this.stockMinimo = stockMinimo;
 	}
 }

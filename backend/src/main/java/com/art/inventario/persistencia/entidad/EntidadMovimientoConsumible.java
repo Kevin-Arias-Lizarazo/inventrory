@@ -1,5 +1,7 @@
 package com.art.inventario.persistencia.entidad;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +19,7 @@ public class EntidadMovimientoConsumible {
 	private Long id;
 
 	private String tipo;
-	private Integer cantidad;
+	private BigDecimal cantidad;
 	private String fecha;
 	private String observacion;
 
@@ -41,11 +43,11 @@ public class EntidadMovimientoConsumible {
 		this.tipo = tipo;
 	}
 
-	public Integer getCantidad() {
+	public BigDecimal getCantidad() {
 		return cantidad;
 	}
 
-	public void setCantidad(Integer cantidad) {
+	public void setCantidad(BigDecimal cantidad) {
 		this.cantidad = cantidad;
 	}
 

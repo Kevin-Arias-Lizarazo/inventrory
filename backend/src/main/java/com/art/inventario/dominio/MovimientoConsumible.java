@@ -1,10 +1,12 @@
 package com.art.inventario.dominio;
 
+import java.math.BigDecimal;
+
 public final class MovimientoConsumible {
 
 	private Long id;
 	private String tipo;
-	private Integer cantidad;
+	private BigDecimal cantidad;
 	private String fecha;
 	private String observacion;
 	private Consumible consumible;
@@ -25,11 +27,11 @@ public final class MovimientoConsumible {
 		this.tipo = tipo;
 	}
 
-	public Integer getCantidad() {
+	public BigDecimal getCantidad() {
 		return cantidad;
 	}
 
-	public void setCantidad(Integer cantidad) {
+	public void setCantidad(BigDecimal cantidad) {
 		this.cantidad = cantidad;
 	}
 

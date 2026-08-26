@@ -314,6 +314,7 @@ public final class Mapeador {
 		ea.setFechaDevolucion(a.getFechaDevolucion());
 		ea.setEmpleado(empleado);
 		ea.setHerramienta(herramienta);
+		ea.setCantidad(a.getCantidad());
 		return ea;
 	}
 
@@ -326,6 +327,7 @@ public final class Mapeador {
 		d.setFechaDevolucion(a.getFechaDevolucion());
 		d.setEmpleado(aDominio(a.getEmpleado()));
 		d.setHerramienta(aDominio(a.getHerramienta()));
+		d.setCantidad(a.getCantidad());
 		return d;
 	}
 

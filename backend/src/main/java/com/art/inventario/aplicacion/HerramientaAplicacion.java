@@ -98,6 +98,31 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 
 	@Override
 	@Transactional
+	public Herramienta crearConCodigo(Herramienta herramienta) {
+		validarNombre(herramienta);
+		validarNombreUnico(herramienta.getNombre(), null);
+		if (herramienta.getCodigo() == null || herramienta.getCodigo().isBlank()) {
+			throw new DatosInvalidosExcepcion("El código es obligatorio para creación express");
+		}
+		if (persistencia.existePorCodigo(herramienta.getCodigo())) {
+			throw new ConflictoExcepcion("Ya existe un ítem con el código " + herramienta.getCodigo());
+		}
+		if (herramienta.getCantidadTotal() == null || herramienta.getCantidadTotal() < 1) {
+			throw new DatosInvalidosExcepcion("La cantidad total debe ser mayor a cero");
+		}
+		if (herramienta.getCantidadDanada() == null) {
+			herramienta.setCantidadDanada(0);
+		}
+		if (herramienta.getCantidadPerdida() == null) {
+			herramienta.setCantidadPerdida(0);
+		}
+		Herramienta creada = persistencia.guardar(herramienta);
+		notificador.publicar(CambiosNotificador.RECURSO_HERRAMIENTAS);
+		return creada;
+	}
+
+	@Override
+	@Transactional
 	public Herramienta actualizar(Long id, Herramienta datos) {
 		Herramienta actual = persistencia.obtener(id);
 		validarNombre(datos);

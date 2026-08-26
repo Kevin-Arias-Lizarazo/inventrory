@@ -14,6 +14,8 @@ public interface EmpleadoPersistencia {
 
 	Empleado obtenerPorCodigo(String codigo);
 
+	boolean existePorCodigo(String codigo);
+
 	Empleado guardar(Empleado empleado);
 
 	void eliminar(Long id);

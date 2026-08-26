@@ -63,6 +63,11 @@ public class EmpleadoPersistenciaJpa implements EmpleadoPersistencia {
 	}
 
 	@Override
+	public boolean existePorCodigo(String codigo) {
+		return consulta.findByCodigo(codigo) != null;
+	}
+
+	@Override
 	@Transactional
 	public Empleado guardar(Empleado empleado) {
 		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(empleado)));

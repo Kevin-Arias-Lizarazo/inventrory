@@ -1,9 +1,11 @@
 package com.art.inventario.dominio;
 
+import java.math.BigDecimal;
+
 public final class AsignacionConsumible {
 
 	private Long id;
-	private Integer cantidad;
+	private BigDecimal cantidad;
 	private String fecha;
 	private String observacion;
 	private Consumible consumible;
@@ -17,11 +19,11 @@ public final class AsignacionConsumible {
 		this.id = id;
 	}
 
-	public Integer getCantidad() {
+	public BigDecimal getCantidad() {
 		return cantidad;
 	}
 
-	public void setCantidad(Integer cantidad) {
+	public void setCantidad(BigDecimal cantidad) {
 		this.cantidad = cantidad;
 	}
 

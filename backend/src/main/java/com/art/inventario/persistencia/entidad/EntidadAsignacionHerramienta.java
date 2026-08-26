@@ -20,6 +20,7 @@ public class EntidadAsignacionHerramienta {
 	private String fecha;
 	private Boolean devuelta;
 	private String fechaDevolucion;
+	private Integer cantidad;
 
 	@ManyToOne
 	@JoinColumn(name = "empleado_id")
@@ -83,5 +84,13 @@ public class EntidadAsignacionHerramienta {
 
 	public void setHerramienta(EntidadHerramienta herramienta) {
 		this.herramienta = herramienta;
+	}
+
+	public Integer getCantidad() {
+		return cantidad;
+	}
+
+	public void setCantidad(Integer cantidad) {
+		this.cantidad = cantidad;
 	}
 }

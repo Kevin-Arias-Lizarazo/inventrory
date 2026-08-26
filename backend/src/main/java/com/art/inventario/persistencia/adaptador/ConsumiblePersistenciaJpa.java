@@ -64,6 +64,11 @@ public class ConsumiblePersistenciaJpa implements ConsumiblePersistencia {
 	}
 
 	@Override
+	public boolean existePorCodigo(String codigo) {
+		return consulta.findByCodigo(codigo) != null;
+	}
+
+	@Override
 	@Transactional
 	public Consumible guardar(Consumible consumible) {
 		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(consumible)));

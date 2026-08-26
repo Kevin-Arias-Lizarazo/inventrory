@@ -81,7 +81,7 @@ public class ImportacionAplicacion implements ImportacionCasoDeUso {
 					c.setMarca(celda(cols, idx, "marca"));
 					c.setUnidad(celda(cols, idx, "unidad"));
 					c.setDescripcion(celda(cols, idx, "descripcion"));
-					c.setStock(0);
+					c.setStock(java.math.BigDecimal.ZERO);
 					consumibles.crear(c);
 					creados++;
 				}

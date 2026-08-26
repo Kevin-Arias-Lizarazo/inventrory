@@ -14,6 +14,8 @@ public interface ProyectoPersistencia {
 
 	Proyecto obtenerPorCodigo(String codigo);
 
+	boolean existePorCodigo(String codigo);
+
 	Proyecto guardar(Proyecto proyecto);
 
 	void eliminar(Long id);

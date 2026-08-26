@@ -16,6 +16,8 @@ public interface ConsumibleCasoDeUso {
 
 	Consumible crear(Consumible consumible);
 
+	Consumible crearConCodigo(Consumible consumible);
+
 	Consumible actualizar(Long id, Consumible datos);
 
 	void eliminar(Long id);

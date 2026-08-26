@@ -16,7 +16,7 @@ public interface AsignacionHerramientaConsultaJpa extends JpaRepository<EntidadA
 
 	boolean existsByHerramientaIdAndDevueltaFalse(Long herramientaId);
 
-	@Query("select count(a) from EntidadAsignacionHerramienta a "
+	@Query("select coalesce(sum(a.cantidad), 0) from EntidadAsignacionHerramienta a "
 			+ "where a.herramienta.id = :herramientaId and a.devuelta = false and a.id <> :excluirId")
 	long contarAsignacionesActivas(@Param("herramientaId") Long herramientaId, @Param("excluirId") Long excluirId);
 
@@ -30,7 +30,7 @@ public interface AsignacionHerramientaConsultaJpa extends JpaRepository<EntidadA
 			+ "where a.herramienta is not null and a.devuelta = false")
 	List<Long> herramientasEnUso();
 
-	@Query("select a.herramienta.id, count(a) from EntidadAsignacionHerramienta a "
+	@Query("select a.herramienta.id, coalesce(sum(a.cantidad), 0) from EntidadAsignacionHerramienta a "
 			+ "where a.herramienta is not null and a.devuelta = false group by a.herramienta.id")
 	List<Object[]> contarAsignacionesActivasPorHerramienta();
 

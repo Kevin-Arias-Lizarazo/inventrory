@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 		validarNombre(consumible);
 		validarNombreUnico(consumible.getNombre(), null);
 		if (consumible.getStock() == null) {
-			consumible.setStock(0);
+			consumible.setStock(BigDecimal.ZERO);
 		}
 		Consumible creado = persistencia.guardar(consumible);
 		creado.setCodigo("C" + creado.getId());
@@ -65,10 +66,29 @@ public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 
 	@Override
 	@Transactional
+	public Consumible crearConCodigo(Consumible consumible) {
+		validarNombre(consumible);
+		validarNombreUnico(consumible.getNombre(), null);
+		if (consumible.getCodigo() == null || consumible.getCodigo().isBlank()) {
+			throw new DatosInvalidosExcepcion("El código es obligatorio para creación express");
+		}
+		if (persistencia.existePorCodigo(consumible.getCodigo())) {
+			throw new ConflictoExcepcion("Ya existe un ítem con el código " + consumible.getCodigo());
+		}
+		if (consumible.getStock() == null) {
+			consumible.setStock(BigDecimal.ZERO);
+		}
+		Consumible creado = persistencia.guardar(consumible);
+		notificador.publicar(CambiosNotificador.RECURSO_CONSUMIBLES);
+		return creado;
+	}
+
+	@Override
+	@Transactional
 	public Consumible actualizar(Long id, Consumible datos) {
 		Consumible actual = persistencia.obtener(id);
 		validarNombre(datos);
-validarNombreUnico(datos.getNombre(), id);
+		validarNombreUnico(datos.getNombre(), id);
 		actual.setNombre(datos.getNombre());
 		actual.setMarca(datos.getMarca());
 		actual.setStockMinimo(datos.getStockMinimo());
@@ -82,7 +102,7 @@ validarNombreUnico(datos.getNombre(), id);
 
 	@Override
 	@Transactional
-public void eliminar(Long id) {
+	public void eliminar(Long id) {
 		persistencia.obtener(id);
 		if (persistencia.tieneMovimientos(id)) {
 			throw new ConflictoExcepcion("No se puede eliminar: el consumible tiene movimientos asociados");
@@ -116,8 +136,8 @@ public void eliminar(Long id) {
 		validarMovimiento(movimiento);
 		Consumible consumible = persistencia.obtener(consumibleId);
 		int signo = signo(movimiento.getTipo());
-		int nuevoStock = stock(consumible) + signo * movimiento.getCantidad();
-		if (nuevoStock < 0) {
+		BigDecimal nuevoStock = stock(consumible).add(movimiento.getCantidad().multiply(BigDecimal.valueOf(signo)));
+		if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
 			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
 		}
 		consumible.setStock(nuevoStock);
@@ -136,9 +156,10 @@ public void eliminar(Long id) {
 		MovimientoConsumible actual = persistencia.obtenerMovimiento(id);
 		Consumible consumible = actual.getConsumible();
 		int signoNuevo = signo(datos.getTipo());
-		int ajuste = signoNuevo * datos.getCantidad() - signo(actual.getTipo()) * actual.getCantidad();
-		int nuevoStock = stock(consumible) + ajuste;
-		if (nuevoStock < 0) {
+		BigDecimal ajuste = datos.getCantidad().multiply(BigDecimal.valueOf(signoNuevo))
+				.subtract(actual.getCantidad().multiply(BigDecimal.valueOf(signo(actual.getTipo()))));
+		BigDecimal nuevoStock = stock(consumible).add(ajuste);
+		if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
 			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
 		}
 		consumible.setStock(nuevoStock);
@@ -158,8 +179,9 @@ public void eliminar(Long id) {
 	public void eliminarMovimiento(Long id) {
 		MovimientoConsumible actual = persistencia.obtenerMovimiento(id);
 		Consumible consumible = actual.getConsumible();
-		int nuevoStock = stock(consumible) - signo(actual.getTipo()) * actual.getCantidad();
-		if (nuevoStock < 0) {
+		BigDecimal nuevoStock = stock(consumible)
+				.subtract(actual.getCantidad().multiply(BigDecimal.valueOf(signo(actual.getTipo()))));
+		if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
 			throw new DatosInvalidosExcepcion("Stock insuficiente para realizar el egreso");
 		}
 		consumible.setStock(nuevoStock);
@@ -170,9 +192,10 @@ public void eliminar(Long id) {
 	}
 
 	private void validarMovimiento(MovimientoConsumible movimiento) {
-		if (movimiento.getCantidad() == null || movimiento.getCantidad() <= 0) {
+		if (movimiento.getCantidad() == null || movimiento.getCantidad().compareTo(BigDecimal.ZERO) <= 0) {
 			throw new DatosInvalidosExcepcion("La cantidad debe ser mayor a cero");
 		}
+		validarPrecision(movimiento.getCantidad());
 		if (!"INGRESO".equals(movimiento.getTipo()) && !"EGRESO".equals(movimiento.getTipo())) {
 			throw new DatosInvalidosExcepcion("El tipo debe ser INGRESO o EGRESO");
 		}
@@ -190,8 +213,15 @@ public void eliminar(Long id) {
 		}
 	}
 
-	private static int stock(Consumible consumible) {
-		return consumible.getStock() == null ? 0 : consumible.getStock();
+	static void validarPrecision(BigDecimal cantidad) {
+		BigDecimal stripped = cantidad.stripTrailingZeros();
+		if (stripped.scale() > 1) {
+			throw new DatosInvalidosExcepcion("La cantidad admite máximo un decimal");
+		}
+	}
+
+	static BigDecimal stock(Consumible consumible) {
+		return consumible.getStock() == null ? BigDecimal.ZERO : consumible.getStock();
 	}
 
 	private static int signo(String tipo) {

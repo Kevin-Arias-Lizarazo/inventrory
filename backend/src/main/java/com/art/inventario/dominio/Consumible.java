@@ -1,5 +1,7 @@
 package com.art.inventario.dominio;
 
+import java.math.BigDecimal;
+
 public final class Consumible {
 
 	private Long id;
@@ -7,9 +9,9 @@ public final class Consumible {
 	private String nombre;
 	private String marca;
 	private String unidad;
-	private Integer stock;
+	private BigDecimal stock;
 	private Double ultimoCosto;
-	private Integer stockMinimo;
+	private BigDecimal stockMinimo;
 	private String descripcion;
 	private String fotoUrl;
 
@@ -53,11 +55,11 @@ public final class Consumible {
 		this.unidad = unidad;
 	}
 
-	public Integer getStock() {
+	public BigDecimal getStock() {
 		return stock;
 	}
 
-	public void setStock(Integer stock) {
+	public void setStock(BigDecimal stock) {
 		this.stock = stock;
 	}
 
@@ -84,11 +86,11 @@ public final class Consumible {
 	public void setFotoUrl(String fotoUrl) {
 		this.fotoUrl = fotoUrl;
 	}
-	public Integer getStockMinimo() {
+	public BigDecimal getStockMinimo() {
 		return stockMinimo;
 	}
 
-	public void setStockMinimo(Integer stockMinimo) {
+	public void setStockMinimo(BigDecimal stockMinimo) {
 		this.stockMinimo = stockMinimo;
 	}
 }

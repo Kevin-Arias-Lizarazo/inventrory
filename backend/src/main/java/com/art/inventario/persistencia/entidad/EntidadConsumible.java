@@ -1,5 +1,7 @@
 package com.art.inventario.persistencia.entidad;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,9 +20,9 @@ public class EntidadConsumible {
 	private String nombre;
 	private String marca;
 	private String unidad;
-	private Integer stock;
+	private BigDecimal stock;
 	private Double ultimoCosto;
-	private Integer stockMinimo;
+	private BigDecimal stockMinimo;
 	private String descripcion;
 	private String fotoUrl;
 
@@ -64,11 +66,11 @@ public class EntidadConsumible {
 		this.unidad = unidad;
 	}
 
-	public Integer getStock() {
+	public BigDecimal getStock() {
 		return stock;
 	}
 
-	public void setStock(Integer stock) {
+	public void setStock(BigDecimal stock) {
 		this.stock = stock;
 	}
 
@@ -95,11 +97,11 @@ public class EntidadConsumible {
 	public void setFotoUrl(String fotoUrl) {
 		this.fotoUrl = fotoUrl;
 	}
-	public Integer getStockMinimo() {
+	public BigDecimal getStockMinimo() {
 		return stockMinimo;
 	}
 
-	public void setStockMinimo(Integer stockMinimo) {
+	public void setStockMinimo(BigDecimal stockMinimo) {
 		this.stockMinimo = stockMinimo;
 	}
 }

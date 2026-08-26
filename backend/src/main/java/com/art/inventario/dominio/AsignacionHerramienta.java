@@ -9,6 +9,7 @@ package com.art.inventario.dominio;
 	private String fechaDevolucion;
 	private Empleado empleado;
 	private Herramienta herramienta;
+	private Integer cantidad;
 
 	public Long getId() {
 		return id;
@@ -64,5 +65,13 @@ package com.art.inventario.dominio;
 
 	public void setHerramienta(Herramienta herramienta) {
 		this.herramienta = herramienta;
+	}
+
+	public Integer getCantidad() {
+		return cantidad;
+	}
+
+	public void setCantidad(Integer cantidad) {
+		this.cantidad = cantidad;
 	}
 }

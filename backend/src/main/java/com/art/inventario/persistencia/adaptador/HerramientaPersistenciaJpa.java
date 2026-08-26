@@ -59,6 +59,11 @@ public class HerramientaPersistenciaJpa implements HerramientaPersistencia {
 	}
 
 	@Override
+	public boolean existePorCodigo(String codigo) {
+		return consulta.findByCodigo(codigo) != null;
+	}
+
+	@Override
 	@Transactional
 	public Herramienta guardar(Herramienta herramienta) {
 		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(herramienta)));

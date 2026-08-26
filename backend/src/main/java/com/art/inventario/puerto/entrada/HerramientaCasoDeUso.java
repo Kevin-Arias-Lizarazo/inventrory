@@ -16,6 +16,8 @@ public interface HerramientaCasoDeUso {
 
 	Herramienta crear(Herramienta herramienta);
 
+	Herramienta crearConCodigo(Herramienta herramienta);
+
 	Herramienta actualizar(Long id, Herramienta datos);
 
 	Herramienta registrarDanada(Long id);

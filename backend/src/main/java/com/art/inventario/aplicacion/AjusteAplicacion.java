@@ -137,7 +137,7 @@ public class AjusteAplicacion implements AjusteCasoDeUso {
 	}
 
 	private static int stock(Consumible consumible) {
-		return consumible.getStock() == null ? 0 : consumible.getStock();
+		return consumible.getStock() == null ? 0 : consumible.getStock().intValue();
 	}
 
 	private static int stock(Material material) {
@@ -213,7 +213,7 @@ public class AjusteAplicacion implements AjusteCasoDeUso {
 		case Ajuste.TIPO_CONSUMIBLE -> {
 			MovimientoConsumible m = new MovimientoConsumible();
 			m.setTipo(tipoMovimiento);
-			m.setCantidad(cantidad);
+			m.setCantidad(java.math.BigDecimal.valueOf(cantidad));
 			m.setFecha(fecha);
 			m.setObservacion(etiqueta);
 			consumibles.registrarMovimiento(productoId, m);

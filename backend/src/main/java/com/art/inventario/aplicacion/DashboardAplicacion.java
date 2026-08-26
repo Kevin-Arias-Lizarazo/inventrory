@@ -64,7 +64,7 @@ public class DashboardAplicacion implements DashboardCasoDeUso {
 		double vCon = 0; int nCon = 0;
 		for (Consumible c : consumibles.listar()) {
 			total++; nCon++;
-			int st = c.getStock() == null ? 0 : c.getStock();
+			int st = c.getStock() == null ? 0 : c.getStock().intValue();
 			if (c.getUltimoCosto() == null) { if (st > 0) sinCosto++; }
 			else { vCon += st * c.getUltimoCosto(); }
 		}
