@@ -243,8 +243,7 @@ export default function Escaneo() {
 
     const item = mapas[letra].get(codigo);
     if (!item) {
-      // R-EU-3: ítem desconocido → lote bloqueado y mini-form de creación express.
-      const loteId = loteActual.id;
+      // R-EU-3: ítem desconocido → lote bloqueado (pendiente); la creación express se ofrece con clic.
       setLoteActual((l) => {
         const yaPendiente = (l.pendientes || []).some((p) => p.codigo === codigo);
         return {
@@ -256,7 +255,6 @@ export default function Escaneo() {
             : [...(l.pendientes || []), { codigo, motivo: 'ITEM_NO_REGISTRADO', mensaje: `Ítem no registrado: ${codigo}` }],
         };
       });
-      abrirCreacion(codigo, loteId);
       setMensaje({ tipo: 'info', texto: `Código desconocido ${codigo}: el lote quedó pendiente de acomodar.` });
       return;
     }
@@ -363,11 +361,6 @@ export default function Escaneo() {
 
   function abrirMiniFormasSegunResultado(lote) {
     if (!lote || !lote.resultado) return;
-    const pendientes = lote.resultado.pendientes || [];
-    if (pendientes.length > 0) {
-      abrirCreacion(pendientes[0].codigo, lote.id);
-      return;
-    }
     const conStock = (lote.resultado.errores || []).find((e) =>
       ['STOCK_INSUFICIENTE', 'SIN_DISPONIBILIDAD'].includes(e.motivo)
     );
