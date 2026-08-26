@@ -127,11 +127,17 @@ body {
   position: relative;
   padding: 9px 12px 9px 16px;
   border-left: 3px solid transparent;
+  text-decoration: none;
 }
 
 .nav-item:hover {
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.07);
   border-left-color: #334155;
+}
+
+.nav-item:hover .nav-label,
+.nav-item:hover .nav-descripcion {
+  color: #fff;
 }
 
 .nav-item-activo,
@@ -148,6 +154,7 @@ body {
 .nav-descripcion {
   font-size: 11px;
   color: #64748b;
+  margin-top: 2px;
 }
 
 .nav-item-activo .nav-descripcion {
@@ -1149,22 +1156,6 @@ a:not(.btn):hover {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   align-items: end;
-}
-
-/* --- navegación por rutas --- */
-.nav-item {
-  text-decoration: none;
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  color: #cbd5e1;
-  padding: 9px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  box-sizing: border-box;
 }
 
 .barra-superior {

@@ -11,6 +11,7 @@ export const TABS_INVENTARIO = [
   { to: '/inventario/epp', label: 'EPP' },
   { to: '/inventario/materiales', label: 'Materiales' },
   { to: '/inventario/consumibles', label: 'Consumibles' },
+  { to: '/inventario/codigos/escaneo', label: 'Lector de códigos' },
 ];
 
 export const TABS_PROYECTOS = [
