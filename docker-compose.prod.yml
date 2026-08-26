@@ -15,7 +15,7 @@ services:
       TZ: America/Bogota
     volumes:
       - inventario-data:/data
-    restart: unless-stopped
+    restart: "no"
 
 volumes:
   inventario-data:

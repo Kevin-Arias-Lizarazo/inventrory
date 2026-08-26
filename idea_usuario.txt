@@ -1,0 +1,364 @@
+hola
+00:38
+
+Hola! ¿En qué puedo ayudarte hoy?
+
+
+
+
+
+00:38 · Ran for 5s · TTFT 5s · 56 tok/s
+ahi te veo volando
+00:38
+
+¡Que tengas un buen día! Estoy aquí para ayudar. ¿Hay algo en particular en lo que necesites hablar o revisar?
+
+
+
+
+
+00:38 · Ran for 0s · TTFT 0.4s · 67 tok/s
+si quiero plantear la ui de un sistema que tiene inventario por categorias herramienta epp consumible materiales , ademas tiene empleados contratos prestaciones tipo de contato, tambien tiene proyecto con cliente y nombre y ubicacion , mira ternurita quiero que planees hacer un modelo de interrelacion para poder ver peridoos de contratacion costo por empleado pagos a empleados pagos de seguro ( empleados ) minuta empleado ( asistencia y en que estuvieron trabajando osea que proyecto ) epp asignados dotacion asignada tipos de contrato , consumibles en proyectos materiales en proyecto tiempo de cada empleado en proyecto otros gastos adicionales en el proyecto como acarreos , tambien es necesario marcar a quien se le da una herramienta y cuando tambien cuando se devuelve y asi alguna duda
+00:44
+
+¡Hola! Claro, te ayudaré con esa planificación. Vamos a identificar la estructura de datos y cómo podemos modelarlas para que puedan interrelacionarse adecuadamente.
+
+Estructuras de Datos
+Empleados: Contiene información sobre los empleados.
+
+id (int)
+nombre
+contrato_id (int) (relación con contratos)
+Contratos: Contiene información sobre los contratos.
+
+id (int)
+empleado_id (int) (relación con empleados)
+tipo_contrato_id (int) (relación con tipos de contrato)
+fecha_inicial
+fecha_final
+Tipo_Contrato: Contiene información sobre los tipos de contratos.
+
+id (int)
+nombre
+Proyectos: Contiene información sobre los proyectos.
+
+id (int)
+cliente_id (int) (relación con clientes)
+nombre
+ubicacion
+fecha_inicial
+fecha_final
+Tipo_Prestaciones: Contiene información sobre las prestaciones de tipo.
+
+id (int)
+nombre
+Prestaciones: Contiene información sobre las prestaciones.
+
+id (int)
+empleado_id (int) (relación con empleados)
+tipo_prestacion_id (int) (relación con tipos de prestaciones)
+fecha
+costo
+Material: Contiene información sobre los materiales.
+
+id (int)
+nombre
+Consumible: Contiene información sobre los consumibles.
+
+id (int)
+nombre
+EPP: Contiene información sobre las EPP.
+
+id (int)
+nombre
+Dotación: Contiene información sobre la dotación.
+
+id (int)
+materiales_id (int) (relación con materiales)
+consumibles_id (int) (relacion con consumibles)
+epp_id (int) (relación con EPP)
+Asistencia: Contiene información sobre la asistencia.
+
+id (int)
+empleado_id (int) (relación con empleados)
+fecha
+estado
+Modelo de Interrelación
+Para modelar esta interrelación, podemos crear las siguientes relaciones:
+
+EmpleadoContrato:
+
+empleado_id (foreign key to Empleados.id)
+contrato_id (foreign key to Contratos.id)
+PrestacionesEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+prestacion_id (foreign key to Prestaciones.id)
+ConsumibleProyecto:
+
+proyecto_id (foreign key to Proyectos.id)
+consumible_id (foreign key to Consumibles.id)
+MaterialProyecto:
+
+proyecto_id (foreign key to Proyectos.id)
+material_id (foreign key to materiales.id)
+EPPProyecto:
+
+proyecto_id (foreign key to Proyectos.id)
+epp_id (foreign key to EPPs.id)
+AsistenciaEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+fecha (datetime)
+TipoPrestacionesEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+tipo_prestacion_id (foreign key to Tipo_Prestaciones.id)
+DotaciónEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+materiales_id (foreign key to materiales.id)
+consumibles_id (foreign key to consumibles.id)
+epp_id (foreign key to EPPs.id)
+Consultas
+Períodos de Contratación:
+
+sql
+Copy
+SELECT DATE(fecha_inicial) AS fecha_inicial, DATE(fecha_final) AS fecha_final FROM Contratos WHERE empleado_id = <empleado_id>
+Costo por Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS costo_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Pagos a Empleados:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS pago_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Seguro a Empleados:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS seguro_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Minuta Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, DATE(a.fecha) AS fecha, COUNT(*) AS horas_trabajadas
+FROM Asistencia a
+JOIN Empleados e ON a.empleado_id = e.id
+GROUP BY e.id, e.nombre, DATE(a.fecha);
+EPP Asignado:
+
+sql
+Copy
+SELECT e.id, e.nombre, COUNT(*) AS cantidad
+FROM Dotación d
+JOIN Empleados e ON d.empleado_id = e.id
+GROUP BY e.id, e.nombre;
+Material en Proyecto:
+
+sql
+Copy
+SELECT p.id, p.nombre, COUNT(*) AS cantidad
+FROM MaterialProyecto mp
+JOIN Proyectos p ON mp.proyecto_id = p.id
+GROUP BY p.id, p.nombre;
+Consumible en Proyecto:
+
+sql
+Copy
+SELECT c.id, c.nombre, COUNT(*) AS cantidad
+FROM ConsumibleProyecto cp
+JOIN Proyectos p ON cp.proyecto_id = p.id
+GROUP BY p.id, p.nombre;
+Tipo de Prestación Empleado:
+
+sql
+Copy
+SELECT pe.empleado_id, tp.nombre
+FROM PrestacionesEmpleado pe
+JOIN Tipo_Prestaciones tp ON pe.tipo_prestacion_id = tp.id
+GROUP BY pe.empleado_id, tp.nombre;
+Dotación Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, d.materiales_id, d.consumibles_id, d.epp_id
+FROM Dotación d
+JOIN Empleados e ON d.empleado_id = e.id
+GROUP BY e.id, e.nombre, d.materiales_id, d.consumibles_id, d.epp_id;
+Conclusiones
+Este modelo de interrelación te permitirá hacer consultas precisas sobre las operaciones relacionadas. Con estas consultas, podrás generar información de períodos de contratación, costo por empleado, pagos a empleados, seguro a empleados, minuta empleado, EPP asignado, materiales en proyecto, consumibles en proyecto, tipo de prestación empleado, y dotación empleado.
+
+
+
+
+
+00:44 · Ran for 27s · TTFT 0.4s · 62 tok/s
+me parece genial osea para el historico tambien estaria bien unas relaciones sencillas para que sean tipo mascara en lugar de hacer todo eso siempre no crees ternurita tipo agarramos el modelo principal para cada vista le hacemos un snap para cada vista ejemplo empleados_snap ( nombre, cedula, tipo de contrato, telefono, correo, direcion, salario,ultima entrega de epp, ultima entrega de dotacion , ultima fecha de pago cesantias si es que aplica , herramientas por devolver en cantidad numero, ultimo proyecto puede ser el actual, fallas del mes) y asi con los demas tambien no crees
+00:49
+
+¡Claro! Aunque la idea tiene mucha sentido, sería útil tener una estructura más completa para cada vista. Aquí tienes una alternativa que es más compacta:
+
+Empleados:
+
+id (int)
+nombre
+cedula
+tipo_contrato_id (int) (relación con contratos)
+telefono
+correo
+direccion
+salario
+Contratos:
+
+id (int)
+empleado_id (int) (relación con empleados)
+tipo_contrato_id (int) (relación con tipos de contrato)
+fecha_inicial
+fecha_final
+Proyectos:
+
+id (int)
+cliente_id (int) (relación con clientes)
+nombre
+ubicacion
+fecha_inicial
+fecha_final
+Tipo_Prestaciones: Contiene información sobre las prestaciones de tipo.
+
+id (int)
+nombre
+Prestaciones: Contiene información sobre las prestaciones.
+
+id (int)
+empleado_id (int) (relación con empleados)
+tipo_prestacion_id (int) (relación con tipos de prestaciones)
+fecha
+costo
+Material: Contiene información sobre los materiales.
+
+id (int)
+nombre
+Consumible: Contiene información sobre los consumibles.
+
+id (int)
+nombre
+EPP: Contiene información sobre las EPP.
+
+id (int)
+nombre
+Asistencia: Contiene información sobre la asistencia.
+
+id (int)
+empleado_id (int) (relación con empleados)
+fecha
+estado
+TipoPrestacionesEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+tipo_prestacion_id (foreign key to Tipo_Prestaciones.id)
+DotaciónEmpleado:
+
+empleado_id (foreign key to Empleados.id)
+materiales_id (foreign key to materiales.id)
+consumibles_id (foreign key to consumibles.id)
+epp_id
+Consultas
+Períodos de Contratación:
+
+sql
+Copy
+SELECT DATE(fecha_inicial) AS fecha_inicial, DATE(fecha_final) AS fecha_final FROM Contratos WHERE empleado_id = <empleado_id>
+Costo por Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS costo_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Pagos a Empleados:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS pago_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Seguro a Empleados:
+
+sql
+Copy
+SELECT e.id, e.nombre, SUM(p.costo) AS seguro_total
+FROM Empleados e
+JOIN PrestacionesEmpleado pe ON e.id = pe.empleado_id
+GROUP BY e.id, e.nombre;
+Minuta Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, DATE(a.fecha) AS fecha, COUNT(*) AS horas_trabajadas
+FROM Asistencia a
+JOIN Empleados e ON a.empleado_id = e.id
+GROUP BY e.id, e.nombre, DATE(a.fecha);
+EPP Asignado:
+
+sql
+Copy
+SELECT e.id, e.nombre, COUNT(*) AS cantidad
+FROM Dotación d
+JOIN Empleados e ON d.empleado_id = e.id
+GROUP BY e.id, e.nombre;
+Material en Proyecto:
+
+sql
+Copy
+SELECT p.id, p.nombre, COUNT(*) AS cantidad
+FROM MaterialProyecto mp
+JOIN Proyectos p ON mp.proyecto_id = p.id
+GROUP BY p.id, p.nombre;
+Consumible en Proyecto:
+
+sql
+Copy
+SELECT c.id, c.nombre, COUNT(*) AS cantidad
+FROM ConsumibleProyecto cp
+JOIN Proyectos p ON cp.proyecto_id = p.id
+GROUP BY p.id, p.nombre;
+Tipo de Prestación Empleado:
+
+sql
+Copy
+SELECT pe.empleado_id, tp.nombre
+FROM PrestacionesEmpleado pe
+JOIN Tipo_Prestaciones tp ON pe.tipo_prestacion_id = tp.id
+GROUP BY pe.empleado_id, tp.nombre;
+Dotación Empleado:
+
+sql
+Copy
+SELECT e.id, e.nombre, d.materiales_id, d.consumibles_id, d.epp_id
+FROM Dotación d
+JOIN Empleados e ON d.empleado_id = e.id
+GROUP BY e.id, e.nombre, d.materiales_id, d.consumibles_id, d.epp_id;
+Conclusiones
+Este modelo de interrelación es más compacto y fácil de mantener. Con estas consultas, podrás generar información de períodos de contratación, costo por empleado, pagos a empleados, seguro a empleados, minuta empleado, EPP asignado, materiales en proyecto, consumibles en proyecto, tipo de prestación empleado, y dotación empleado.
+
+
+
+
+
+00:49 · Ran for 21s · TTFT 1s · 65 tok/s
+pero te equivocas esas serian snap_dato porque de esa forma esas son solo para leer pero se actualizan no directamente sino al cambiar ejemplo el tipo de contrato

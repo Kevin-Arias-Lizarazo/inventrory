@@ -2,6 +2,8 @@
 
 Inventario: SQLite + Spring Boot (backend) + React/Vite (frontend).
 
+> **Tareas pendientes**: el roadmap de funcionalidades a implementar (prestaciones y tipos de contrato, archivo base de siembra, detalle de proyecto con costo, etc.) vive en [`ROADMAP.md`](ROADMAP.md). Revisar allí antes de empezar una sesión de desarrollo.
+
 ## Levantar desde Docker (vía preferida)
 
 La app corre en contenedores definidos en `docker-compose.yml`:
