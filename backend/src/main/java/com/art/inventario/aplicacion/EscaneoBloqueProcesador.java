@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -85,6 +86,7 @@ public class EscaneoBloqueProcesador {
 				asignacion.setFecha(hoy());
 				asignacion.setDevuelta(false);
 				asignacion.setLugar("");
+				asignacion.setCantidad(1);
 				asignacionHerramientaCasoDeUso.crear(asignacion);
 				creados++;
 			}
@@ -97,15 +99,28 @@ public class EscaneoBloqueProcesador {
 		int devueltas = 0;
 		for (ItemEscaneo item : bloque.getItems()) {
 			Herramienta herramienta = herramientaPersistencia.obtenerPorCodigo(item.getCodigo());
-			List<AsignacionHerramienta> activas = asignacionHerramientaPersistencia
-					.activasMasAntiguas(empleado.getId(), herramienta.getId(), cantidad(item));
-			if (activas.size() < cantidad(item)) {
+			int cantidadDevolver = cantidad(item);
+			List<AsignacionHerramienta> filasAbiertas = asignacionHerramientaPersistencia
+					.activasMasAntiguas(empleado.getId(), herramienta.getId(), Integer.MAX_VALUE);
+			long sumAbiertas = filasAbiertas.stream()
+					.filter(a -> a.getCantidad() != null && a.getCantidad() > 0)
+					.mapToLong(AsignacionHerramienta::getCantidad)
+					.sum();
+			if (sumAbiertas < cantidadDevolver) {
 				throw new DatosInvalidosExcepcion(
 						"El empleado no tiene suficientes asignaciones activas de \"" + herramienta.getNombre() + "\"");
 			}
-			for (AsignacionHerramienta a : activas) {
-				a.setDevuelta(true);
-				a.setFechaDevolucion(hoy());
+			int restante = cantidadDevolver;
+			for (AsignacionHerramienta a : filasAbiertas) {
+				if (restante <= 0) break;
+				if (a.getCantidad() == null || a.getCantidad() <= 0) continue;
+				int tomar = Math.min(restante, a.getCantidad());
+				a.setCantidad(a.getCantidad() - tomar);
+				restante -= tomar;
+				if (a.getCantidad() == 0) {
+					a.setDevuelta(true);
+					a.setFechaDevolucion(hoy());
+				}
 				asignacionHerramientaPersistencia.guardar(a);
 				devueltas++;
 			}
@@ -123,7 +138,7 @@ public class EscaneoBloqueProcesador {
 			AsignacionConsumible asignacion = new AsignacionConsumible();
 			asignacion.setConsumible(consumible);
 			asignacion.setProyecto(proyecto);
-			asignacion.setCantidad(cantidad(item));
+			asignacion.setCantidad(BigDecimal.valueOf(cantidad(item)));
 			asignacion.setFecha(hoy());
 			asignacionConsumibleCasoDeUso.crear(asignacion);
 			creados++;
