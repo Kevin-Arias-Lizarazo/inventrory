@@ -25,6 +25,11 @@ const inicialMov = () => ({
   observacion: '',
 });
 
+const formatoNumero = (n) => {
+  const num = Number(n ?? 0);
+  return Number.isInteger(num) ? String(num) : String(num);
+};
+
 export default function Inventario({ config, titulo }) {
   const { suscribir } = useEventos();
   const { lista, cargando, error, recargar } = config;
@@ -177,7 +182,7 @@ export default function Inventario({ config, titulo }) {
           x.stockMinimo != null && x.stockMinimo > 0 && (x.stock ?? 0) <= x.stockMinimo;
         return (
           <Badge tipo={bajo ? 'rojo' : x.stock > 0 ? 'verde' : 'rojo'}>
-            {x.stock} {x.unidad ? ` ${x.unidad}` : ''}
+            {formatoNumero(x.stock)} {x.unidad ? ` ${x.unidad}` : ''}
             {bajo ? ' ⚠' : ''}
           </Badge>
         );
@@ -186,7 +191,7 @@ export default function Inventario({ config, titulo }) {
     {
       clave: 'stockMinimo',
       titulo: 'Mín.',
-      render: (x) => (x.stockMinimo != null && x.stockMinimo > 0 ? x.stockMinimo : <span className="sin-dato">&mdash;</span>),
+      render: (x) => (x.stockMinimo != null && x.stockMinimo > 0 ? formatoNumero(x.stockMinimo) : <span className="sin-dato">&mdash;</span>),
     },
     ...(config.mostrarVencimiento
       ? [
@@ -225,7 +230,7 @@ export default function Inventario({ config, titulo }) {
       render: (m) =>
         m.tipo === 'INGRESO' ? <Badge tipo="verde">Ingreso</Badge> : <Badge tipo="rojo">Egreso</Badge>,
     },
-    { clave: 'cantidad', titulo: 'Cantidad' },
+    { clave: 'cantidad', titulo: 'Cantidad', render: (m) => formatoNumero(m.cantidad) },
     { clave: 'fecha', titulo: 'Fecha' },
     { clave: 'observacion', titulo: 'Observación' },
     {
@@ -313,6 +318,7 @@ export default function Inventario({ config, titulo }) {
             <input
               type="number"
               min="0"
+              step={config.decimales ? '0.1' : '1'}
               value={formItem.stockMinimo}
               placeholder="0 = sin alerta"
               onChange={(e) => setFormItem({ ...formItem, stockMinimo: e.target.value })}
@@ -385,7 +391,8 @@ export default function Inventario({ config, titulo }) {
               <label>Cantidad *</label>
               <input
                 type="number"
-                min="1"
+                min={config.decimales ? '0.1' : '1'}
+                step={config.decimales ? '0.1' : '1'}
                 value={formMov.cantidad}
                 onChange={(e) => setFormMov({ ...formMov, cantidad: e.target.value })}
                 required

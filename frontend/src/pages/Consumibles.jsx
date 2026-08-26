@@ -17,6 +17,7 @@ export default function Consumibles() {
         nombrePlural: 'consumibles',
         mostrarCodigo: true,
         mostrarMarca: true,
+        decimales: true,
       }}
       titulo="Inventario de consumibles"
     />

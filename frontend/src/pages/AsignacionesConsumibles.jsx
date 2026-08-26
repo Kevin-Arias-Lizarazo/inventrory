@@ -183,7 +183,8 @@ export default function AsignacionesConsumibles() {
               <label>Cantidad *</label>
               <input
                 type="number"
-                min="1"
+                min="0.1"
+                step="0.1"
                 value={form.cantidad}
                 onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
                 required

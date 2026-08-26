@@ -12,6 +12,7 @@ const inicial = () => ({
   fecha: hoy(),
   empleadoId: null,
   herramientaId: null,
+  cantidad: 1,
   devuelta: false,
   fechaDevolucion: '',
 });
@@ -46,13 +47,15 @@ export default function Asignaciones() {
   }
 
   function abrirEdicion(item) {
+    const cantidad = item.cantidad != null ? item.cantidad : item.devuelta ? -1 : 1;
     setEditando(item);
     setForm({
       lugar: item.lugar,
       fecha: item.fecha,
       empleadoId: item.empleado?.id || null,
       herramientaId: item.herramienta?.id || null,
-      devuelta: item.devuelta || false,
+      cantidad: Math.abs(cantidad),
+      devuelta: cantidad <= 0,
       fechaDevolucion: item.fechaDevolucion || '',
     });
     setErrores(null);
@@ -63,8 +66,10 @@ export default function Asignaciones() {
     e.preventDefault();
     setErrores(null);
     try {
+      const cantidad = Math.abs(Number(form.cantidad)) || 1;
       const cuerpo = aDominio({
         ...form,
+        cantidad: form.devuelta ? -cantidad : cantidad,
         fechaDevolucion: form.devuelta ? form.fechaDevolucion : null,
       });
       if (editando) {
@@ -104,14 +109,16 @@ export default function Asignaciones() {
     { clave: 'lugar', titulo: 'Lugar' },
     { clave: 'fecha', titulo: 'Fecha' },
     {
-      clave: 'devuelta',
-      titulo: 'Estado',
-      render: (x) =>
-        x.devuelta ? (
-          <Badge tipo="verde">Devuelta</Badge>
+      clave: 'cantidad',
+      titulo: 'Cantidad',
+      render: (x) => {
+        const cantidad = x.cantidad != null ? x.cantidad : x.devuelta ? -1 : 1;
+        return cantidad > 0 ? (
+          <Badge tipo="rojo">Pendiente · +{cantidad}</Badge>
         ) : (
-          <Badge tipo="rojo">Pendiente</Badge>
-        ),
+          <Badge tipo="verde">Devuelta · {cantidad}</Badge>
+        );
+      },
     },
     {
       clave: 'fechaDevolucion',
@@ -209,6 +216,17 @@ export default function Asignaciones() {
                 onCambio={(id) => setForm({ ...form, empleadoId: id })}
                 requerido
                 soloContratados
+              />
+            </div>
+            <div className="campo">
+              <label>Cantidad</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={form.cantidad}
+                onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
+                title={form.devuelta ? 'Cantidad devuelta' : 'Cantidad entregada'}
               />
             </div>
           </div>

@@ -83,21 +83,31 @@ export default function DetalleHerramienta() {
       ) : (
         <table className="tabla">
           <thead>
-            <tr><th>Empleado</th><th>Lugar</th><th>Fecha</th><th>Estado</th></tr>
+            <tr><th>Empleado</th><th>Lugar</th><th>Cantidad</th><th>Fecha</th><th>Estado</th></tr>
           </thead>
           <tbody>
-            {asignaciones.map((a) => (
-              <tr key={a.id}>
-                <td>{a.empleado?.nombre || '—'}</td>
-                <td>{a.lugar || '—'}</td>
-                <td>{a.fecha}</td>
-                <td>
-                  {a.devuelta
-                    ? <Badge tipo="verde">Devuelta {a.fechaDevolucion}</Badge>
-                    : <Badge tipo="rojo">Asignada</Badge>}
-                </td>
-              </tr>
-            ))}
+            {asignaciones.map((a) => {
+              const cantidad = a.cantidad != null ? a.cantidad : a.devuelta ? -1 : 1;
+              return (
+                <tr key={a.id}>
+                  <td>{a.empleado?.nombre || '—'}</td>
+                  <td>{a.lugar || '—'}</td>
+                  <td>
+                    {cantidad > 0 ? (
+                      <Badge tipo="rojo">+{cantidad}</Badge>
+                    ) : (
+                      <Badge tipo="verde">{cantidad}</Badge>
+                    )}
+                  </td>
+                  <td>{a.fecha}</td>
+                  <td>
+                    {cantidad <= 0
+                      ? <Badge tipo="verde">Devuelta {a.fechaDevolucion}</Badge>
+                      : <Badge tipo="rojo">Asignada</Badge>}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
