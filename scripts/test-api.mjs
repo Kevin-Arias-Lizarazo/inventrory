@@ -354,6 +354,8 @@ async function main() {
     method: "PUT",
     body: {
       ...asigRet.data,
+      // Contrato nuevo: devolución = cantidad negativa (cantidad firmada). No valida contrato.
+      cantidad: -1,
       devuelta: true,
       fechaDevolucion: "2026-08-12",
       herramienta: { id: hRet.data.id },
@@ -1112,6 +1114,275 @@ async function main() {
   const restUp = await request("/api/backup/restaurar-uploads", { method: "POST", blob: fdZip });
   ok("POST backup restaurar-uploads", restUp.status === 200 && typeof restUp.data?.mensaje === "string",
     `status=${restUp.status}`);
+
+  // ===== Escaneo de lotes (escaneo-lotes) =====
+  // Fixtures propios del bloque (por runId); el bloque legacy no se toca.
+  // NOTA (anomalías backend detectadas al escribir este bloque):
+  //  a) LoteEscaneoProcesador.buildRejected() NO adjunta las listas errores/pendientes al
+  //     ResultadoLoteEscaneo (spec R-EL-4/R-EL-8 exige [{codigo,motivo,mensaje}]) -> las
+  //     aserciones de motivo fallarán hasta que el backend serialice esas listas.
+  //  b) Colisión de creación express: el backend responde 409 (ConflictoExcepcion); la spec
+  //     S-EE-3 exige 400 -> la aserción pide 400.
+  //  c) IncrementoStockEscaneo no tiene campo `tipo` (se infiere del prefijo del código);
+  //     el spec lo envía y Jackson lo ignora -> se manda igual para respetar el contrato.
+  const lotPost = (lotes) => request("/api/escaneos/lote", { method: "POST", body: lotes });
+
+  const empLot = await request("/api/empleados", { method: "POST", body: { nombre: "LoteEmp " + runId } });
+  const empLotId = empLot.data.id;
+  const empLotCod = empLot.data.codigo;
+  const contratoLot = await request("/api/contratos", {
+    method: "POST",
+    body: { empleado: { id: empLotId }, fechaInicio: "2026-01-01" },
+  });
+  ok("lote: empleado contratado (fixture)", contratoLot.status === 201 && contratoLot.data.estado === "ACTIVO");
+  const herrLotA = await request("/api/herramientas", { method: "POST", body: { nombre: "LoteA " + runId, cantidadTotal: 5 } });
+  const herrLotACod = herrLotA.data.codigo;
+  const herrLotB = await request("/api/herramientas", { method: "POST", body: { nombre: "LoteB " + runId, cantidadTotal: 3 } });
+  const herrLotBCod = herrLotB.data.codigo;
+  const proyLot = await request("/api/proyectos", { method: "POST", body: { nombre: "LoteProy " + runId } });
+  const proyLotCod = proyLot.data.codigo;
+  const consLot = await request("/api/consumibles", { method: "POST", body: { nombre: "LoteCons " + runId, unidad: "u", stock: 10 } });
+  const consLotCod = consLot.data.codigo;
+
+  // 1) Lote ASIGNACION feliz (herramientas): E# contratado + 2 H#
+  const lot1 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [
+      { codigo: herrLotACod, cantidad: 2 },
+      { codigo: herrLotBCod, cantidad: 1 },
+    ]},
+  ]);
+  ok("lote 1: ASIGNACION herramientas ok", lot1.status === 200 && lot1.data[0]?.ok === true && lot1.data[0]?.registrosCreados === 2, JSON.stringify(lot1.data));
+  ok("lote 1: sin errores ni pendientes", Array.isArray(lot1.data[0]?.errores) && lot1.data[0].errores.length === 0 && Array.isArray(lot1.data[0]?.pendientes) && lot1.data[0].pendientes.length === 0, JSON.stringify(lot1.data));
+  const hA1 = await request(`/api/herramientas/${herrLotA.data.id}`);
+  ok("lote 1: disponible H<A> = 3 (5-2)", hA1.data.cantidadDisponible === 3, `disp=${hA1.data.cantidadDisponible}`);
+  const hB1 = await request(`/api/herramientas/${herrLotB.data.id}`);
+  ok("lote 1: disponible H<B> = 2 (3-1)", hB1.data.cantidadDisponible === 2, `disp=${hB1.data.cantidadDisponible}`);
+  const asigLot1 = await request("/api/asignaciones-herramientas");
+  const filaLot1 = asigLot1.data.find((a) => a.empleado?.id === empLotId && a.herramienta?.codigo === herrLotACod);
+  ok("lote 1: fila creada con cantidad 2", filaLot1 && filaLot1.cantidad === 2, JSON.stringify(filaLot1));
+
+  // 2) Lote ASIGNACION consumibles: P# ACTIVO + C# -> stock decrece
+  const lot2 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: proyLotCod, items: [{ codigo: consLotCod, cantidad: 4 }] },
+  ]);
+  ok("lote 2: ASIGNACION consumibles ok", lot2.status === 200 && lot2.data[0]?.ok === true && lot2.data[0]?.registrosCreados === 1, JSON.stringify(lot2.data));
+  const cLot2 = await request(`/api/consumibles/${consLot.data.id}`);
+  ok("lote 2: stock consumible = 6 (10-4)", Number(cLot2.data.stock) === 6, `stock=${cLot2.data.stock}`);
+  const asigConsLot2 = await request("/api/asignaciones-consumibles");
+  const filaCons2 = asigConsLot2.data.find((a) => a.proyecto?.id === proyLot.data.id && a.consumible?.id === consLot.data.id);
+  ok("lote 2: AsignacionConsumible.cantidad = 4", filaCons2 && Number(filaCons2.cantidad) === 4, JSON.stringify(filaCons2));
+
+  // 3) Rechazo tipo cruzado: E# con C# -> error por ítem, nada creado
+  const stockCons3 = (await request(`/api/consumibles/${consLot.data.id}`)).data.stock;
+  const lot3 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [{ codigo: consLotCod, cantidad: 1 }] },
+  ]);
+  ok("lote 3: rechaza C# en destino E# (TIPO_CRUZADO)", lot3.data[0]?.ok === false && lot3.data[0]?.registrosCreados === 0 && lot3.data[0]?.errores?.[0]?.motivo === "TIPO_CRUZADO", JSON.stringify(lot3.data));
+  const stockCons3b = (await request(`/api/consumibles/${consLot.data.id}`)).data.stock;
+  ok("lote 3: nada creado (stock intacto)", Number(stockCons3b) === Number(stockCons3), `stock=${stockCons3b}`);
+
+  // 4) Rechazo contrato no activo: empleado sin contrato -> error, nada creado
+  const empSinContrato = await request("/api/empleados", { method: "POST", body: { nombre: "LoteSinContrato " + runId } });
+  const lot4 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empSinContrato.data.codigo, items: [{ codigo: herrLotACod, cantidad: 1 }] },
+  ]);
+  ok("lote 4: rechaza empleado sin contrato (CONTRATO_INACTIVO)", lot4.data[0]?.ok === false && lot4.data[0]?.registrosCreados === 0 && lot4.data[0]?.errores?.[0]?.motivo === "CONTRATO_INACTIVO", JSON.stringify(lot4.data));
+  const hA4 = await request(`/api/herramientas/${herrLotA.data.id}`);
+  ok("lote 4: nada creado (disponible intacto)", hA4.data.cantidadDisponible === 3, `disp=${hA4.data.cantidadDisponible}`);
+
+  // 5) Rechazo sin stock/disponibilidad + increment express -> el lote revalidado pasa
+  const lot5 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [{ codigo: herrLotBCod, cantidad: 3 }] },
+  ]);
+  ok("lote 5: rechaza herramientas sin disponibilidad (SIN_DISPONIBILIDAD)", lot5.data[0]?.ok === false && lot5.data[0]?.registrosCreados === 0 && lot5.data[0]?.errores?.[0]?.motivo === "SIN_DISPONIBILIDAD", JSON.stringify(lot5.data));
+  const lot5c = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: proyLotCod, items: [{ codigo: consLotCod, cantidad: 999 }] },
+  ]);
+  ok("lote 5: rechaza consumible sin stock (STOCK_INSUFICIENTE)", lot5c.data[0]?.ok === false && lot5c.data[0]?.registrosCreados === 0 && lot5c.data[0]?.errores?.[0]?.motivo === "STOCK_INSUFICIENTE", JSON.stringify(lot5c.data));
+  const incH = await request("/api/escaneos/incrementar-stock", {
+    method: "POST",
+    body: { tipo: "HERRAMIENTA", codigo: herrLotBCod, cantidad: 2 },
+  });
+  ok("lote 5: increment express H# ok", incH.status === 200 && incH.data?.ok === true && incH.data?.codigo === herrLotBCod && incH.data?.id === herrLotB.data.id, JSON.stringify(incH.data));
+  const hB5 = await request(`/api/herramientas/${herrLotB.data.id}`);
+  ok("lote 5: cantidadTotal tras incremento = 5", hB5.data.cantidadTotal === 5, `total=${hB5.data.cantidadTotal}`);
+  const movsH5 = await request("/api/movimientos-herramientas");
+  ok("lote 5: movimiento 'Incremento por escaneo' registrado", Array.isArray(movsH5.data) && movsH5.data.some((m) => m.herramienta?.id === herrLotB.data.id && m.observacion === "Incremento por escaneo"), JSON.stringify(movsH5.data?.slice?.(0, 3)));
+  const lot5b = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [{ codigo: herrLotBCod, cantidad: 3 }] },
+  ]);
+  ok("lote 5: el mismo lote revalidado pasa", lot5b.data[0]?.ok === true && lot5b.data[0]?.registrosCreados === 1, JSON.stringify(lot5b.data));
+
+  // 6) Ítem no registrado bloquea el lote + creación express con código fijo -> revalidado pasa
+  const herramientasTotal = await request("/api/herramientas");
+  const maxH = herramientasTotal.data.reduce((m, h) => {
+    const n = parseInt(String(h.codigo || "").replace(/^H/, ""), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  // Código libre garantizado (avanza entre corridas) y distinto del "H<id>" que asignaría
+  // la creación normal: el id nuevo será ~maxH+1, nunca maxH+1000 -> la aserción
+  // "codigo !== H<id>" distingue de verdad el bug de regeneración (S-EE-2).
+  const codigoFijo = "H" + (maxH + 1000);
+  const lot6 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [
+      { codigo: codigoFijo, cantidad: 1 },
+      { codigo: herrLotACod, cantidad: 1 },
+    ]},
+  ]);
+  ok("lote 6: ítem no registrado bloquea el lote (ITEM_NO_REGISTRADO)", lot6.data[0]?.ok === false && lot6.data[0]?.registrosCreados === 0 && lot6.data[0]?.pendientes?.[0]?.motivo === "ITEM_NO_REGISTRADO", JSON.stringify(lot6.data));
+  const hA6 = await request(`/api/herramientas/${herrLotA.data.id}`);
+  ok("lote 6: el otro ítem NO se aplicó (bloqueo total)", hA6.data.cantidadDisponible === 3, `disp=${hA6.data.cantidadDisponible}`);
+  const creaH = await request("/api/escaneos/items", {
+    method: "POST",
+    body: { tipo: "HERRAMIENTA", codigo: codigoFijo, nombre: "Llave fija " + runId, marca: "Stanley", cantidadTotal: 2 },
+  });
+  ok("lote 6: creación express H# ok", creaH.status === 200 && creaH.data?.ok === true && creaH.data?.codigo === codigoFijo && creaH.data?.id > 0, JSON.stringify(creaH.data));
+  const hCreada = await request(`/api/herramientas/${creaH.data.id}`);
+  ok("lote 6: código fijo persistido (no H<id>)", hCreada.data.codigo === codigoFijo && hCreada.data.codigo !== "H" + creaH.data.id, `codigo=${hCreada.data.codigo}`);
+  const colision = await request("/api/escaneos/items", {
+    method: "POST",
+    body: { tipo: "HERRAMIENTA", codigo: codigoFijo, nombre: "Llave fija 2 " + runId, marca: "Stanley", cantidadTotal: 1 },
+  });
+  ok("lote 6: colisión de código rechazada (400)", colision.status === 400 && typeof colision.data?.mensaje === "string" && colision.data.mensaje.includes("Ya existe un ítem con el código"), `status=${colision.status} ${JSON.stringify(colision.data)}`);
+  const lot6b = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [
+      { codigo: codigoFijo, cantidad: 1 },
+      { codigo: herrLotACod, cantidad: 1 },
+    ]},
+  ]);
+  ok("lote 6: lote revalidado tras creación pasa", lot6b.data[0]?.ok === true && lot6b.data[0]?.registrosCreados === 2, JSON.stringify(lot6b.data));
+  const hA6b = await request(`/api/herramientas/${herrLotA.data.id}`);
+  ok("lote 6: disponible H<A> = 2 tras revalidar", hA6b.data.cantidadDisponible === 2, `disp=${hA6b.data.cantidadDisponible}`);
+
+  // 7) Lote DEVOLUCION FIFO: 2 asignaciones (cantidad 2 y 1), devolver 2 -> cierra la primera
+  const empFifo = await request("/api/empleados", { method: "POST", body: { nombre: "LoteFifo " + runId } });
+  const empFifoId = empFifo.data.id;
+  await request("/api/contratos", { method: "POST", body: { empleado: { id: empFifoId }, fechaInicio: "2026-01-01" } });
+  const herrFifo = await request("/api/herramientas", { method: "POST", body: { nombre: "LoteFifoH " + runId, cantidadTotal: 5 } });
+  const herrFifoCod = herrFifo.data.codigo;
+  const lotF1 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 2 }] }]);
+  const lotF2 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 1 }] }]);
+  ok("FIFO: 2 asignaciones creadas (2 y 1)", lotF1.data[0]?.ok === true && lotF2.data[0]?.ok === true, JSON.stringify([lotF1.data, lotF2.data]));
+  const asigFifo = await request("/api/asignaciones-herramientas");
+  const filasFifo = asigFifo.data
+    .filter((a) => a.empleado?.id === empFifoId && a.herramienta?.codigo === herrFifoCod && a.cantidad > 0)
+    .sort((a, b) => a.id - b.id);
+  ok("FIFO: filas abiertas [2, 1] por id asc", filasFifo.length === 2 && filasFifo[0].cantidad === 2 && filasFifo[1].cantidad === 1, JSON.stringify(filasFifo.map((f) => ({ id: f.id, c: f.cantidad }))));
+  const filaFifoA = filasFifo[0];
+  const filaFifoB = filasFifo[1];
+  const lotF3 = await lotPost([{ tipo: "DEVOLUCION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 2 }] }]);
+  ok("FIFO: devolución ok (1 fila tocada)", lotF3.data[0]?.ok === true && lotF3.data[0]?.registrosCreados === 1, JSON.stringify(lotF3.data));
+  const asigFifo2 = await request("/api/asignaciones-herramientas");
+  const filaA2 = asigFifo2.data.find((a) => a.id === filaFifoA.id);
+  const filaB2 = asigFifo2.data.find((a) => a.id === filaFifoB.id);
+  ok("FIFO: primera fila cerrada (devuelta acumulado)", filaA2.cantidad === 0 && filaA2.devuelta === true, JSON.stringify(filaA2));
+  ok("FIFO: segunda fila queda en 1", filaB2.cantidad === 1 && filaB2.devuelta === false, JSON.stringify(filaB2));
+  const hFifo2 = await request(`/api/herramientas/${herrFifo.data.id}`);
+  ok("FIFO: disponible = 4 (5-1)", hFifo2.data.cantidadDisponible === 4, `disp=${hFifo2.data.cantidadDisponible}`);
+
+  // 8) Devolución SIN contrato: contrato concluido pero asignaciones abiertas -> DV ok
+  const empDev = await request("/api/empleados", { method: "POST", body: { nombre: "LoteDev " + runId } });
+  const empDevId = empDev.data.id;
+  const contrDev = await request("/api/contratos", { method: "POST", body: { empleado: { id: empDevId }, fechaInicio: "2026-01-01" } });
+  const herrDev = await request("/api/herramientas", { method: "POST", body: { nombre: "LoteDevH " + runId, cantidadTotal: 3 } });
+  const herrDevCod = herrDev.data.codigo;
+  const lotDev1 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: empDev.data.codigo, items: [{ codigo: herrDevCod, cantidad: 2 }] }]);
+  ok("DV sin contrato: asignación previa ok", lotDev1.data[0]?.ok === true, JSON.stringify(lotDev1.data));
+  const concluidoDev = await request(`/api/contratos/${contrDev.data.id}/concluir`, { method: "POST" });
+  ok("DV sin contrato: contrato concluido", concluidoDev.status === 200 && concluidoDev.data.estado === "CONCLUIDO");
+  const lotDev2 = await lotPost([{ tipo: "DEVOLUCION", destinoCodigo: empDev.data.codigo, items: [{ codigo: herrDevCod, cantidad: 2 }] }]);
+  ok("DV sin contrato: devolución permitida (ok)", lotDev2.data[0]?.ok === true && lotDev2.data[0]?.registrosCreados === 1, JSON.stringify(lotDev2.data));
+  const hDev2 = await request(`/api/herramientas/${herrDev.data.id}`);
+  ok("DV sin contrato: disponible restaurado = 3", hDev2.data.cantidadDisponible === 3, `disp=${hDev2.data.cantidadDisponible}`);
+
+  // 9) Devolución en exceso: devolver más de lo asignado -> rechazo con error
+  const empEx = await request("/api/empleados", { method: "POST", body: { nombre: "LoteEx " + runId } });
+  const empExId = empEx.data.id;
+  await request("/api/contratos", { method: "POST", body: { empleado: { id: empExId }, fechaInicio: "2026-01-01" } });
+  const herrEx = await request("/api/herramientas", { method: "POST", body: { nombre: "LoteExH " + runId, cantidadTotal: 3 } });
+  const herrExCod = herrEx.data.codigo;
+  await lotPost([{ tipo: "ASIGNACION", destinoCodigo: empEx.data.codigo, items: [{ codigo: herrExCod, cantidad: 1 }] }]);
+  const lotEx = await lotPost([{ tipo: "DEVOLUCION", destinoCodigo: empEx.data.codigo, items: [{ codigo: herrExCod, cantidad: 2 }] }]);
+  ok("lote exceso: rechaza devolver más de lo asignado (EXCESO_DEVOLUCION)", lotEx.data[0]?.ok === false && lotEx.data[0]?.registrosCreados === 0 && lotEx.data[0]?.errores?.[0]?.motivo === "EXCESO_DEVOLUCION", JSON.stringify(lotEx.data));
+  const asigEx = await request("/api/asignaciones-herramientas");
+  const filaEx = asigEx.data.find((a) => a.empleado?.id === empExId && a.herramienta?.codigo === herrExCod);
+  ok("lote exceso: fila intacta (cantidad 1)", filaEx && filaEx.cantidad === 1, JSON.stringify(filaEx));
+
+  // 10) Decimales en consumibles: asignar 1.5 -> stock 3.5; 1.25 -> CANTIDAD_INVALIDA
+  const proyDec = await request("/api/proyectos", { method: "POST", body: { nombre: "LoteDec " + runId } });
+  const consDec = await request("/api/consumibles", { method: "POST", body: { nombre: "LoteDecC " + runId, unidad: "u", stock: 5 } });
+  const consDecCod = consDec.data.codigo;
+  const lotDec = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: proyDec.data.codigo, items: [{ codigo: consDecCod, cantidad: 1.5 }] }]);
+  ok("decimales: asignación 1.5 ok", lotDec.data[0]?.ok === true && lotDec.data[0]?.registrosCreados === 1, JSON.stringify(lotDec.data));
+  const cDec1 = await request(`/api/consumibles/${consDec.data.id}`);
+  ok("decimales: stock = 3.5 (5 - 1.5)", Number(cDec1.data.stock) === 3.5, `stock=${cDec1.data.stock}`);
+  const asigDec = await request("/api/asignaciones-consumibles");
+  const filaDec = asigDec.data.find((a) => a.proyecto?.id === proyDec.data.id && a.consumible?.id === consDec.data.id);
+  ok("decimales: AsignacionConsumible.cantidad = 1.5", filaDec && Number(filaDec.cantidad) === 1.5, JSON.stringify(filaDec));
+  const incDec = await request("/api/escaneos/incrementar-stock", {
+    method: "POST",
+    body: { tipo: "CONSUMIBLE", codigo: consDecCod, cantidad: 1.5 },
+  });
+  ok("decimales: increment express 1.5 ok", incDec.status === 200 && incDec.data?.ok === true, JSON.stringify(incDec.data));
+  const cDec2 = await request(`/api/consumibles/${consDec.data.id}`);
+  ok("decimales: stock restaurado = 5", Number(cDec2.data.stock) === 5, `stock=${cDec2.data.stock}`);
+  const movsDec = await request("/api/movimientos-consumibles");
+  ok("decimales: movimiento 'Incremento por escaneo' 1.5 registrado", Array.isArray(movsDec.data) && movsDec.data.some((m) => m.consumible?.id === consDec.data.id && m.observacion === "Incremento por escaneo" && Number(m.cantidad) === 1.5), JSON.stringify(movsDec.data?.slice?.(0, 3)));
+  const lotDec2 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: proyDec.data.codigo, items: [{ codigo: consDecCod, cantidad: 1.25 }] }]);
+  ok("decimales: 1.25 rechazado (CANTIDAD_INVALIDA)", lotDec2.data[0]?.ok === false && lotDec2.data[0]?.registrosCreados === 0 && lotDec2.data[0]?.errores?.[0]?.motivo === "CANTIDAD_INVALIDA", JSON.stringify(lotDec2.data));
+  const cDec3 = await request(`/api/consumibles/${consDec.data.id}`);
+  ok("decimales: stock intacto tras rechazo", Number(cDec3.data.stock) === 5, `stock=${cDec3.data.stock}`);
+
+  // 11) Destino no registrado: E# inexistente -> error claro, nada creado (la UI usa selector, la API rechaza)
+  const dispA11 = (await request(`/api/herramientas/${herrLotA.data.id}`)).data.cantidadDisponible;
+  const lot11 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: "E999999", items: [{ codigo: herrLotACod, cantidad: 1 }] }]);
+  ok("lote 11: destino E# no registrado (DESTINO_NO_REGISTRADO)", lot11.data[0]?.ok === false && lot11.data[0]?.registrosCreados === 0 && lot11.data[0]?.errores?.[0]?.motivo === "DESTINO_NO_REGISTRADO", JSON.stringify(lot11.data));
+  const dispA11b = (await request(`/api/herramientas/${herrLotA.data.id}`)).data.cantidadDisponible;
+  ok("lote 11: nada creado (disponible intacto)", dispA11b === dispA11, `disp=${dispA11b}`);
+
+  // 12) Remap 'Cuadrar devoluciones': asignaciones explícitas válidas -> ok; suma != escaneada -> rechazo
+  const lotR1 = await lotPost([{ tipo: "DEVOLUCION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 1, asignaciones: [{ id: filaFifoB.id, cantidad: 1 }] }] }]);
+  ok("remap: distribución explícita válida ok", lotR1.data[0]?.ok === true && lotR1.data[0]?.registrosCreados === 1, JSON.stringify(lotR1.data));
+  const asigR1 = await request("/api/asignaciones-herramientas");
+  const filaB3 = asigR1.data.find((a) => a.id === filaFifoB.id);
+  ok("remap: fila objetivo cerrada", filaB3.cantidad === 0 && filaB3.devuelta === true, JSON.stringify(filaB3));
+  const hFifo3 = await request(`/api/herramientas/${herrFifo.data.id}`);
+  ok("remap: disponible = 5 (todo devuelto)", hFifo3.data.cantidadDisponible === 5, `disp=${hFifo3.data.cantidadDisponible}`);
+  const lotR2a = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 3 }] }]);
+  ok("remap: nueva fila de 3 (fixture)", lotR2a.data[0]?.ok === true, JSON.stringify(lotR2a.data));
+  const asigR2 = await request("/api/asignaciones-herramientas");
+  const filaR2 = asigR2.data.find((a) => a.empleado?.id === empFifoId && a.herramienta?.codigo === herrFifoCod && a.cantidad > 0);
+  const lotR2 = await lotPost([{ tipo: "DEVOLUCION", destinoCodigo: empFifo.data.codigo, items: [{ codigo: herrFifoCod, cantidad: 2, asignaciones: [{ id: filaR2.id, cantidad: 3 }] }] }]);
+  ok("remap: suma != escaneada rechazada (ASIGNACION_REMAP_INVALIDA)", lotR2.data[0]?.ok === false && lotR2.data[0]?.registrosCreados === 0 && lotR2.data[0]?.errores?.[0]?.motivo === "ASIGNACION_REMAP_INVALIDA", JSON.stringify(lotR2.data));
+  const asigR3 = await request("/api/asignaciones-herramientas");
+  const filaR3 = asigR3.data.find((a) => a.id === filaR2.id);
+  ok("remap: fila intacta tras rechazo", filaR3.cantidad === 3, JSON.stringify(filaR3));
+
+  // 13) Proyecto FINALIZADO -> PROYECTO_INACTIVO (más estricto que el flujo legacy)
+  const finProy = await request(`/api/proyectos/${proyLot.data.id}/finalizar`, { method: "POST" });
+  ok("lote 13: proyecto finalizado (fixture)", finProy.status === 200 && finProy.data.estado === "FINALIZADO");
+  const stockP13 = (await request(`/api/consumibles/${consLot.data.id}`)).data.stock;
+  const lot13 = await lotPost([{ tipo: "ASIGNACION", destinoCodigo: proyLotCod, items: [{ codigo: consLotCod, cantidad: 1 }] }]);
+  ok("lote 13: proyecto FINALIZADO rechazado (PROYECTO_INACTIVO)", lot13.data[0]?.ok === false && lot13.data[0]?.registrosCreados === 0 && lot13.data[0]?.errores?.[0]?.motivo === "PROYECTO_INACTIVO", JSON.stringify(lot13.data));
+  const stockP13b = (await request(`/api/consumibles/${consLot.data.id}`)).data.stock;
+  ok("lote 13: stock intacto", Number(stockP13b) === Number(stockP13), `stock=${stockP13b}`);
+
+  // 14) Multi-lote parcial: un lote fallido no corta a los demás (REQUIRES_NEW, orden preservado)
+  const dispA14 = (await request(`/api/herramientas/${herrLotA.data.id}`)).data.cantidadDisponible;
+  const dispB14 = (await request(`/api/herramientas/${herrLotB.data.id}`)).data.cantidadDisponible;
+  const lot14 = await lotPost([
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [{ codigo: herrLotACod, cantidad: 1 }] },
+    { tipo: "ASIGNACION", destinoCodigo: "E999999", items: [{ codigo: herrLotACod, cantidad: 1 }] },
+    { tipo: "ASIGNACION", destinoCodigo: empLotCod, items: [{ codigo: herrLotBCod, cantidad: 1 }] },
+  ]);
+  ok("lote 14: orden preservado (ok, fallo, ok)", lot14.data.length === 3 && lot14.data[0]?.ok === true && lot14.data[1]?.ok === false && lot14.data[2]?.ok === true, JSON.stringify(lot14.data));
+  const dispA14b = (await request(`/api/herramientas/${herrLotA.data.id}`)).data.cantidadDisponible;
+  const dispB14b = (await request(`/api/herramientas/${herrLotB.data.id}`)).data.cantidadDisponible;
+  ok("lote 14: aislamiento (lote 3 aplicado, lote 2 no)", dispA14b === dispA14 - 1 && dispB14b === dispB14 - 1, `A=${dispA14b} B=${dispB14b}`);
+
+  // 15) Estructura inválida: lista vacía -> 400
+  const lot15 = await lotPost([]);
+  ok("lote 15: lista vacía -> 400", lot15.status === 400, `status=${lot15.status} ${JSON.stringify(lot15.data)}`);
 
   console.log(`\nResumen: ${pasos} pasos, ${fallos} fallos`);
   process.exit(fallos === 0 ? 0 : 1);
