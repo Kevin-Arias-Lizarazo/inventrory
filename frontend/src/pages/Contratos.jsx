@@ -1,16 +1,43 @@
 import SeccionTabs from '../components/SeccionTabs';
 import { TABS_EMPLEADOS } from '../secciones';
 import { useState } from 'react';
-import { post, put, del, hoy } from '../api';
+import { post, put, del, get, hoy } from '../api';
 import { useLista, useListaPaginada, useDebounce } from '../hooks';
 import Modal from '../components/Modal';
 import { Tabla, Microsofto, Badge, Paginacion } from '../components/ui';
 
-const inicial = () => ({ empleadoId: null, fechaInicio: hoy(), fechaFin: '', estado: 'ACTIVO' });
+const CATEGORIA_APRENDIZAJE = new Set(['APRENDIZAJE', 'PRACTICAS_LABORALES']);
+
+const inicial = () => ({
+  empleadoId: null,
+  fechaInicio: hoy(),
+  fechaFin: '',
+  estado: 'ACTIVO',
+  tipoContratoId: null,
+  remuneracionMensual: '',
+  faseAprendizaje: '',
+});
+
+const extraInicial = () => ({
+  concepto: '',
+  tipo: 'EVENTUAL',
+  valor: '',
+  fecha: '',
+  vigenciaDesde: '',
+  vigenciaHasta: '',
+  observacion: '',
+});
 
 function aDominio(f) {
-  const { empleadoId, ...resto } = f;
-  return { ...resto, empleado: empleadoId ? { id: empleadoId } : null };
+  const { empleadoId, tipoContratoId, ...resto } = f;
+  return {
+    ...resto,
+    empleado: empleadoId ? { id: empleadoId } : null,
+    tipoContrato: tipoContratoId ? { id: tipoContratoId } : null,
+    remuneracionMensual: resto.remuneracionMensual !== ''
+      ? Number(resto.remuneracionMensual)
+      : null,
+  };
 }
 
 function aForm(d) {
@@ -19,11 +46,25 @@ function aForm(d) {
     fechaInicio: d.fechaInicio,
     fechaFin: d.fechaFin || '',
     estado: d.estado || 'ACTIVO',
+    tipoContratoId: d.tipoContrato?.id || null,
+    remuneracionMensual: d.remuneracionMensual != null ? String(d.remuneracionMensual) : '',
+    faseAprendizaje: d.faseAprendizaje || '',
   };
+}
+
+function numero(n) {
+  return n == null ? 0 : Number(n);
+}
+
+function formatoMoneda(n) {
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
+    numero(n)
+  );
 }
 
 export default function Contratos() {
   const { lista: empleados } = useLista('empleados', '/api/empleados');
+  const { lista: tiposContrato } = useLista('tipos-contrato', '/api/tipos-contrato');
   const [busqueda, setBusqueda] = useState('');
   const q = useDebounce(busqueda, 300);
   const url = q.trim() ? `/api/contratos/paginado?q=${encodeURIComponent(q.trim())}` : '/api/contratos/paginado';
@@ -33,6 +74,15 @@ export default function Contratos() {
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(inicial);
   const [errores, setErrores] = useState(null);
+
+  const [prestaciones, setPrestaciones] = useState(null);
+  const [contratoPrest, setContratoPrest] = useState(null);
+  const [extraForm, setExtraForm] = useState(extraInicial);
+  const [extraErrores, setExtraErrores] = useState(null);
+  const [prestacionesCargando, setPrestacionesCargando] = useState(false);
+
+  const tipoSeleccionado = tiposContrato.find((t) => t.id === form.tipoContratoId);
+  const esAprendizaje = tipoSeleccionado && CATEGORIA_APRENDIZAJE.has(tipoSeleccionado.nombre);
 
   function abrirNuevo() {
     setEditando(null);
@@ -64,24 +114,68 @@ export default function Contratos() {
     }
   }
 
-  async function concluir(item) {
-    if (!window.confirm(`¿Concluir el contrato de "${item.empleado?.nombre}"?`)) return;
+  async function abrirPrestaciones(item) {
+    setContratoPrest(item);
+    setExtraForm(extraInicial());
+    setExtraErrores(null);
+    setPrestaciones(null);
+    setPrestacionesCargando(true);
     try {
-      await post(`/api/contratos/${item.id}/concluir`);
-      await recargar();
+      setPrestaciones(await get(`/api/contratos/${item.id}/prestaciones`));
+    } catch (err) {
+      setPrestaciones({ error: err.message });
+    } finally {
+      setPrestacionesCargando(false);
+    }
+  }
+
+  async function recalcular() {
+    if (!contratoPrest) return;
+    setPrestacionesCargando(true);
+    try {
+      setPrestaciones(await post(`/api/contratos/${contratoPrest.id}/calcular-prestaciones`));
+      setExtraErrores(null);
+    } catch (err) {
+      setPrestaciones({ error: err.message });
+    } finally {
+      setPrestacionesCargando(false);
+    }
+  }
+
+  async function agregarExtra(e) {
+    e.preventDefault();
+    setExtraErrores(null);
+    try {
+      await post(`/api/contratos/${contratoPrest.id}/prestaciones`, extraForm);
+      setExtraForm(extraInicial());
+      setPrestaciones(await get(`/api/contratos/${contratoPrest.id}/prestaciones`));
+    } catch (err) {
+      setExtraErrores([err.message]);
+    }
+  }
+
+  async function eliminarExtra(extra) {
+    if (!window.confirm(`¿Eliminar la prestación extra "${extra.concepto}"?`)) return;
+    try {
+      await del(`/api/contratos/${contratoPrest.id}/prestaciones/${extra.id}`);
+      setPrestaciones(await get(`/api/contratos/${contratoPrest.id}/prestaciones`));
     } catch (err) {
       window.alert(err.message);
     }
   }
 
-  async function eliminar(item) {
+  function concluir(item) {
+    if (!window.confirm(`¿Concluir el contrato de "${item.empleado?.nombre}"?`)) return;
+    post(`/api/contratos/${item.id}/concluir`)
+      .then(() => recargar())
+      .catch((err) => window.alert(err.message));
+  }
+
+  function eliminar(item) {
     if (!window.confirm('¿Eliminar este contrato?')) return;
-    try {
-      await del(`/api/contratos/${item.id}`);
-      await recargar();
-    } catch (err) {
-      window.alert(err.message);
-    }
+    del(`/api/contratos/${item.id}`)
+      .then(() => recargar())
+      .catch((err) => window.alert(err.message));
   }
 
   const columnas = [
@@ -91,6 +185,16 @@ export default function Contratos() {
       clave: 'fechaFin',
       titulo: 'Fin',
       render: (c) => c.fechaFin || <span className="sin-dato">Indefinido</span>,
+    },
+    {
+      clave: 'tipoContrato',
+      titulo: 'Tipo',
+      render: (c) => c.tipoContrato?.nombre || <Badge tipo="gris">Sin tipo</Badge>,
+    },
+    {
+      clave: 'remuneracionMensual',
+      titulo: 'Remuneración',
+      render: (c) => (c.remuneracionMensual != null ? formatoMoneda(c.remuneracionMensual) : '—'),
     },
     {
       clave: 'estado',
@@ -103,6 +207,9 @@ export default function Contratos() {
       titulo: '',
       render: (c) => (
         <div className="acciones">
+          <button type="button" className="btn btn-borde" onClick={() => abrirPrestaciones(c)}>
+            Prestaciones
+          </button>
           <button type="button" className="btn btn-borde" onClick={() => abrirEdicion(c)}>
             Editar
           </button>
@@ -118,6 +225,39 @@ export default function Contratos() {
       ),
     },
   ];
+
+  const columnasDesglose = [
+    { clave: 'concepto', titulo: 'Concepto' },
+    {
+      clave: 'quienPaga',
+      titulo: 'Quién paga',
+      render: (l) =>
+        l.quienPaga === 'EMPLEADOR' ? <Badge tipo="azul">Empleador</Badge> : <Badge tipo="gris">Contratista</Badge>,
+    },
+    {
+      clave: 'base',
+      titulo: 'Base',
+      render: (l) => (l.base != null ? formatoMoneda(l.base) : '—'),
+    },
+    {
+      clave: 'porcentaje',
+      titulo: '%',
+      render: (l) => (l.porcentaje != null ? `${l.porcentaje}%` : '—'),
+    },
+    {
+      clave: 'valorMensual',
+      titulo: 'Mensual',
+      render: (l) => formatoMoneda(l.valorMensual),
+    },
+    {
+      clave: 'valorAnual',
+      titulo: 'Anual',
+      render: (l) => formatoMoneda(l.valorAnual),
+    },
+  ];
+
+  const calculadas = prestaciones && prestaciones.calculadas ? prestaciones.calculadas : [];
+  const extras = prestaciones && prestaciones.extras ? prestaciones.extras : [];
 
   return (
     <section>
@@ -192,6 +332,45 @@ export default function Contratos() {
               />
             </div>
           </div>
+          <div className="form-grid">
+            <div className="campo">
+              <label>Tipo de contrato</label>
+              <select
+                value={form.tipoContratoId || ''}
+                onChange={(e) => setForm({ ...form, tipoContratoId: e.target.value ? Number(e.target.value) : null })}
+              >
+                <option value="">&mdash; Sin tipo &mdash;</option>
+                {tiposContrato.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="campo">
+              <label>Remuneración mensual (COP)</label>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={form.remuneracionMensual}
+                onChange={(e) => setForm({ ...form, remuneracionMensual: e.target.value })}
+              />
+            </div>
+          </div>
+          {esAprendizaje && (
+            <div className="campo">
+              <label>Fase de aprendizaje</label>
+              <select
+                value={form.faseAprendizaje}
+                onChange={(e) => setForm({ ...form, faseAprendizaje: e.target.value })}
+              >
+                <option value="">&mdash; Seleccione fase &mdash;</option>
+                <option value="LECTIVA">Lectiva</option>
+                <option value="PRACTICA">Práctica</option>
+              </select>
+            </div>
+          )}
           {editando && (
             <div className="campo">
               <label>Estado</label>
@@ -214,6 +393,147 @@ export default function Contratos() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        titulo={`Prestaciones — ${contratoPrest?.empleado?.nombre || ''}`}
+        abierto={prestaciones !== null}
+        onCerrar={() => setPrestaciones(null)}
+      >
+        {prestacionesCargando && <p className="vacio">Cargando…</p>}
+        {!prestacionesCargando && prestaciones && prestaciones.error && (
+          <p className="texto-error">{prestaciones.error}</p>
+        )}
+        {!prestacionesCargando && prestaciones && !prestaciones.error && (
+          <div className="stack">
+            <div className="campo">
+              <label>Desglose calculado</label>
+              {calculadas.length === 0 ? (
+                <p className="sin-dato">Sin cálculo. Presione «Calcular».</p>
+              ) : (
+                <Tabla columnas={columnasDesglose} filas={calculadas} vacio="Sin líneas." />
+              )}
+            </div>
+            <p>
+              <strong>Total costo empleador:</strong> {formatoMoneda(prestaciones.totalEmpleador)}
+            </p>
+            <div className="form-acciones">
+              <button type="button" className="btn btn-primario" onClick={recalcular} disabled={prestacionesCargando}>
+                Calcular / Recalcular
+              </button>
+            </div>
+
+            <h3>Prestaciones extra</h3>
+            {extras.length === 0 ? (
+              <p className="sin-dato">Sin prestaciones extra.</p>
+            ) : (
+              <Tabla
+                columnas={[
+                  { clave: 'concepto', titulo: 'Concepto' },
+                  { clave: 'tipo', titulo: 'Tipo' },
+                  { clave: 'valor', titulo: 'Valor', render: (x) => formatoMoneda(x.valor) },
+                  { clave: 'fecha', titulo: 'Fecha', render: (x) => x.fecha || '—' },
+                  {
+                    clave: 'vigencia',
+                    titulo: 'Vigencia',
+                    render: (x) => (x.vigenciaDesde || x.vigenciaHasta ? `${x.vigenciaDesde || '?'} → ${x.vigenciaHasta || '?'}` : '—'),
+                  },
+                  {
+                    clave: 'acciones',
+                    titulo: '',
+                    render: (x) => (
+                      <button type="button" className="btn btn-peligro" onClick={() => eliminarExtra(x)}>
+                        Eliminar
+                      </button>
+                    ),
+                  },
+                ]}
+                filas={extras}
+                vacio="Sin prestaciones extra."
+              />
+            )}
+
+            <form className="form" onSubmit={agregarExtra}>
+              <div className="form-grid">
+                <div className="campo">
+                  <label>Concepto *</label>
+                  <input
+                    type="text"
+                    value={extraForm.concepto}
+                    onChange={(e) => setExtraForm({ ...extraForm, concepto: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="campo">
+                  <label>Tipo</label>
+                  <select
+                    value={extraForm.tipo}
+                    onChange={(e) => setExtraForm({ ...extraForm, tipo: e.target.value })}
+                  >
+                    <option value="EVENTUAL">Eventual (viático)</option>
+                    <option value="RECURRENTE">Recurrente (prima)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-grid">
+                <div className="campo">
+                  <label>Valor (COP) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={extraForm.valor}
+                    onChange={(e) => setExtraForm({ ...extraForm, valor: e.target.value })}
+                    required
+                  />
+                </div>
+                {extraForm.tipo === 'EVENTUAL' ? (
+                  <div className="campo">
+                    <label>Fecha</label>
+                    <input
+                      type="date"
+                      value={extraForm.fecha}
+                      onChange={(e) => setExtraForm({ ...extraForm, fecha: e.target.value })}
+                    />
+                  </div>
+                ) : (
+                  <div className="form-grid">
+                    <div className="campo">
+                      <label>Vigencia desde</label>
+                      <input
+                        type="date"
+                        value={extraForm.vigenciaDesde}
+                        onChange={(e) => setExtraForm({ ...extraForm, vigenciaDesde: e.target.value })}
+                      />
+                    </div>
+                    <div className="campo">
+                      <label>Vigencia hasta</label>
+                      <input
+                        type="date"
+                        value={extraForm.vigenciaHasta}
+                        onChange={(e) => setExtraForm({ ...extraForm, vigenciaHasta: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="campo">
+                <label>Observación</label>
+                <input
+                  type="text"
+                  value={extraForm.observacion}
+                  onChange={(e) => setExtraForm({ ...extraForm, observacion: e.target.value })}
+                />
+              </div>
+              <Microsofto errores={extraErrores} />
+              <div className="form-acciones">
+                <button type="submit" className="btn btn-primario">
+                  Agregar prestación extra
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </Modal>
     </section>
   );

@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:${INVENTARIO_TEST_DB:inventario-test.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+app:
+  uploads:
+    dir: ${APP_UPLOADS_DIR:target/test-uploads}
+  sesiones:
+    dir: ${APP_SESIONES_DIR:target/test-sesiones}
+  logs:
+    dir: ${APP_LOGS_DIR:target/test-logs}
+  auth:
+    secret:
+      file: ${AUTH_SECRET_FILE:target/.env.auth.test}
+  backups:
+    dir: ${APP_BACKUPS_DIR:target/test-backups}
+
+server:
+  port: 8080
