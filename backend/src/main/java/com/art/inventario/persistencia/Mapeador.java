@@ -33,6 +33,7 @@ import com.art.inventario.dominio.OrdenCompra;
 import com.art.inventario.dominio.PagoFactura;
 import com.art.inventario.dominio.Proveedor;
 import com.art.inventario.dominio.Proyecto;
+import com.art.inventario.dominio.TipoContrato;
 import com.art.inventario.dominio.Usuario;
 import com.art.inventario.persistencia.entidad.EntidadAjuste;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionConsumible;
@@ -63,6 +64,7 @@ import com.art.inventario.persistencia.entidad.EntidadMovimientoHerramienta;
 import com.art.inventario.persistencia.entidad.EntidadMovimientoMaterial;
 import com.art.inventario.persistencia.entidad.EntidadProveedor;
 import com.art.inventario.persistencia.entidad.EntidadProyecto;
+import com.art.inventario.persistencia.entidad.EntidadTipoContrato;
 import com.art.inventario.persistencia.entidad.EntidadUsuario;
 
 public final class Mapeador {
@@ -118,7 +120,7 @@ public final class Mapeador {
 		return lista.stream().map(Mapeador::aDominio).collect(Collectors.toList());
 	}
 
-	public static EntidadContrato aEntidad(Contrato c, EntidadEmpleado empleado) {
+	public static EntidadContrato aEntidad(Contrato c, EntidadEmpleado empleado, EntidadTipoContrato tipoContrato) {
 		if (c == null) {
 			return null;
 		}
@@ -128,6 +130,9 @@ public final class Mapeador {
 		ec.setFechaFin(c.getFechaFin());
 		ec.setEstado(c.getEstado());
 		ec.setEmpleado(empleado);
+		ec.setTipoContrato(tipoContrato);
+		ec.setRemuneracionMensual(c.getRemuneracionMensual());
+		ec.setFaseAprendizaje(c.getFaseAprendizaje());
 		return ec;
 	}
 
@@ -141,6 +146,9 @@ public final class Mapeador {
 		d.setFechaFin(c.getFechaFin());
 		d.setEstado(c.getEstado());
 		d.setEmpleado(aDominio(c.getEmpleado()));
+		d.setTipoContrato(MapeadorCatalogos.aDominio(c.getTipoContrato()));
+		d.setRemuneracionMensual(c.getRemuneracionMensual());
+		d.setFaseAprendizaje(c.getFaseAprendizaje());
 		return d;
 	}
 

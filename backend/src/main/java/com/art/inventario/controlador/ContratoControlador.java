@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.art.inventario.aplicacion.dto.PaginaResultado;
+import com.art.inventario.aplicacion.dto.PrestacionesContrato;
 import com.art.inventario.dominio.Contrato;
+import com.art.inventario.dominio.ContratoPrestacionExtra;
 import com.art.inventario.puerto.entrada.ContratoCasoDeUso;
 
 @RestController
@@ -59,6 +61,29 @@ public class ContratoControlador {
 	@PostMapping("/{id}/concluir")
 	public ResponseEntity<Contrato> concluir(@PathVariable Long id) {
 		return ResponseEntity.ok(servicio.concluir(id));
+	}
+
+	@PostMapping("/{id}/calcular-prestaciones")
+	public ResponseEntity<PrestacionesContrato> calcularPrestaciones(@PathVariable Long id) {
+		servicio.calcularPrestaciones(id);
+		return ResponseEntity.ok(servicio.listarPrestaciones(id));
+	}
+
+	@GetMapping("/{id}/prestaciones")
+	public ResponseEntity<PrestacionesContrato> listarPrestaciones(@PathVariable Long id) {
+		return ResponseEntity.ok(servicio.listarPrestaciones(id));
+	}
+
+	@PostMapping("/{id}/prestaciones")
+	public ResponseEntity<ContratoPrestacionExtra> agregarExtra(@PathVariable Long id,
+			@RequestBody ContratoPrestacionExtra extra) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.agregarExtra(id, extra));
+	}
+
+	@DeleteMapping("/{id}/prestaciones/{extraId}")
+	public ResponseEntity<Void> eliminarExtra(@PathVariable Long id, @PathVariable Long extraId) {
+		servicio.eliminarExtra(id, extraId);
+		return ResponseEntity.noContent().build();
 	}
 
 	@DeleteMapping("/{id}")

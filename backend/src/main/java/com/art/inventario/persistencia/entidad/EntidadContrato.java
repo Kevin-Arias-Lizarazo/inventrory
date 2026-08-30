@@ -1,5 +1,7 @@
 package com.art.inventario.persistencia.entidad;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +25,13 @@ public class EntidadContrato {
 	@ManyToOne
 	@JoinColumn(name = "empleado_id")
 	private EntidadEmpleado empleado;
+
+	@ManyToOne
+	@JoinColumn(name = "tipo_contrato_id")
+	private EntidadTipoContrato tipoContrato;
+
+	private BigDecimal remuneracionMensual;
+	private String faseAprendizaje;
 
 	public Long getId() {
 		return id;
@@ -62,5 +71,29 @@ public class EntidadContrato {
 
 	public void setEmpleado(EntidadEmpleado empleado) {
 		this.empleado = empleado;
+	}
+
+	public EntidadTipoContrato getTipoContrato() {
+		return tipoContrato;
+	}
+
+	public void setTipoContrato(EntidadTipoContrato tipoContrato) {
+		this.tipoContrato = tipoContrato;
+	}
+
+	public BigDecimal getRemuneracionMensual() {
+		return remuneracionMensual;
+	}
+
+	public void setRemuneracionMensual(BigDecimal remuneracionMensual) {
+		this.remuneracionMensual = remuneracionMensual;
+	}
+
+	public String getFaseAprendizaje() {
+		return faseAprendizaje;
+	}
+
+	public void setFaseAprendizaje(String faseAprendizaje) {
+		this.faseAprendizaje = faseAprendizaje;
 	}
 }

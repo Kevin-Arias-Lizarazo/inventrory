@@ -10,7 +10,9 @@ import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.persistencia.Mapeador;
 import com.art.inventario.persistencia.consulta.ContratoConsultaJpa;
 import com.art.inventario.persistencia.consulta.EmpleadoConsultaJpa;
+import com.art.inventario.persistencia.consulta.TipoContratoConsultaJpa;
 import com.art.inventario.persistencia.entidad.EntidadEmpleado;
+import com.art.inventario.persistencia.entidad.EntidadTipoContrato;
 import com.art.inventario.puerto.salida.ContratoPersistencia;
 
 @Repository
@@ -19,10 +21,13 @@ public class ContratoPersistenciaJpa implements ContratoPersistencia {
 
 	private final ContratoConsultaJpa consulta;
 	private final EmpleadoConsultaJpa empleadoConsulta;
+	private final TipoContratoConsultaJpa tipoContratoConsulta;
 
-	public ContratoPersistenciaJpa(ContratoConsultaJpa consulta, EmpleadoConsultaJpa empleadoConsulta) {
+	public ContratoPersistenciaJpa(ContratoConsultaJpa consulta, EmpleadoConsultaJpa empleadoConsulta,
+			TipoContratoConsultaJpa tipoContratoConsulta) {
 		this.consulta = consulta;
 		this.empleadoConsulta = empleadoConsulta;
+		this.tipoContratoConsulta = tipoContratoConsulta;
 	}
 
 	@Override
@@ -42,7 +47,9 @@ public class ContratoPersistenciaJpa implements ContratoPersistencia {
 	public Contrato guardar(Contrato contrato) {
 		EntidadEmpleado empleado = resolverEmpleado(
 				contrato.getEmpleado() == null ? null : contrato.getEmpleado().getId());
-		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(contrato, empleado)));
+		EntidadTipoContrato tipo = resolverTipoContrato(
+				contrato.getTipoContrato() == null ? null : contrato.getTipoContrato().getId());
+		return Mapeador.aDominio(consulta.save(Mapeador.aEntidad(contrato, empleado, tipo)));
 	}
 
 	@Override
@@ -75,5 +82,13 @@ public class ContratoPersistenciaJpa implements ContratoPersistencia {
 		}
 		return empleadoConsulta.findById(empleadoId)
 				.orElseThrow(() -> new NoEncontradoExcepcion("Empleado no encontrado"));
+	}
+
+	private EntidadTipoContrato resolverTipoContrato(Long tipoContratoId) {
+		if (tipoContratoId == null) {
+			return null;
+		}
+		return tipoContratoConsulta.findById(tipoContratoId)
+				.orElseThrow(() -> new NoEncontradoExcepcion("Tipo de contrato no encontrado"));
 	}
 }
