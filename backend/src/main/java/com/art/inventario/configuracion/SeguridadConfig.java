@@ -98,6 +98,12 @@ public class SeguridadConfig {
 				.requestMatchers("/api/backup/**").hasAnyRole("ADMIN", "ROOT")
 				.requestMatchers("/api/importar/**").hasRole("ADMIN")
 				.requestMatchers("/api/auditoria/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.POST, "/api/tipos-contrato/**", "/api/prestaciones/**",
+						"/api/parametros-legales/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.PUT, "/api/tipos-contrato/**", "/api/prestaciones/**",
+						"/api/parametros-legales/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.DELETE, "/api/tipos-contrato/**", "/api/prestaciones/**",
+						"/api/parametros-legales/**").hasRole("ADMIN")
 				.anyRequest().authenticated())
 			.formLogin(form -> form.disable())
 			.httpBasic(basic -> basic.disable())

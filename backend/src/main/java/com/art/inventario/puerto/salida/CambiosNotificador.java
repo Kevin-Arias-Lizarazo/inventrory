@@ -27,6 +27,9 @@ public interface CambiosNotificador {
 	String RECURSO_DEVOLUCIONES = "devoluciones";
 	String RECURSO_PAGOS_FACTURA = "pagos-factura";
 	String RECURSO_ORDENES_COMPRA = "ordenes-compra";
+	String RECURSO_TIPOS_CONTRATO = "tipos-contrato";
+	String RECURSO_PRESTACIONES = "prestaciones";
+	String RECURSO_PARAMETROS_LEGALES = "parametros-legales";
 
 	SseEmitter suscribir();
 
