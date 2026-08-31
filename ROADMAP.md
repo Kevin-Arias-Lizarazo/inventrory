@@ -35,7 +35,7 @@ Objetivo: normalizar tipos de contrato y calcular prestaciones/seguridad social 
 - Cambiar un parámetro **no** toca snapshots existentes; solo afecta recálculos futuros.
 - Lógica por categoría:
   - **LABORAL** → prestaciones sociales + seguridad social + parafiscales.
-  - **PRESTACION_SERVICIOS** → solo seguridad social (100% a cargo del contratista, base mínima 40% del valor mensual). Sin prestaciones sociales ni parafiscales.
+  - **PRESTACION_SERVICIOS** → genera 0 líneas calculadas (las obligaciones de seguridad social del contratista son responsabilidad propia y no entran en el cálculo del empleador). `aplicaCalculo` sigue en `true` para que el recálculo se complete sin error, pero el desglose siempre queda vacío.
   - **APRENDIZAJE** → Salud (100% empresa) y ARL (solo fase práctica). Sin prima/cesantías/pensión. Base = auxilio de sostenimiento.
 
 ### A.6 API (hexagonal, endpoints nuevos)
@@ -103,7 +103,8 @@ Objetivo: crear un **archivo de datos base** (SQL/JSON/seed script) que iniciali
   - Consumibles utilizados (`AsignacionConsumible`).
   - **Materiales utilizados** → requiere definir el **vínculo materiales→proyecto** (hoy no existe).
   - Tiempo transcurrido / estado (concluido o en curso).
-  - **Costo del proyecto** (suma de mano de obra por prestaciones + consumibles + materiales).
+  - **Costo del proyecto** (suma de mano de obra por prestaciones + consumibles + materiales + gastos extra).
+  - **Gastos extra por proyecto** (feature pedida por el dueño 2026-08-30, NO mezclar con Fase A): registrar contra un proyecto gastos que no son consumibles ni materiales — ej. incentivos al equipo al terminar el trabajo, una carrera pagada por algún motivo, etc. Requiere tabla nueva (`proyecto_gasto_extra`: proyecto_id, concepto, valor, fecha, observacion) + CRUD + sumar al costo del proyecto. Hoy no existe vínculo.
 - Nota: la mano de obra dependerá del módulo de prestaciones (Fase A).
 
 ---

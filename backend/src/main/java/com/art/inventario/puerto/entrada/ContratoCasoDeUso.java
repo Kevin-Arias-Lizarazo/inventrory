@@ -23,7 +23,7 @@ public interface ContratoCasoDeUso {
 
 	void eliminar(Long id);
 
-	List<com.art.inventario.dominio.ContratoPrestacionCalculada> calcularPrestaciones(Long id);
+	PrestacionesContrato calcularPrestaciones(Long id);
 
 	PrestacionesContrato listarPrestaciones(Long id);
 

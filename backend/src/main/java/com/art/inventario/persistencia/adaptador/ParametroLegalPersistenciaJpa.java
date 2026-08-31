@@ -49,4 +49,10 @@ public class ParametroLegalPersistenciaJpa implements ParametroLegalPersistencia
 	public boolean existeAnio(int anio) {
 		return consulta.existsByAnio(anio);
 	}
+
+	@Override
+	@Transactional
+	public void eliminar(Long id) {
+		consulta.deleteById(id);
+	}
 }

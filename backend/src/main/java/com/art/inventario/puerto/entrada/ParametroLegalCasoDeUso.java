@@ -13,4 +13,6 @@ public interface ParametroLegalCasoDeUso {
 	ParametroLegal crear(ParametroLegal parametro);
 
 	ParametroLegal actualizar(Long id, ParametroLegal datos);
+
+	void eliminar(Long id);
 }

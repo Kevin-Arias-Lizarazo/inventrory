@@ -16,4 +16,6 @@ public interface ParametroLegalPersistencia {
 	Optional<ParametroLegal> porAnio(int anio);
 
 	boolean existeAnio(int anio);
+
+	void eliminar(Long id);
 }

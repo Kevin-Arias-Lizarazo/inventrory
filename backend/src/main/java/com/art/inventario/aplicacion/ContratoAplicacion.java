@@ -156,7 +156,7 @@ public class ContratoAplicacion implements ContratoCasoDeUso {
 
 	@Override
 	@Transactional
-	public List<ContratoPrestacionCalculada> calcularPrestaciones(Long id) {
+	public PrestacionesContrato calcularPrestaciones(Long id) {
 		Contrato contrato = persistencia.obtener(id);
 		TipoContrato tipo = contrato.getTipoContrato();
 		if (tipo == null) {
@@ -170,7 +170,7 @@ public class ContratoAplicacion implements ContratoCasoDeUso {
 				contrato.getRemuneracionMensual(), contrato.getFaseAprendizaje(), parametroVigente());
 		reemplazarSnapshot(id, lineas);
 		notificar();
-		return listarPrestaciones(id).getCalculadas();
+		return listarPrestaciones(id);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package com.art.inventario.aplicacion;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -61,6 +62,18 @@ public class ParametroLegalAplicacion implements ParametroLegalCasoDeUso {
 		ParametroLegal guardado = persistencia.guardar(actual);
 		notificador.publicar(CambiosNotificador.RECURSO_PARAMETROS_LEGALES);
 		return guardado;
+	}
+
+	@Override
+	@Transactional
+	public void eliminar(Long id) {
+		ParametroLegal parametro = persistencia.obtener(id);
+		if (parametro.getAnio() == LocalDate.now().getYear()) {
+			throw new DatosInvalidosExcepcion(
+					"No es posible eliminar el parámetro legal del año en curso; edítelo en su lugar");
+		}
+		persistencia.eliminar(id);
+		notificador.publicar(CambiosNotificador.RECURSO_PARAMETROS_LEGALES);
 	}
 
 	private void validar(ParametroLegal parametro) {

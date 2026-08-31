@@ -65,8 +65,7 @@ public class ContratoControlador {
 
 	@PostMapping("/{id}/calcular-prestaciones")
 	public ResponseEntity<PrestacionesContrato> calcularPrestaciones(@PathVariable Long id) {
-		servicio.calcularPrestaciones(id);
-		return ResponseEntity.ok(servicio.listarPrestaciones(id));
+		return ResponseEntity.ok(servicio.calcularPrestaciones(id));
 	}
 
 	@GetMapping("/{id}/prestaciones")

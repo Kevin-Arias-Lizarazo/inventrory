@@ -23,8 +23,11 @@ import com.art.inventario.dominio.TipoContrato;
  * <ul>
  * <li><b>LABORAL</b> (término indefinido/fijo, obra-labor): full prestaciones
  * sociales + seguridad social + parafiscales, all at the employer's expense.</li>
- * <li><b>PRESTACION_SERVICIOS</b>: only seguridad social, 100% paid by the
- * contractor, over a minimum base of 40% of the monthly value.</li>
+ * <li><b>PRESTACION_SERVICIOS</b> (OPS): generates zero calculated lines.
+ * {@code aplicaCalculo} remains true so recalculation completes without error,
+ * but the result is always an empty list — the contractor's social-security
+ * contributions are their own responsibility, outside the employer's
+ * calculation scope.</li>
  * <li><b>APRENDIZAJE</b>: health always (100% employer) + ARL only during the
  * practical phase; no prestaciones sociales, no pensión, no parafiscales, base =
  * the apprentice stipend (the contract's monthly remuneration).</li>
@@ -106,17 +109,14 @@ public final class CalculadoraPrestaciones {
 		return lineas;
 	}
 
+	/**
+	 * PRESTACION_SERVICIOS (OPS) generates zero calculated lines. The contractor's
+	 * social-security obligations (Salud, Pensión, ARL) are their own responsibility
+	 * and fall outside the employer's calculation scope. Parameters are accepted but
+	 * ignored — the empty result is intentional.
+	 */
 	private List<ContratoPrestacionCalculada> prestacionServicios(BigDecimal remuneracion, ParametroLegal p) {
-		// Minimum base: 40% of the monthly value.
-		BigDecimal base = remuneracion.multiply(new BigDecimal("0.40"));
-		List<ContratoPrestacionCalculada> lineas = new ArrayList<>();
-		lineas.add(porcentualSobre("Salud (P.S.)", Prestacion.TIPO_PRESTACION_SERVICIOS,
-				QUIEN_PAGA_CONTRATISTA, base, porc(p.getPorcentajeSalud()), true));
-		lineas.add(porcentualSobre("Pensión (P.S.)", Prestacion.TIPO_PRESTACION_SERVICIOS,
-				QUIEN_PAGA_CONTRATISTA, base, porc(p.getPorcentajePension()), true));
-		lineas.add(porcentualSobre("ARL (P.S.)", Prestacion.TIPO_PRESTACION_SERVICIOS,
-				QUIEN_PAGA_CONTRATISTA, base, porc(p.getPorcentajeArl()), true));
-		return lineas;
+		return List.of();
 	}
 
 	private List<ContratoPrestacionCalculada> aprendizaje(BigDecimal remuneracion, String fase, ParametroLegal p) {

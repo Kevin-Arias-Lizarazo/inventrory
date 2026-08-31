@@ -121,25 +121,22 @@ class CalculadoraPrestacionesTest {
 	}
 
 	@Test
-	void prestacionServiciosSoloSeguridadSocialAlContratista() {
+	void prestacionServiciosNoGeneraLineasCalculadas() {
+		// OPS generates zero calculated lines — seguridad social is the
+		// contractor's own responsibility, outside the employer's calculation.
+		assertTrue(calculadora.aplicaCalculo(tipo("PRESTACION_SERVICIOS")));
+
 		List<ContratoPrestacionCalculada> lineas = calculadora.calcular(tipo("PRESTACION_SERVICIOS"),
 				new BigDecimal("2000000"), null, params);
 
-		assertEquals(3, lineas.size());
-		assertTrue(lineas.stream().noneMatch(tieneConcepto("Prima de Servicios")));
-		assertTrue(lineas.stream().noneMatch(l -> l.getTipo().equals("LABORAL")));
+		assertTrue(lineas.isEmpty(),
+				"PRESTACION_SERVICIOS must produce zero calculated lines");
+	}
 
-		ContratoPrestacionCalculada salud = linea(lineas, "Salud (P.S.)");
-		assertEquals(CalculadoraPrestaciones.QUIEN_PAGA_CONTRATISTA, salud.getQuienPaga());
-		// Base mínima = 40% del valor mensual (800.000 sobre 2.000.000)
-		assertEquals(new BigDecimal("800000.00"), salud.getBase());
-		assertEquals(new BigDecimal("68000.00"), salud.getValorMensual());
-
-		ContratoPrestacionCalculada pension = linea(lineas, "Pensión (P.S.)");
-		assertEquals(new BigDecimal("96000.00"), pension.getValorMensual());
-
-		ContratoPrestacionCalculada arl = linea(lineas, "ARL (P.S.)");
-		assertEquals(new BigDecimal("4176.00"), arl.getValorMensual());
+	@Test
+	void prestacionServiciosAplicaCalculoTrue() {
+		assertTrue(calculadora.aplicaCalculo(tipo("PRESTACION_SERVICIOS")),
+				"aplicaCalculo must remain true so recalculation completes without error");
 	}
 
 	@Test
