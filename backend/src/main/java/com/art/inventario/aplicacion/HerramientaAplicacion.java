@@ -249,6 +249,17 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 	}
 
 	@Override
+	public PaginaResultado<MovimientoHerramienta> listarTodosMovimientosPagina(ConsultaPaginada consulta) {
+		return movimientoPersistencia.listarTodosPagina(consulta);
+	}
+
+	@Override
+	public PaginaResultado<MovimientoHerramienta> listarMovimientosPagina(Long herramientaId, ConsultaPaginada consulta) {
+		persistencia.obtener(herramientaId);
+		return movimientoPersistencia.listarPorHerramientaPagina(herramientaId, consulta);
+	}
+
+	@Override
 	@Transactional
 	public MovimientoHerramienta registrarMovimiento(Long herramientaId, MovimientoHerramienta movimiento) {
 		validarMovimiento(movimiento);

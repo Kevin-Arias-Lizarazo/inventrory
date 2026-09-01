@@ -23,6 +23,7 @@ import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
 import com.art.inventario.persistencia.consulta.MaterialConsultaJpa;
 import com.art.inventario.persistencia.consulta.MovimientoMaterialConsultaJpa;
 import com.art.inventario.persistencia.entidad.EntidadMaterial;
+import com.art.inventario.persistencia.entidad.EntidadMovimientoMaterial;
 import com.art.inventario.puerto.salida.MaterialPersistencia;
 
 @Repository
@@ -37,6 +38,18 @@ public class MaterialPersistenciaJpa implements MaterialPersistencia {
 
 	private static final Set<String> ORDENABLES = Set.of(
 			"id", "nombre", "marca", "stock", "ultimoCosto", "stockMinimo");
+
+	private static final Map<String, CampoFiltro> CAMPOS_MOVIMIENTOS = Map.of(
+			"recursoId", new CampoFiltro("material.id", TipoFiltro.ID),
+			"tipo", new CampoFiltro("tipo", TipoFiltro.TEXTO_EXACTO),
+			"fechaDesde", new CampoFiltro(
+					(r, q, cb, v) -> cb.greaterThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA),
+			"fechaHasta", new CampoFiltro(
+					(r, q, cb, v) -> cb.lessThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA));
+
+	private static final List<String> BUSCABLES_MOVIMIENTOS = List.of("observacion");
+
+	private static final Set<String> ORDENABLES_MOVIMIENTOS = Set.of("id", "fecha", "tipo", "cantidad");
 
 	private final MaterialConsultaJpa consulta;
 	private final MovimientoMaterialConsultaJpa movimientosConsulta;
@@ -110,6 +123,25 @@ public class MaterialPersistenciaJpa implements MaterialPersistencia {
 	@Override
 	public List<MovimientoMaterial> listarTodosMovimientos() {
 		return Mapeador.aDominioMovimientosMaterial(movimientosConsulta.findAll());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoMaterial> listarTodosMovimientosPagina(ConsultaPaginada c) {
+		Especificaciones.validarRangoFechas(c);
+		Specification<EntidadMovimientoMaterial> spec = Especificaciones.<EntidadMovimientoMaterial>filtrar(
+				c, CAMPOS_MOVIMIENTOS, BUSCABLES_MOVIMIENTOS);
+		Sort sort = Especificaciones.ordenarMovimientos(c, ORDENABLES_MOVIMIENTOS);
+		Page<EntidadMovimientoMaterial> page = movimientosConsulta.findAll(spec,
+				PageRequest.of(c.getPagina(), c.getTamano(), sort));
+		return new PaginaResultado<>(Mapeador.aDominioMovimientosMaterial(page.getContent()),
+				c.getPagina(), c.getTamano(), page.getTotalElements(), page.getTotalPages());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoMaterial> listarMovimientosPagina(Long materialId, ConsultaPaginada c) {
+		ConsultaPaginada conRecurso = c.conCopy();
+		conRecurso.getFiltros().put("recursoId", String.valueOf(materialId));
+		return listarTodosMovimientosPagina(conRecurso);
 	}
 
 	@Override

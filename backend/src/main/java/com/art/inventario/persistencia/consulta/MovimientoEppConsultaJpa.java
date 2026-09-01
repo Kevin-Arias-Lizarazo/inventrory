@@ -3,10 +3,12 @@ package com.art.inventario.persistencia.consulta;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.art.inventario.persistencia.entidad.EntidadMovimientoEpp;
 
-public interface MovimientoEppConsultaJpa extends JpaRepository<EntidadMovimientoEpp, Long> {
+public interface MovimientoEppConsultaJpa
+		extends JpaRepository<EntidadMovimientoEpp, Long>, JpaSpecificationExecutor<EntidadMovimientoEpp> {
 
 	List<EntidadMovimientoEpp> findByEppIdOrderByFechaDesc(Long eppId);
 

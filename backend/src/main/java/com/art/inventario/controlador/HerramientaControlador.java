@@ -88,6 +88,12 @@ public class HerramientaControlador {
 		return ResponseEntity.ok(servicio.listarMovimientos(id));
 	}
 
+	@GetMapping("/{id}/movimientos/paginado")
+	public ResponseEntity<PaginaResultado<MovimientoHerramienta>> listarMovimientosPagina(@PathVariable Long id,
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarMovimientosPagina(id, ConsultaPaginada.desdeParams(params)));
+	}
+
 	@PostMapping("/{id}/movimientos")
 	public ResponseEntity<MovimientoHerramienta> crearMovimiento(@PathVariable Long id,
 			@RequestBody MovimientoHerramienta movimiento) {

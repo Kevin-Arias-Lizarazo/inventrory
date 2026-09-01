@@ -1,14 +1,18 @@
 package com.art.inventario.controlador;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Devolucion;
 import com.art.inventario.puerto.entrada.DevolucionCasoDeUso;
 
@@ -25,6 +29,12 @@ public class DevolucionControlador {
 	@GetMapping
 	public ResponseEntity<List<Devolucion>> listar() {
 		return ResponseEntity.ok(servicio.listar());
+	}
+
+	@GetMapping("/paginado")
+	public ResponseEntity<PaginaResultado<Devolucion>> paginado(
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarPagina(ConsultaPaginada.desdeParams(params)));
 	}
 
 	@DeleteMapping("/{id}")

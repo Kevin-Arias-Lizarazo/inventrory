@@ -119,4 +119,20 @@ public class ConsultaPaginada {
 	public void setFiltros(Map<String, String> filtros) {
 		this.filtros = filtros;
 	}
+
+	/**
+	 * Devuelve una copia de la consulta con los mismos valores, compartiendo el
+	 * mapa de filtros. &Uacute;til para forzar un filtro (p. ej. el recursoId de
+	 * una ruta /{id}/movimientos/paginado) sin mutar la consulta original.
+	 */
+	public ConsultaPaginada conCopy() {
+		ConsultaPaginada copia = new ConsultaPaginada();
+		copia.pagina = this.pagina;
+		copia.tamano = this.tamano;
+		copia.q = this.q;
+		copia.orden = this.orden;
+		copia.dir = this.dir;
+		copia.filtros = new HashMap<>(this.filtros);
+		return copia;
+	}
 }

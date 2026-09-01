@@ -68,6 +68,12 @@ public class EppControlador {
 		return ResponseEntity.ok(servicio.listarMovimientos(id));
 	}
 
+	@GetMapping("/{id}/movimientos/paginado")
+	public ResponseEntity<PaginaResultado<MovimientoEpp>> listarMovimientosPagina(@PathVariable Long id,
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarMovimientosPagina(id, ConsultaPaginada.desdeParams(params)));
+	}
+
 	@PostMapping("/{id}/movimientos")
 	public ResponseEntity<MovimientoEpp> crearMovimiento(@PathVariable Long id,
 			@RequestBody MovimientoEpp movimiento) {

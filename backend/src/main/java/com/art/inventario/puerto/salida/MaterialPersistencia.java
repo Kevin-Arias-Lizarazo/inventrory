@@ -29,6 +29,10 @@ public interface MaterialPersistencia {
 
 	List<MovimientoMaterial> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoMaterial> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoMaterial> listarMovimientosPagina(Long materialId, ConsultaPaginada consulta);
+
 	MovimientoMaterial obtenerMovimiento(Long id);
 
 	MovimientoMaterial guardarMovimiento(MovimientoMaterial movimiento);

@@ -27,6 +27,10 @@ public interface EppCasoDeUso {
 
 	List<MovimientoEpp> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoEpp> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoEpp> listarMovimientosPagina(Long eppId, ConsultaPaginada consulta);
+
 	MovimientoEpp registrarMovimiento(Long eppId, MovimientoEpp movimiento);
 
 	MovimientoEpp actualizarMovimiento(Long id, MovimientoEpp datos);

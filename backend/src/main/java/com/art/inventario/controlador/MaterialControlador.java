@@ -68,6 +68,12 @@ public class MaterialControlador {
 		return ResponseEntity.ok(servicio.listarMovimientos(id));
 	}
 
+	@GetMapping("/{id}/movimientos/paginado")
+	public ResponseEntity<PaginaResultado<MovimientoMaterial>> listarMovimientosPagina(@PathVariable Long id,
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarMovimientosPagina(id, ConsultaPaginada.desdeParams(params)));
+	}
+
 	@PostMapping("/{id}/movimientos")
 	public ResponseEntity<MovimientoMaterial> crearMovimiento(@PathVariable Long id,
 			@RequestBody MovimientoMaterial movimiento) {

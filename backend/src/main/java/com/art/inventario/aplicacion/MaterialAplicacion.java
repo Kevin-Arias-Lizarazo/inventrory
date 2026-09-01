@@ -115,6 +115,17 @@ public void eliminar(Long id) {
 	}
 
 	@Override
+	public PaginaResultado<MovimientoMaterial> listarTodosMovimientosPagina(ConsultaPaginada consulta) {
+		return persistencia.listarTodosMovimientosPagina(consulta);
+	}
+
+	@Override
+	public PaginaResultado<MovimientoMaterial> listarMovimientosPagina(Long materialId, ConsultaPaginada consulta) {
+		persistencia.obtener(materialId);
+		return persistencia.listarMovimientosPagina(materialId, consulta);
+	}
+
+	@Override
 	@Transactional
 	public MovimientoMaterial registrarMovimiento(Long materialId, MovimientoMaterial movimiento) {
 		validarMovimiento(movimiento);

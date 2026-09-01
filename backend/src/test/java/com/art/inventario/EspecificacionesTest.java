@@ -129,4 +129,59 @@ class EspecificacionesTest {
 		assertThrows(DatosInvalidosExcepcion.class,
 				() -> Especificaciones.validar(c, CAMPOS_PREDICADO_TIPADO, List.of()));
 	}
+
+	// ===== F3: rango de fechas de movimientos / historiales (H1) =====
+
+	@Test
+	void validarRangoFechasRechazaFormatoInvalido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("fechaDesde", "12-08-2026"));
+		assertThrows(DatosInvalidosExcepcion.class, () -> Especificaciones.validarRangoFechas(c));
+	}
+
+	@Test
+	void validarRangoFechasRechazaRangoInvertido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(
+				Map.of("fechaDesde", "2026-08-31", "fechaHasta", "2026-08-01"));
+		assertThrows(DatosInvalidosExcepcion.class, () -> Especificaciones.validarRangoFechas(c));
+	}
+
+	@Test
+	void validarRangoFechasAceptaRangoValido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(
+				Map.of("fechaDesde", "2026-08-01", "fechaHasta", "2026-08-31"));
+		assertDoesNotThrow(() -> Especificaciones.validarRangoFechas(c));
+	}
+
+	@Test
+	void validarRangoFechasSinFiltrosNoLanza() {
+		assertDoesNotThrow(() -> Especificaciones.validarRangoFechas(ConsultaPaginada.desdeParams(Map.of())));
+	}
+
+	// ===== F3: orden por defecto de historiales (H2: fecha desc, id desc) =====
+
+	@Test
+	void ordenarMovimientosUsaFechaDescPorDefecto() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of());
+		Sort sort = Especificaciones.ordenarMovimientos(c, Set.of("id", "fecha", "tipo", "cantidad"));
+		assertEquals("fecha", sort.getOrderFor("fecha").getProperty());
+		assertEquals(Sort.Direction.DESC, sort.getOrderFor("fecha").getDirection());
+		assertEquals(Sort.Direction.DESC, sort.getOrderFor("id").getDirection());
+		assertEquals(2, sort.toList().size());
+	}
+
+	@Test
+	void ordenarMovimientosRespetaOrdenYDirExplícitos() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("orden", "cantidad", "dir", "asc"));
+		Sort sort = Especificaciones.ordenarMovimientos(c, Set.of("id", "fecha", "tipo", "cantidad"));
+		assertEquals("cantidad", sort.getOrderFor("cantidad").getProperty());
+		assertEquals(Sort.Direction.ASC, sort.getOrderFor("cantidad").getDirection());
+		assertEquals(Sort.Direction.ASC, sort.getOrderFor("id").getDirection());
+	}
+
+	@Test
+	void ordenarMovimientosRechazaCampoInvalido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("orden", "inexistente"));
+		assertThrows(DatosInvalidosExcepcion.class,
+				() -> Especificaciones.ordenarMovimientos(c, Set.of("id", "fecha", "tipo", "cantidad")));
+	}
 }

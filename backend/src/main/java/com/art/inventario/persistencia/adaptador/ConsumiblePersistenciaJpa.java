@@ -23,6 +23,7 @@ import com.art.inventario.persistencia.consulta.Especificaciones.CampoFiltro;
 import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
 import com.art.inventario.persistencia.consulta.MovimientoConsumibleConsultaJpa;
 import com.art.inventario.persistencia.entidad.EntidadConsumible;
+import com.art.inventario.persistencia.entidad.EntidadMovimientoConsumible;
 import com.art.inventario.puerto.salida.ConsumiblePersistencia;
 
 @Repository
@@ -37,6 +38,18 @@ public class ConsumiblePersistenciaJpa implements ConsumiblePersistencia {
 
 	private static final Set<String> ORDENABLES = Set.of(
 			"id", "codigo", "nombre", "marca", "stock", "ultimoCosto", "stockMinimo");
+
+	private static final Map<String, CampoFiltro> CAMPOS_MOVIMIENTOS = Map.of(
+			"recursoId", new CampoFiltro("consumible.id", TipoFiltro.ID),
+			"tipo", new CampoFiltro("tipo", TipoFiltro.TEXTO_EXACTO),
+			"fechaDesde", new CampoFiltro(
+					(r, q, cb, v) -> cb.greaterThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA),
+			"fechaHasta", new CampoFiltro(
+					(r, q, cb, v) -> cb.lessThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA));
+
+	private static final List<String> BUSCABLES_MOVIMIENTOS = List.of("observacion");
+
+	private static final Set<String> ORDENABLES_MOVIMIENTOS = Set.of("id", "fecha", "tipo", "cantidad");
 
 	private final ConsumibleConsultaJpa consulta;
 	private final MovimientoConsumibleConsultaJpa movimientosConsulta;
@@ -126,6 +139,25 @@ public class ConsumiblePersistenciaJpa implements ConsumiblePersistencia {
 	@Override
 	public List<MovimientoConsumible> listarTodosMovimientos() {
 		return Mapeador.aDominioMovimientosConsumible(movimientosConsulta.findAll());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoConsumible> listarTodosMovimientosPagina(ConsultaPaginada c) {
+		Especificaciones.validarRangoFechas(c);
+		Specification<EntidadMovimientoConsumible> spec = Especificaciones.<EntidadMovimientoConsumible>filtrar(
+				c, CAMPOS_MOVIMIENTOS, BUSCABLES_MOVIMIENTOS);
+		Sort sort = Especificaciones.ordenarMovimientos(c, ORDENABLES_MOVIMIENTOS);
+		Page<EntidadMovimientoConsumible> page = movimientosConsulta.findAll(spec,
+				PageRequest.of(c.getPagina(), c.getTamano(), sort));
+		return new PaginaResultado<>(Mapeador.aDominioMovimientosConsumible(page.getContent()),
+				c.getPagina(), c.getTamano(), page.getTotalElements(), page.getTotalPages());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoConsumible> listarMovimientosPagina(Long consumibleId, ConsultaPaginada c) {
+		ConsultaPaginada conRecurso = c.conCopy();
+		conRecurso.getFiltros().put("recursoId", String.valueOf(consumibleId));
+		return listarTodosMovimientosPagina(conRecurso);
 	}
 
 	@Override

@@ -21,8 +21,7 @@ public class AuditoriaAplicacion implements AuditoriaCasoDeUso {
 	@Override
 	public PaginaResultado<EventoLog> consultar(String fecha, String usuario, String accion, String resultado,
 			Integer pagina, Integer tamano) {
-		List<EventoLog> eventos = persistencia.leer(fecha, usuario, accion, resultado);
-		return PaginaResultado.deLista(eventos, pagina, tamano);
+		return persistencia.leerPagina(fecha, usuario, accion, resultado, pagina, tamano);
 	}
 
 	@Override

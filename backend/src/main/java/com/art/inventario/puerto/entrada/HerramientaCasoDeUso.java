@@ -35,6 +35,10 @@ public interface HerramientaCasoDeUso {
 
 	List<MovimientoHerramienta> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoHerramienta> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoHerramienta> listarMovimientosPagina(Long herramientaId, ConsultaPaginada consulta);
+
 	MovimientoHerramienta registrarMovimiento(Long herramientaId, MovimientoHerramienta movimiento);
 
 	MovimientoHerramienta actualizarMovimiento(Long id, MovimientoHerramienta datos);

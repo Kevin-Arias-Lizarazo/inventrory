@@ -29,6 +29,10 @@ public interface ConsumibleCasoDeUso {
 
 	List<MovimientoConsumible> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoConsumible> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoConsumible> listarMovimientosPagina(Long consumibleId, ConsultaPaginada consulta);
+
 	MovimientoConsumible registrarMovimiento(Long consumibleId, MovimientoConsumible movimiento);
 
 	MovimientoConsumible actualizarMovimiento(Long id, MovimientoConsumible datos);

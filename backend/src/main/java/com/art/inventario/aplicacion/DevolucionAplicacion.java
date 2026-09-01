@@ -9,6 +9,8 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Consumible;
 import com.art.inventario.dominio.Devolucion;
@@ -57,6 +59,11 @@ public class DevolucionAplicacion implements DevolucionCasoDeUso {
 	@Override
 	public List<Devolucion> listar() {
 		return persistencia.listar();
+	}
+
+	@Override
+	public PaginaResultado<Devolucion> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

@@ -29,6 +29,10 @@ public interface EppPersistencia {
 
 	List<MovimientoEpp> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoEpp> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoEpp> listarMovimientosPagina(Long eppId, ConsultaPaginada consulta);
+
 	MovimientoEpp obtenerMovimiento(Long id);
 
 	MovimientoEpp guardarMovimiento(MovimientoEpp movimiento);

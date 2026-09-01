@@ -137,6 +137,17 @@ public class ConsumibleAplicacion implements ConsumibleCasoDeUso {
 	}
 
 	@Override
+	public PaginaResultado<MovimientoConsumible> listarTodosMovimientosPagina(ConsultaPaginada consulta) {
+		return persistencia.listarTodosMovimientosPagina(consulta);
+	}
+
+	@Override
+	public PaginaResultado<MovimientoConsumible> listarMovimientosPagina(Long consumibleId, ConsultaPaginada consulta) {
+		persistencia.obtener(consumibleId);
+		return persistencia.listarMovimientosPagina(consumibleId, consulta);
+	}
+
+	@Override
 	@Transactional
 	public MovimientoConsumible registrarMovimiento(Long consumibleId, MovimientoConsumible movimiento) {
 		validarMovimiento(movimiento);

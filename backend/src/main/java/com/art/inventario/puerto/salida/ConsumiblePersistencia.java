@@ -33,6 +33,10 @@ public interface ConsumiblePersistencia {
 
 	List<MovimientoConsumible> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoConsumible> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoConsumible> listarMovimientosPagina(Long consumibleId, ConsultaPaginada consulta);
+
 	MovimientoConsumible obtenerMovimiento(Long id);
 
 	MovimientoConsumible guardarMovimiento(MovimientoConsumible movimiento);

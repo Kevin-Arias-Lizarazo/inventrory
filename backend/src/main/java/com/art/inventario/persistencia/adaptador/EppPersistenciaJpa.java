@@ -18,6 +18,7 @@ import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.persistencia.Mapeador;
 import com.art.inventario.persistencia.entidad.EntidadEpp;
+import com.art.inventario.persistencia.entidad.EntidadMovimientoEpp;
 import com.art.inventario.persistencia.consulta.Especificaciones;
 import com.art.inventario.persistencia.consulta.Especificaciones.CampoFiltro;
 import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
@@ -36,6 +37,18 @@ public class EppPersistenciaJpa implements EppPersistencia {
 
 	private static final Set<String> ORDENABLES = Set.of(
 			"id", "nombre", "marca", "stock", "ultimoCosto", "stockMinimo", "fechaVencimiento");
+
+	private static final Map<String, CampoFiltro> CAMPOS_MOVIMIENTOS = Map.of(
+			"recursoId", new CampoFiltro("epp.id", TipoFiltro.ID),
+			"tipo", new CampoFiltro("tipo", TipoFiltro.TEXTO_EXACTO),
+			"fechaDesde", new CampoFiltro(
+					(r, q, cb, v) -> cb.greaterThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA),
+			"fechaHasta", new CampoFiltro(
+					(r, q, cb, v) -> cb.lessThanOrEqualTo(r.get("fecha").as(String.class), v), TipoFiltro.FECHA));
+
+	private static final List<String> BUSCABLES_MOVIMIENTOS = List.of("observacion");
+
+	private static final Set<String> ORDENABLES_MOVIMIENTOS = Set.of("id", "fecha", "tipo", "cantidad");
 
 	private final EppConsultaJpa consulta;
 	private final MovimientoEppConsultaJpa movimientosConsulta;
@@ -109,6 +122,25 @@ public class EppPersistenciaJpa implements EppPersistencia {
 	@Override
 	public List<MovimientoEpp> listarTodosMovimientos() {
 		return Mapeador.aDominioMovimientosEpp(movimientosConsulta.findAll());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoEpp> listarTodosMovimientosPagina(ConsultaPaginada c) {
+		Especificaciones.validarRangoFechas(c);
+		Specification<EntidadMovimientoEpp> spec = Especificaciones.<EntidadMovimientoEpp>filtrar(
+				c, CAMPOS_MOVIMIENTOS, BUSCABLES_MOVIMIENTOS);
+		Sort sort = Especificaciones.ordenarMovimientos(c, ORDENABLES_MOVIMIENTOS);
+		Page<EntidadMovimientoEpp> page = movimientosConsulta.findAll(spec,
+				PageRequest.of(c.getPagina(), c.getTamano(), sort));
+		return new PaginaResultado<>(Mapeador.aDominioMovimientosEpp(page.getContent()),
+				c.getPagina(), c.getTamano(), page.getTotalElements(), page.getTotalPages());
+	}
+
+	@Override
+	public PaginaResultado<MovimientoEpp> listarMovimientosPagina(Long eppId, ConsultaPaginada c) {
+		ConsultaPaginada conRecurso = c.conCopy();
+		conRecurso.getFiltros().put("recursoId", String.valueOf(eppId));
+		return listarTodosMovimientosPagina(conRecurso);
 	}
 
 	@Override

@@ -27,6 +27,10 @@ public interface MaterialCasoDeUso {
 
 	List<MovimientoMaterial> listarTodosMovimientos();
 
+	PaginaResultado<MovimientoMaterial> listarTodosMovimientosPagina(ConsultaPaginada consulta);
+
+	PaginaResultado<MovimientoMaterial> listarMovimientosPagina(Long materialId, ConsultaPaginada consulta);
+
 	MovimientoMaterial registrarMovimiento(Long materialId, MovimientoMaterial movimiento);
 
 	MovimientoMaterial actualizarMovimiento(Long id, MovimientoMaterial datos);

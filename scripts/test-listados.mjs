@@ -410,6 +410,47 @@ async function main() {
   await request(`/api/materiales/${matF2.data.id}`, { method: "DELETE" });
   await request(`/api/proveedores/${provF2.data.id}`, { method: "DELETE" });
 
+  // ============================================================
+  // F3: auditoría pagina dentro del lector JSONL (D6).
+  // FiltroRegistroPeticiones escribe cada evento DESPUÉS de
+  // responder (append-only), así que el stream no se desplaza:
+  // concatenar página 0 + página 1 (tamano=1) debe dar exactamente
+  // la página 0 con tamano=2 => ventana correcta + orden preservado
+  // sin solape (H2 / escenario de auditoría de R4).
+  // ============================================================
+  const hoy = new Date().toISOString().slice(0, 10); // asume backend en UTC
+  const a0 = await request("/api/auditoria?usuario=admin&pagina=0&tamano=1");
+  const a1 = await request("/api/auditoria?usuario=admin&pagina=1&tamano=1");
+  const a2 = await request("/api/auditoria?usuario=admin&pagina=0&tamano=2");
+  ok("F3 auditoria envelope pagina/tamano/ceil",
+    a0.status === 200 && a0.data.pagina === 0 && a0.data.tamano === 1 && a0.data.totalPaginas === Math.ceil(a0.data.total / 1),
+    `status=${a0.status} pagina=${a0.data.pagina} tam=${a0.data.tamano} tp=${a0.data.totalPaginas}`);
+  ok("F3 auditoria total completo (no decrece entre ventanas)",
+    a1.data.total >= a0.data.total && a2.data.total >= a1.data.total,
+    `totales=${a0.data.total},${a1.data.total},${a2.data.total}`);
+  ok("F3 auditoria contenido por ventana",
+    a0.data.contenido.length === 1 && a1.data.contenido.length === 1 && a2.data.contenido.length === 2,
+    `lens=${a0.data.contenido.length},${a1.data.contenido.length},${a2.data.contenido.length}`);
+  const concat = [a0.data.contenido[0], a1.data.contenido[0]].map(JSON.stringify).join("|");
+  const doble = a2.data.contenido.map(JSON.stringify).join("|");
+  ok("F3 auditoria pagina 2 = slice siguiente (orden preservado, sin solape)",
+    concat === doble,
+    `concat=[${concat}] doble=[${doble}]`);
+  ok("F3 auditoria default tamano=30 (controlador sin cambios)",
+    (await request("/api/auditoria?usuario=admin")).data.tamano === 30, "");
+  ok("F3 auditoria tamano cap 100",
+    (await request("/api/auditoria?usuario=admin&pagina=0&tamano=9999")).data.tamano === 100, "");
+  ok("F3 auditoria pagina fuera de rango -> contenido vacio",
+    (await request("/api/auditoria?usuario=admin&pagina=999999&tamano=1")).data.contenido.length === 0, "");
+  const fHoy = await request(`/api/auditoria?fecha=${hoy}&usuario=admin&pagina=0&tamano=1`);
+  ok("F3 auditoria filtro fecha selecciona el archivo del dia",
+    fHoy.status === 200 && fHoy.data.total >= 1 && fHoy.data.contenido.length === 1,
+    `status=${fHoy.status} total=${fHoy.data.total}`);
+  const fVieja = await request("/api/auditoria?fecha=2000-01-01&usuario=admin&pagina=0&tamano=1");
+  ok("F3 auditoria fecha sin archivos -> total 0",
+    fVieja.status === 200 && fVieja.data.total === 0 && fVieja.data.contenido.length === 0,
+    `status=${fVieja.status} total=${fVieja.data.total}`);
+
   console.log(`\n${pasos} pasos, ${fallos} fallos`);
   if (fallos > 0) process.exit(1);
 }

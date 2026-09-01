@@ -121,6 +121,17 @@ public class EppAplicacion implements EppCasoDeUso {
 	}
 
 	@Override
+	public PaginaResultado<MovimientoEpp> listarTodosMovimientosPagina(ConsultaPaginada consulta) {
+		return persistencia.listarTodosMovimientosPagina(consulta);
+	}
+
+	@Override
+	public PaginaResultado<MovimientoEpp> listarMovimientosPagina(Long eppId, ConsultaPaginada consulta) {
+		persistencia.obtener(eppId);
+		return persistencia.listarMovimientosPagina(eppId, consulta);
+	}
+
+	@Override
 	@Transactional
 	public MovimientoEpp registrarMovimiento(Long eppId, MovimientoEpp movimiento) {
 		validarMovimiento(movimiento);

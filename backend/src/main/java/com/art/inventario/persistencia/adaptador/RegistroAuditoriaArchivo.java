@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.EventoLog;
 import com.art.inventario.puerto.salida.AuditoriaPersistencia;
 import com.art.inventario.puerto.salida.RegistroAuditoria;
@@ -57,7 +58,38 @@ public class RegistroAuditoriaArchivo implements RegistroAuditoria, AuditoriaPer
 	}
 
 	@Override
-	public List<EventoLog> leer(String fecha, String usuario, String accion, String resultado) {
+	public PaginaResultado<EventoLog> leerPagina(String fecha, String usuario, String accion, String resultado,
+			Integer pagina, Integer tamano) {
+		int p = PaginaResultado.paginaSegura(pagina);
+		int t = PaginaResultado.tamanoSeguro(tamano);
+		long desde = (long) p * t;
+		long hasta = desde + t;
+		List<EventoLog> contenido = new ArrayList<>();
+		long[] conteo = { 0L };
+		for (Path archivo : seleccionarArchivos(fecha)) {
+			try (Stream<String> lineas = Files.lines(archivo, StandardCharsets.UTF_8)) {
+				lineas.forEach(linea -> {
+					try {
+						EventoLog e = json.readValue(linea, EventoLog.class);
+						if (coincide(e, usuario, accion, resultado)) {
+							if (conteo[0] >= desde && conteo[0] < hasta) {
+								contenido.add(e);
+							}
+							conteo[0]++;
+						}
+					} catch (Exception ignored) {
+						// línea malformada se ignora
+					}
+				});
+			} catch (IOException e) {
+				// archivo no legible se ignora
+			}
+		}
+		int totalPaginas = (int) Math.ceil(conteo[0] / (double) t);
+		return new PaginaResultado<>(contenido, p, t, conteo[0], totalPaginas);
+	}
+
+	private List<Path> seleccionarArchivos(String fecha) {
 		List<Path> archivos = new ArrayList<>();
 		if (fecha != null && !fecha.isBlank()) {
 			String base = formatearFecha(fecha);
@@ -82,24 +114,7 @@ public class RegistroAuditoriaArchivo implements RegistroAuditoria, AuditoriaPer
 			}
 			archivos.sort(Comparator.comparing(p -> p.getFileName().toString()));
 		}
-		List<EventoLog> resultadoLista = new ArrayList<>();
-		for (Path p : archivos) {
-			try (Stream<String> lineas = Files.lines(p, StandardCharsets.UTF_8)) {
-				lineas.forEach(linea -> {
-					try {
-						EventoLog e = json.readValue(linea, EventoLog.class);
-						if (coincide(e, usuario, accion, resultado)) {
-							resultadoLista.add(e);
-						}
-					} catch (Exception ignored) {
-						// línea malformada se ignora
-					}
-				});
-			} catch (IOException e) {
-				// archivo no legible se ignora
-			}
-		}
-		return resultadoLista;
+		return archivos;
 	}
 
 	@Override

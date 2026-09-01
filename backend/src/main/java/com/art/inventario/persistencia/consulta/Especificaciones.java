@@ -165,6 +165,67 @@ public final class Especificaciones<T> {
 		return Sort.by(direccion, campo).and(Sort.by(direccion, "id"));
 	}
 
+	private static final java.util.regex.Pattern FECHA_ISO = java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+
+	/**
+	 * Valida el rango de fechas de los filtros {@code fechaDesde}/{@code fechaHasta}
+	 * usados por los historiales y devoluciones (H1). Si alguno est&aacute; presente
+	 * con formato no ISO (yyyy-MM-dd) o {@code fechaDesde > fechaHasta} lanza
+	 * {@link DatosInvalidosExcepcion} (400). Sin filtros de fecha no hace nada.
+	 */
+	public static void validarRangoFechas(ConsultaPaginada c) {
+		String desde = c.getFiltros().get("fechaDesde");
+		String hasta = c.getFiltros().get("fechaHasta");
+		if (desde != null && !desde.isBlank()) {
+			validarFormatoFecha("fechaDesde", desde);
+		}
+		if (hasta != null && !hasta.isBlank()) {
+			validarFormatoFecha("fechaHasta", hasta);
+		}
+		if (desde != null && !desde.isBlank() && hasta != null && !hasta.isBlank()
+				&& desde.compareTo(hasta) > 0) {
+			throw new DatosInvalidosExcepcion("La fecha desde no puede ser posterior a la fecha hasta");
+		}
+	}
+
+	private static void validarFormatoFecha(String clave, String valor) {
+		String v = valor.trim();
+		if (!FECHA_ISO.matcher(v).matches()) {
+			throw new DatosInvalidosExcepcion("Formato de fecha inválido en " + clave + ": " + valor);
+		}
+		try {
+			java.time.LocalDate.parse(v);
+		} catch (java.time.format.DateTimeParseException e) {
+			throw new DatosInvalidosExcepcion("Formato de fecha inválido en " + clave + ": " + valor);
+		}
+	}
+
+	/**
+	 * Construye el orden de los historiales y devoluciones (movimientos). A
+	 * diferencia de {@link #ordenar}, el orden por defecto es {@code fecha desc,
+	 * id desc} (H2/D7). Si se indica {@code orden}/{@code dir} se validan contra la
+	 * lista blanca y se a&ntilde;ade siempre el desempate por id.
+	 */
+	public static Sort ordenarMovimientos(ConsultaPaginada c, Set<String> ordenables) {
+		String campo = c.getOrden();
+		if (campo == null || campo.isBlank()) {
+			return Sort.by(Sort.Direction.DESC, "fecha").and(Sort.by(Sort.Direction.DESC, "id"));
+		}
+		if (!ordenables.contains(campo)) {
+			throw new DatosInvalidosExcepcion("Campo de orden no permitido: " + campo);
+		}
+		String dir = c.getDir();
+		Sort.Direction direccion = Sort.Direction.ASC;
+		if (dir != null && !dir.isBlank()) {
+			try {
+				direccion = Sort.Direction.fromString(dir);
+			} catch (IllegalArgumentException e) {
+				throw new DatosInvalidosExcepcion("Dirección de orden no válida: " + dir);
+			}
+		}
+		return Sort.by(direccion, campo).and(Sort.by(direccion, "id"));
+	}
+
 	/**
 	 * Construye la Specification con los filtros y la b&uacute;squeda libre.
 	 * Valida primero; la b&uacute;squeda libre aplica TEXTO_CONTIONE sobre los
