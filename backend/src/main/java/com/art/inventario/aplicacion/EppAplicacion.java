@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Epp;
 import com.art.inventario.dominio.MovimientoEpp;
@@ -44,6 +45,11 @@ public class EppAplicacion implements EppCasoDeUso {
 	@Override
 	public PaginaResultado<Epp> listarPagina(int pagina, int tamano) {
 		return persistencia.listarPagina(PaginaResultado.paginaSegura(pagina), PaginaResultado.tamanoSeguro(tamano));
+	}
+
+	@Override
+	public PaginaResultado<Epp> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

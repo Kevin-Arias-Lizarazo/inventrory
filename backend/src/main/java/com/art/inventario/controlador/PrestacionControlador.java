@@ -1,6 +1,7 @@
 package com.art.inventario.controlador;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Prestacion;
 import com.art.inventario.puerto.entrada.PrestacionCasoDeUso;
@@ -35,10 +37,8 @@ public class PrestacionControlador {
 
 	@GetMapping("/paginado")
 	public ResponseEntity<PaginaResultado<Prestacion>> listarPagina(
-			@RequestParam(required = false) Integer pagina,
-			@RequestParam(required = false) Integer tamano) {
-		return ResponseEntity.ok(servicio.listarPagina(
-				PaginaResultado.paginaSegura(pagina), PaginaResultado.tamanoSeguro(tamano)));
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarPagina(ConsultaPaginada.desdeParams(params)));
 	}
 
 	@GetMapping("/tipo/{tipoContratoId}")

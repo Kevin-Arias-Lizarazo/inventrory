@@ -23,7 +23,7 @@ public class PaginaResultado<T> {
 
 	public static int tamanoSeguro(Integer tamano) {
 		if (tamano == null || tamano < 1) {
-			return 30;
+			return 50;
 		}
 		return Math.min(tamano, 100);
 	}

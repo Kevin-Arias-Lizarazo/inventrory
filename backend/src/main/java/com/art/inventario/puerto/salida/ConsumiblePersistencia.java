@@ -2,6 +2,7 @@ package com.art.inventario.puerto.salida;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Consumible;
 import com.art.inventario.dominio.MovimientoConsumible;
@@ -11,6 +12,8 @@ public interface ConsumiblePersistencia {
 	List<Consumible> listar();
 
 	PaginaResultado<Consumible> listarPagina(int pagina, int tamano);
+
+	PaginaResultado<Consumible> listarPagina(ConsultaPaginada consulta);
 
 	boolean existeNombre(String nombre, Long excluirId);
 

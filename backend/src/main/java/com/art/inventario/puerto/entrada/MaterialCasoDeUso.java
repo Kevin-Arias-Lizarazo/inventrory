@@ -2,6 +2,7 @@ package com.art.inventario.puerto.entrada;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Material;
 import com.art.inventario.dominio.MovimientoMaterial;
@@ -11,6 +12,8 @@ public interface MaterialCasoDeUso {
 	List<Material> listar();
 
 	PaginaResultado<Material> listarPagina(int pagina, int tamano);
+
+	PaginaResultado<Material> listarPagina(ConsultaPaginada consulta);
 
 	Material obtener(Long id);
 

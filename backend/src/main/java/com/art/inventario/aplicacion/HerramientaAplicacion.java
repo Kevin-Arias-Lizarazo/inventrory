@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Herramienta;
 import com.art.inventario.dominio.MovimientoHerramienta;
@@ -57,6 +58,18 @@ public class HerramientaAplicacion implements HerramientaCasoDeUso {
 		int p = PaginaResultado.paginaSegura(pagina);
 		int t = PaginaResultado.tamanoSeguro(tamano);
 		PaginaResultado<Herramienta> paginaResultado = persistencia.listarPagina(p, t);
+		Map<Long, Long> asignadas = asignacionPersistencia.asignacionesActivasPorHerramienta();
+		paginaResultado.getContenido().forEach(h -> {
+			long asignada = asignadas.getOrDefault(h.getId(), 0L);
+			h.setCantidadAsignada((int) asignada);
+			h.setCantidadDisponible(total(h) - (int) asignada - danada(h) - perdida(h));
+		});
+		return paginaResultado;
+	}
+
+	@Override
+	public PaginaResultado<Herramienta> listarPagina(ConsultaPaginada consulta) {
+		PaginaResultado<Herramienta> paginaResultado = persistencia.listarPagina(consulta);
 		Map<Long, Long> asignadas = asignacionPersistencia.asignacionesActivasPorHerramienta();
 		paginaResultado.getContenido().forEach(h -> {
 			long asignada = asignadas.getOrDefault(h.getId(), 0L);

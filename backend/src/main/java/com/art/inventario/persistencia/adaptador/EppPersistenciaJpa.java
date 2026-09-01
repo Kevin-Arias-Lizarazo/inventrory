@@ -1,18 +1,26 @@
 package com.art.inventario.persistencia.adaptador;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Epp;
 import com.art.inventario.dominio.MovimientoEpp;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.persistencia.Mapeador;
 import com.art.inventario.persistencia.entidad.EntidadEpp;
+import com.art.inventario.persistencia.consulta.Especificaciones;
+import com.art.inventario.persistencia.consulta.Especificaciones.CampoFiltro;
+import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
 import com.art.inventario.persistencia.consulta.EppConsultaJpa;
 import com.art.inventario.persistencia.consulta.MovimientoEppConsultaJpa;
 import com.art.inventario.puerto.salida.EppPersistencia;
@@ -20,6 +28,14 @@ import com.art.inventario.puerto.salida.EppPersistencia;
 @Repository
 @Transactional(readOnly = true)
 public class EppPersistenciaJpa implements EppPersistencia {
+
+	private static final Map<String, CampoFiltro> CAMPOS = Map.of(
+			"marca", new CampoFiltro("marca", TipoFiltro.TEXTO_EXACTO));
+
+	private static final List<String> BUSCABLES = List.of("nombre", "marca", "descripcion");
+
+	private static final Set<String> ORDENABLES = Set.of(
+			"id", "nombre", "marca", "stock", "ultimoCosto", "stockMinimo", "fechaVencimiento");
 
 	private final EppConsultaJpa consulta;
 	private final MovimientoEppConsultaJpa movimientosConsulta;
@@ -39,6 +55,18 @@ public class EppPersistenciaJpa implements EppPersistencia {
 		Page<EntidadEpp> page = consulta.findAll(PageRequest.of(pagina, tamano));
 		List<Epp> contenido = page.getContent().stream().map(Mapeador::aDominio).toList();
 		return new PaginaResultado<>(contenido, pagina, tamano, page.getTotalElements(), page.getTotalPages());
+	}
+
+	@Override
+	public PaginaResultado<Epp> listarPagina(ConsultaPaginada consultaPaginada) {
+		Specification<EntidadEpp> spec = Especificaciones.<EntidadEpp>filtrar(
+				consultaPaginada, CAMPOS, BUSCABLES);
+		Sort sort = Especificaciones.ordenar(consultaPaginada, ORDENABLES, "id");
+		Page<EntidadEpp> page = consulta.findAll(spec,
+				PageRequest.of(consultaPaginada.getPagina(), consultaPaginada.getTamano(), sort));
+		List<Epp> contenido = page.getContent().stream().map(Mapeador::aDominio).toList();
+		return new PaginaResultado<>(contenido, consultaPaginada.getPagina(), consultaPaginada.getTamano(),
+				page.getTotalElements(), page.getTotalPages());
 	}
 
 	@Override
