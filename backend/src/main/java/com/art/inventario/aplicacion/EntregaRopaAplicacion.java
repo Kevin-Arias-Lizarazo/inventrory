@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.EntregaRopa;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
@@ -39,6 +40,11 @@ public class EntregaRopaAplicacion implements EntregaRopaCasoDeUso {
 	@Override
 	public PaginaResultado<EntregaRopa> listarPagina(int pagina, int tamano) {
 		return persistencia.listarPagina(PaginaResultado.paginaSegura(pagina), PaginaResultado.tamanoSeguro(tamano));
+	}
+
+	@Override
+	public PaginaResultado<EntregaRopa> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

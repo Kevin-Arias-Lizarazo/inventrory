@@ -4,13 +4,15 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.art.inventario.persistencia.entidad.EntidadAsignacionHerramienta;
 
-public interface AsignacionHerramientaConsultaJpa extends JpaRepository<EntidadAsignacionHerramienta, Long> {
+public interface AsignacionHerramientaConsultaJpa extends JpaRepository<EntidadAsignacionHerramienta, Long>,
+		JpaSpecificationExecutor<EntidadAsignacionHerramienta> {
 
 	boolean existsByEmpleadoId(Long empleadoId);
 

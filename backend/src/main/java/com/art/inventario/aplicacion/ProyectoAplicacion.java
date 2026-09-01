@@ -9,6 +9,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Proyecto;
 import com.art.inventario.excepcion.ConflictoExcepcion;
@@ -45,17 +46,8 @@ public class ProyectoAplicacion implements ProyectoCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<Proyecto> listarPagina(String estado, String q, int pagina, int tamano) {
-		List<Proyecto> lista = listar(estado);
-		if (q != null && !q.isBlank()) {
-			String criterio = q.trim().toLowerCase();
-			lista = lista.stream()
-					.filter(p -> (p.getNombre() != null && p.getNombre().toLowerCase().contains(criterio))
-							|| (p.getCliente() != null && p.getCliente().toLowerCase().contains(criterio))
-							|| (p.getUbicacion() != null && p.getUbicacion().toLowerCase().contains(criterio)))
-					.toList();
-		}
-		return PaginaResultado.deLista(lista, pagina, tamano);
+	public PaginaResultado<Proyecto> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

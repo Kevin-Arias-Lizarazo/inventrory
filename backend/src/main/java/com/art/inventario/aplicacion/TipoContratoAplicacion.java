@@ -35,11 +35,6 @@ public class TipoContratoAplicacion implements TipoContratoCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<TipoContrato> listarPagina(int pagina, int tamano) {
-		return PaginaResultado.deLista(persistencia.listar(), pagina, tamano);
-	}
-
-	@Override
 	public PaginaResultado<TipoContrato> listarPagina(ConsultaPaginada consulta) {
 		return persistencia.listarPagina(consulta);
 	}

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.AsignacionHerramienta;
 import com.art.inventario.dominio.Herramienta;
@@ -43,6 +44,11 @@ public class AsignacionHerramientaAplicacion implements AsignacionHerramientaCas
 	@Override
 	public PaginaResultado<AsignacionHerramienta> listarPagina(int pagina, int tamano) {
 		return persistencia.listarPagina(PaginaResultado.paginaSegura(pagina), PaginaResultado.tamanoSeguro(tamano));
+	}
+
+	@Override
+	public PaginaResultado<AsignacionHerramienta> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

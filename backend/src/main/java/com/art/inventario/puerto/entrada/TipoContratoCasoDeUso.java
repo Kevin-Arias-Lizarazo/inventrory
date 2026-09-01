@@ -10,8 +10,6 @@ public interface TipoContratoCasoDeUso {
 
 	List<TipoContrato> listar();
 
-	PaginaResultado<TipoContrato> listarPagina(int pagina, int tamano);
-
 	PaginaResultado<TipoContrato> listarPagina(ConsultaPaginada consulta);
 
 	TipoContrato obtener(Long id);

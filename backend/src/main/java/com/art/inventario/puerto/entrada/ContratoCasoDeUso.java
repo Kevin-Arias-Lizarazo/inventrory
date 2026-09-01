@@ -2,6 +2,7 @@ package com.art.inventario.puerto.entrada;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.aplicacion.dto.PrestacionesContrato;
 import com.art.inventario.dominio.Contrato;
@@ -11,7 +12,7 @@ public interface ContratoCasoDeUso {
 
 	List<Contrato> listar();
 
-	PaginaResultado<Contrato> listarPagina(String q, int pagina, int tamano);
+	PaginaResultado<Contrato> listarPagina(ConsultaPaginada consulta);
 
 	Contrato obtener(Long id);
 

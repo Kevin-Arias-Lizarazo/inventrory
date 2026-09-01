@@ -2,11 +2,15 @@ package com.art.inventario.puerto.salida;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 
 public interface CompraPersistencia {
 
 	List<Compra> listar();
+
+	PaginaResultado<Compra> listarPagina(ConsultaPaginada consultaPaginada);
 
 	Compra obtener(Long id);
 

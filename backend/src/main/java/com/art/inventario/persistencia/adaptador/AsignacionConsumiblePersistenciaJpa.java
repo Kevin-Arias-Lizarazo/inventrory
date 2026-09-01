@@ -1,12 +1,17 @@
 package com.art.inventario.persistencia.adaptador;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.AsignacionConsumible;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
@@ -14,6 +19,9 @@ import com.art.inventario.persistencia.Mapeador;
 import com.art.inventario.persistencia.entidad.EntidadAsignacionConsumible;
 import com.art.inventario.persistencia.consulta.AsignacionConsumibleConsultaJpa;
 import com.art.inventario.persistencia.consulta.ConsumibleConsultaJpa;
+import com.art.inventario.persistencia.consulta.Especificaciones;
+import com.art.inventario.persistencia.consulta.Especificaciones.CampoFiltro;
+import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
 import com.art.inventario.persistencia.consulta.ProyectoConsultaJpa;
 import com.art.inventario.persistencia.entidad.EntidadConsumible;
 import com.art.inventario.persistencia.entidad.EntidadProyecto;
@@ -22,6 +30,15 @@ import com.art.inventario.puerto.salida.AsignacionConsumiblePersistencia;
 @Repository
 @Transactional(readOnly = true)
 public class AsignacionConsumiblePersistenciaJpa implements AsignacionConsumiblePersistencia {
+
+	private static final Map<String, CampoFiltro> CAMPOS = Map.of(
+			"consumibleId", new CampoFiltro("consumible.id", TipoFiltro.ID),
+			"proyectoId", new CampoFiltro("proyecto.id", TipoFiltro.ID),
+			"fecha", new CampoFiltro("fecha", TipoFiltro.FECHA));
+
+	private static final List<String> BUSCABLES = List.of("observacion");
+
+	private static final Set<String> ORDENABLES = Set.of("id", "fecha", "proyecto.nombre");
 
 	private final AsignacionConsumibleConsultaJpa consulta;
 	private final ConsumibleConsultaJpa consumibleConsulta;
@@ -44,6 +61,18 @@ public class AsignacionConsumiblePersistenciaJpa implements AsignacionConsumible
 		Page<EntidadAsignacionConsumible> page = consulta.findAll(PageRequest.of(pagina, tamano));
 		List<AsignacionConsumible> contenido = page.getContent().stream().map(Mapeador::aDominio).toList();
 		return new PaginaResultado<>(contenido, pagina, tamano, page.getTotalElements(), page.getTotalPages());
+	}
+
+	@Override
+	public PaginaResultado<AsignacionConsumible> listarPagina(ConsultaPaginada consultaPaginada) {
+		Specification<EntidadAsignacionConsumible> spec = Especificaciones.<EntidadAsignacionConsumible>filtrar(
+				consultaPaginada, CAMPOS, BUSCABLES);
+		Sort sort = Especificaciones.ordenar(consultaPaginada, ORDENABLES, "id");
+		Page<EntidadAsignacionConsumible> page = consulta.findAll(spec,
+				PageRequest.of(consultaPaginada.getPagina(), consultaPaginada.getTamano(), sort));
+		List<AsignacionConsumible> contenido = page.getContent().stream().map(Mapeador::aDominio).toList();
+		return new PaginaResultado<>(contenido, consultaPaginada.getPagina(), consultaPaginada.getTamano(),
+				page.getTotalElements(), page.getTotalPages());
 	}
 
 	@Override

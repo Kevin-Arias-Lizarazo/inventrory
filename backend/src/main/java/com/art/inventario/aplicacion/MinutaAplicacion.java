@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Minuta;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
@@ -41,18 +42,8 @@ public class MinutaAplicacion implements MinutaCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<Minuta> listarPagina(String q, int pagina, int tamano) {
-		List<Minuta> lista = persistencia.listar();
-		if (q != null && !q.isBlank()) {
-			String criterio = q.trim().toLowerCase();
-			lista = lista.stream()
-					.filter(m -> (m.getProyecto() != null && m.getProyecto().getNombre() != null
-							&& m.getProyecto().getNombre().toLowerCase().contains(criterio))
-							|| (m.getEmpleado() != null && m.getEmpleado().getNombre() != null
-									&& m.getEmpleado().getNombre().toLowerCase().contains(criterio)))
-					.toList();
-		}
-		return PaginaResultado.deLista(lista, pagina, tamano);
+	public PaginaResultado<Minuta> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

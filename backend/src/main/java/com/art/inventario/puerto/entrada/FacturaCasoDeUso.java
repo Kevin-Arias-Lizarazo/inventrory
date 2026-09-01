@@ -2,6 +2,7 @@ package com.art.inventario.puerto.entrada;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Factura;
 
@@ -9,8 +10,7 @@ public interface FacturaCasoDeUso {
 
 	List<Factura> listar();
 
-	PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha, String estadoPago,
-			Integer pagina, Integer tamano);
+	PaginaResultado<Factura> listarPagina(ConsultaPaginada consulta);
 
 	Factura obtener(Long id);
 

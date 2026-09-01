@@ -2,6 +2,7 @@ package com.art.inventario.puerto.entrada;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.OrdenCompra;
 
@@ -9,8 +10,7 @@ public interface OrdenCompraCasoDeUso {
 
 	List<OrdenCompra> listar();
 
-	PaginaResultado<OrdenCompra> listarPagina(String q, Long proveedorId, String fecha,
-			Integer pagina, Integer tamano);
+	PaginaResultado<OrdenCompra> listarPagina(ConsultaPaginada consulta);
 
 	OrdenCompra obtener(Long id);
 

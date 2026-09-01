@@ -40,11 +40,6 @@ public class PrestacionAplicacion implements PrestacionCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<Prestacion> listarPagina(int pagina, int tamano) {
-		return PaginaResultado.deLista(persistencia.listar(), pagina, tamano);
-	}
-
-	@Override
 	public PaginaResultado<Prestacion> listarPagina(ConsultaPaginada consulta) {
 		return persistencia.listarPagina(consulta);
 	}

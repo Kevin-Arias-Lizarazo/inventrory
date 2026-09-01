@@ -10,8 +10,6 @@ public interface PrestacionCasoDeUso {
 
 	List<Prestacion> listar();
 
-	PaginaResultado<Prestacion> listarPagina(int pagina, int tamano);
-
 	PaginaResultado<Prestacion> listarPagina(ConsultaPaginada consulta);
 
 	Prestacion obtener(Long id);

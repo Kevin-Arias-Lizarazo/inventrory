@@ -1,5 +1,6 @@
 package com.art.inventario;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,5 +88,45 @@ class EspecificacionesTest {
 		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("q", "algo"));
 		assertThrows(DatosInvalidosExcepcion.class,
 				() -> Especificaciones.validar(c, CAMPOS, List.of()));
+	}
+
+	private static final Map<String, CampoFiltro> CAMPOS_NULO = Map.of(
+			"facturaId", new CampoFiltro("facturaId", TipoFiltro.NULO));
+
+	@Test
+	void validarRechazaFiltroNuloInvalido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("facturaId", "quizas"));
+		assertThrows(DatosInvalidosExcepcion.class,
+				() -> Especificaciones.validar(c, CAMPOS_NULO, List.of()));
+	}
+
+	@Test
+	void validarAceptaFiltroNuloValido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("facturaId", "true"));
+		assertDoesNotThrow(() -> Especificaciones.validar(c, CAMPOS_NULO, List.of()));
+	}
+
+	@Test
+	void validarAceptaPredicadoPersonalizado() {
+		Map<String, CampoFiltro> campos = Map.of(
+				"estadoPago", new CampoFiltro((r, q, cb, v) -> cb.conjunction()));
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("estadoPago", "PENDIENTE"));
+		assertDoesNotThrow(() -> Especificaciones.validar(c, campos, List.of()));
+	}
+
+	private static final Map<String, CampoFiltro> CAMPOS_PREDICADO_TIPADO = Map.of(
+			"contratados", new CampoFiltro((r, q, cb, v) -> cb.conjunction(), TipoFiltro.BOOLEANO));
+
+	@Test
+	void validarAceptaPredicadoTipadoBooleanoValido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("contratados", "true"));
+		assertDoesNotThrow(() -> Especificaciones.validar(c, CAMPOS_PREDICADO_TIPADO, List.of()));
+	}
+
+	@Test
+	void validarRechazaPredicadoTipadoBooleanoInvalido() {
+		ConsultaPaginada c = ConsultaPaginada.desdeParams(Map.of("contratados", "no"));
+		assertThrows(DatosInvalidosExcepcion.class,
+				() -> Especificaciones.validar(c, CAMPOS_PREDICADO_TIPADO, List.of()));
 	}
 }

@@ -1,15 +1,26 @@
 package com.art.inventario.persistencia.adaptador;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
+import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.LineaCompra;
 import com.art.inventario.excepcion.NoEncontradoExcepcion;
 import com.art.inventario.persistencia.Mapeador;
 import com.art.inventario.persistencia.consulta.CompraConsultaJpa;
+import com.art.inventario.persistencia.consulta.Especificaciones;
+import com.art.inventario.persistencia.consulta.Especificaciones.CampoFiltro;
+import com.art.inventario.persistencia.consulta.Especificaciones.TipoFiltro;
 import com.art.inventario.persistencia.consulta.LineaCompraConsultaJpa;
 import com.art.inventario.persistencia.consulta.ProveedorConsultaJpa;
 import com.art.inventario.persistencia.entidad.EntidadCompra;
@@ -20,6 +31,18 @@ import com.art.inventario.puerto.salida.CompraPersistencia;
 @Repository
 @Transactional(readOnly = true)
 public class CompraPersistenciaJpa implements CompraPersistencia {
+
+	private static final Map<String, CampoFiltro> CAMPOS = Map.of(
+			"proveedorId", new CampoFiltro("proveedor.id", TipoFiltro.ID),
+			"facturaId", new CampoFiltro("facturaId", TipoFiltro.ID),
+			"fecha", new CampoFiltro("fecha", TipoFiltro.FECHA),
+			"fechaDesde", new CampoFiltro("fecha", TipoFiltro.FECHA),
+			"fechaHasta", new CampoFiltro("fecha", TipoFiltro.FECHA),
+			"facturada", new CampoFiltro("facturaId", TipoFiltro.NULO));
+
+	private static final List<String> BUSCABLES = List.of("observacion", "proveedor.nombre");
+
+	private static final Set<String> ORDENABLES = Set.of("id", "fecha", "proveedor.nombre");
 
 	private final CompraConsultaJpa consulta;
 	private final LineaCompraConsultaJpa lineasConsulta;
@@ -36,6 +59,21 @@ public class CompraPersistenciaJpa implements CompraPersistencia {
 	public List<Compra> listar() {
 		return Mapeador.aDominioCompras(consulta.findAll(),
 				e -> Mapeador.aDominioLineasCompra(lineasConsulta.findByCompraId(e.getId())));
+	}
+
+	@Override
+	public PaginaResultado<Compra> listarPagina(ConsultaPaginada consultaPaginada) {
+		Specification<EntidadCompra> spec = Especificaciones.<EntidadCompra>filtrar(
+				consultaPaginada, CAMPOS, BUSCABLES);
+		Sort sort = Especificaciones.ordenar(consultaPaginada, ORDENABLES, "id");
+		Page<EntidadCompra> page = consulta.findAll(spec,
+				PageRequest.of(consultaPaginada.getPagina(), consultaPaginada.getTamano(), sort));
+		List<Compra> contenido = page.getContent().stream()
+				.map(e -> Mapeador.aDominio(e,
+						Mapeador.aDominioLineasCompra(lineasConsulta.findByCompraId(e.getId()))))
+				.toList();
+		return new PaginaResultado<>(contenido, consultaPaginada.getPagina(), consultaPaginada.getTamano(),
+				page.getTotalElements(), page.getTotalPages());
 	}
 
 	@Override

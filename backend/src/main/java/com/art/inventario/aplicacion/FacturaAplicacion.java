@@ -8,6 +8,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Compra;
 import com.art.inventario.dominio.Factura;
@@ -51,32 +52,11 @@ public class FacturaAplicacion implements FacturaCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<Factura> listarPagina(String q, Long proveedorId, String fecha,
-			String estadoPago, Integer pagina, Integer tamano) {
-		List<Factura> lista = listar();
-		if (q != null && !q.isBlank()) {
-			String criterio = q.toLowerCase();
-			lista = lista.stream()
-					.filter(f -> (f.getNumero() != null && f.getNumero().toLowerCase().contains(criterio))
-							|| (f.getObservacion() != null && f.getObservacion().toLowerCase().contains(criterio)))
-					.toList();
-		}
-		if (proveedorId != null) {
-			lista = lista.stream()
-					.filter(f -> f.getProveedor() != null && proveedorId.equals(f.getProveedor().getId()))
-					.toList();
-		}
-		if (fecha != null && !fecha.isBlank()) {
-			lista = lista.stream()
-					.filter(f -> fecha.equals(f.getFecha()))
-					.toList();
-		}
-		if (estadoPago != null && !estadoPago.isBlank()) {
-			lista = lista.stream()
-					.filter(f -> estadoPago.equals(f.getEstadoPago()))
-					.toList();
-		}
-		return PaginaResultado.deLista(lista, pagina, tamano);
+	public PaginaResultado<Factura> listarPagina(ConsultaPaginada consulta) {
+		PaginaResultado<Factura> pagina = persistencia.listarPagina(consulta);
+		List<Factura> enriquecidas = pagina.getContenido().stream().map(this::enriquecerPagos).toList();
+		return new PaginaResultado<>(enriquecidas, pagina.getPagina(), pagina.getTamano(),
+				pagina.getTotal(), pagina.getTotalPaginas());
 	}
 
 	@Override

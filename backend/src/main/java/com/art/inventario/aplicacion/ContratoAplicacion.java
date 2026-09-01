@@ -11,6 +11,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.aplicacion.dto.PrestacionesContrato;
 import com.art.inventario.dominio.Contrato;
@@ -63,16 +64,8 @@ public class ContratoAplicacion implements ContratoCasoDeUso {
 	}
 
 	@Override
-	public PaginaResultado<Contrato> listarPagina(String q, int pagina, int tamano) {
-		List<Contrato> lista = persistencia.listar();
-		if (q != null && !q.isBlank()) {
-			String criterio = q.trim().toLowerCase();
-			lista = lista.stream()
-					.filter(c -> c.getEmpleado() != null && c.getEmpleado().getNombre() != null
-							&& c.getEmpleado().getNombre().toLowerCase().contains(criterio))
-					.toList();
-		}
-		return PaginaResultado.deLista(lista, pagina, tamano);
+	public PaginaResultado<Contrato> listarPagina(ConsultaPaginada consulta) {
+		return persistencia.listarPagina(consulta);
 	}
 
 	@Override

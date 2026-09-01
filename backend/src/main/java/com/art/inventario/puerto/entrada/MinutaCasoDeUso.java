@@ -2,6 +2,7 @@ package com.art.inventario.puerto.entrada;
 
 import java.util.List;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Minuta;
 
@@ -9,7 +10,7 @@ public interface MinutaCasoDeUso {
 
 	List<Minuta> listar();
 
-	PaginaResultado<Minuta> listarPagina(String q, int pagina, int tamano);
+	PaginaResultado<Minuta> listarPagina(ConsultaPaginada consulta);
 
 	PaginaResultado<Minuta> listarPaginaRecientes(int pagina, int tamano);
 

@@ -12,6 +12,7 @@ import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.excepcion.DatosInvalidosExcepcion;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -27,17 +28,49 @@ import jakarta.persistence.criteria.Root;
 public final class Especificaciones<T> {
 
 	public enum TipoFiltro {
-		TEXTO_EXACTO, TEXTO_CONTIENE, ID, NUMERO, FECHA, BOOLEANO
+		TEXTO_EXACTO, TEXTO_CONTIENE, ID, NUMERO, FECHA, BOOLEANO, NULO
+	}
+
+	/**
+	 * Predicado de filtro de resoluci&oacute;n a medida. Se usa para campos
+	 * derivados que no existen como columna simple (p. ej. estado de pago de una
+	 * factura, contratado de un empleado), donde el adaptador conoce la
+	 * subconsulta o el c&aacute;lculo exacto.
+	 */
+	@FunctionalInterface
+	public interface PredicadoFiltro {
+		Predicate aplicar(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, String valor);
 	}
 
 	/** Campo de filtro: propiedad de la entidad y c&oacute;mo interpretar el valor. */
 	public static class CampoFiltro {
 		private final String propiedad;
 		private final TipoFiltro tipo;
+		private final PredicadoFiltro predicado;
 
 		public CampoFiltro(String propiedad, TipoFiltro tipo) {
 			this.propiedad = propiedad;
 			this.tipo = tipo;
+			this.predicado = null;
+		}
+
+		/** Campo con predicado a medida: la validaci&oacute;n e interpretaci&oacute;n del valor las resuelve el adaptador. */
+		public CampoFiltro(PredicadoFiltro predicado) {
+			this.propiedad = null;
+			this.tipo = null;
+			this.predicado = predicado;
+		}
+
+		/**
+		 * Campo con predicado a medida que adem&aacute;s declara un
+		 * {@link TipoFiltro} para que {@link Especificaciones#validar} valide el
+		 * valor de forma temprana (p. ej. booleano de {@code contratados}) y
+		 * devuelva 400 ante un valor inv&aacute;lido.
+		 */
+		public CampoFiltro(PredicadoFiltro predicado, TipoFiltro tipo) {
+			this.propiedad = null;
+			this.tipo = tipo;
+			this.predicado = predicado;
 		}
 
 		public String getPropiedad() {
@@ -46,6 +79,10 @@ public final class Especificaciones<T> {
 
 		public TipoFiltro getTipo() {
 			return tipo;
+		}
+
+		public PredicadoFiltro getPredicado() {
+			return predicado;
 		}
 	}
 
@@ -64,7 +101,9 @@ public final class Especificaciones<T> {
 			if (campo == null) {
 				throw new DatosInvalidosExcepcion("Campo de filtro desconocido: " + clave);
 			}
-			validarValor(clave, f.getValue(), campo);
+			if (campo.getPredicado() == null || campo.getTipo() != null) {
+				validarValor(clave, f.getValue(), campo);
+			}
 		}
 		if (c.getQ() != null && !c.getQ().isBlank() && buscables.isEmpty()) {
 			throw new DatosInvalidosExcepcion("La búsqueda libre no está configurada para este recurso");
@@ -84,6 +123,12 @@ public final class Especificaciones<T> {
 				}
 			}
 			case BOOLEANO -> {
+				String v = valor.trim().toLowerCase(Locale.ROOT);
+				if (!"true".equals(v) && !"false".equals(v)) {
+					throw new DatosInvalidosExcepcion("Valor booleano inválido en " + clave + ": " + valor);
+				}
+			}
+			case NULO -> {
 				String v = valor.trim().toLowerCase(Locale.ROOT);
 				if (!"true".equals(v) && !"false".equals(v)) {
 					throw new DatosInvalidosExcepcion("Valor booleano inválido en " + clave + ": " + valor);
@@ -129,13 +174,13 @@ public final class Especificaciones<T> {
 	public static <E> Specification<E> filtrar(ConsultaPaginada c, Map<String, CampoFiltro> campos, List<String> buscables) {
 		validar(c, campos, buscables);
 		return (root, query, cb) -> {
-			Predicate[] predicados = predicados(c, campos, buscables, root, cb);
+			Predicate[] predicados = predicados(c, campos, buscables, root, query, cb);
 			return predicados.length == 0 ? cb.conjunction() : cb.and(predicados);
 		};
 	}
 
 	private static <E> Predicate[] predicados(ConsultaPaginada c, Map<String, CampoFiltro> campos,
-			List<String> buscables, Root<E> root, CriteriaBuilder cb) {
+			List<String> buscables, Root<E> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
 		java.util.ArrayList<Predicate> lista = new java.util.ArrayList<>();
 		for (Map.Entry<String, String> f : c.getFiltros().entrySet()) {
 			String valor = f.getValue();
@@ -143,6 +188,11 @@ public final class Especificaciones<T> {
 				continue;
 			}
 			CampoFiltro campo = campos.get(f.getKey());
+			PredicadoFiltro predicado = campo.getPredicado();
+			if (predicado != null) {
+				lista.add(predicado.aplicar(root, query, cb, valor));
+				continue;
+			}
 			Path<Object> path = ruta(root, campo.getPropiedad());
 			switch (campo.getTipo()) {
 				case TEXTO_EXACTO -> lista.add(cb.equal(path, valor));
@@ -151,6 +201,7 @@ public final class Especificaciones<T> {
 				case ID, NUMERO -> lista.add(cb.equal(path, Long.parseLong(valor.trim())));
 				case FECHA -> lista.add(cb.like(path.as(String.class), valor.trim() + "%"));
 				case BOOLEANO -> lista.add(cb.equal(path, Boolean.parseBoolean(valor.trim())));
+				case NULO -> lista.add(Boolean.parseBoolean(valor.trim()) ? cb.isNotNull(path) : cb.isNull(path));
 				default -> {
 					// sin predicado
 				}

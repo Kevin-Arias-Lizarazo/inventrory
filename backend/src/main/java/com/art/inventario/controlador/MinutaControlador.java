@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.art.inventario.aplicacion.dto.ConsultaPaginada;
 import com.art.inventario.aplicacion.dto.PaginaResultado;
 import com.art.inventario.dominio.Minuta;
 import com.art.inventario.puerto.entrada.MinutaCasoDeUso;
@@ -50,6 +51,12 @@ public class MinutaControlador {
 			@RequestParam(defaultValue = "0") int pagina,
 			@RequestParam(defaultValue = "30") int tamano) {
 		return ResponseEntity.ok(servicio.listarFiltradas(fecha, empleadoId, q, orden, pagina, tamano));
+	}
+
+	@GetMapping("/paginado")
+	public ResponseEntity<PaginaResultado<Minuta>> listarPagina(
+			@RequestParam Map<String, String> params) {
+		return ResponseEntity.ok(servicio.listarPagina(ConsultaPaginada.desdeParams(params)));
 	}
 
 @GetMapping("/{id}")
